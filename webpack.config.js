@@ -37,12 +37,14 @@ const config = {
   },
   plugins: [
     // @ts-ignore
-    new CopyPlugin([
+    new CopyPlugin({ 
+      patterns: [
         {
             from: path.resolve(__dirname, './node_modules/@salesforce-ux/design-system/assets'),
             to: path.resolve(__dirname, 'dist/design-system')
         },
-    ])
+      ]
+    })
   ]
 };
 module.exports = config;
