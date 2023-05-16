@@ -1,6 +1,6 @@
 import { window } from "vscode";
 import * as commandsConfig from "./commands.json";
-import { execInWindowTerminal, readFile } from "./utils";
+import { execInTerminal, execInWindowTerminal, readFile } from "./utils";
 
 interface DTCommand {
     id: string,
@@ -18,6 +18,14 @@ interface CommandOptionsSettings {
     dtCommand?: {command: string, args: {[key: string]: string}},
 };
 
+interface SupportedMdTypes {
+    name: string,
+    apiName: string,
+    retrievedByDefault: boolean,
+    supports: { [key: string]: boolean },
+    description: string
+}
+
 const allPlaceholder: string = "*All*";
 const COMMAND_INPUT_TITLES: { [key: string]: string } = {
     selectType: "Select the DevTools Command Type...",
@@ -34,11 +42,13 @@ const COMMAND_TYPES_HANDLERS: { [key: string]: (command: string, args: {[key: st
     templating: handleTemplatingCommand
 };
 
-const COMMAND_PARAMETERS_HANDLERS: {[key: string]: (mcdevrc: {[key: string]: any}) => Promise<string>} = {
+const COMMAND_PARAMETERS_HANDLERS: {[key: string]: (param: {[key: string]: any}, supportedAction: string) => Promise<string>} = {
     bu: buHandler,
     credentialsName: credentialsHandler,
     type: typeHandler
 };
+
+let supportedMdTypes: Array<SupportedMdTypes> = [];
 
 function getCommandsTypes(): Array<{id: string, label: string}>{
     return Object.keys(commandsConfig)
@@ -56,11 +66,22 @@ async function executeCredentialsSelection(){
     return selectedCredentialBU;
 }
 
-function handleAdminCommand(command: string, args: {[key: string]: string}) {
+async function handleAdminCommand(command: string, args: {[key: string]: string}) {
+    if(command){
+        if("json" in args){
+            if(args.json !== ""){
+                const mdTypes: Array<SupportedMdTypes> = JSON.parse(
+                    await execInTerminal(`${command} ${args["json"]}`)
+                );
+                return mdTypes;
+            }else{
+                execInWindowTerminal(command);
+            }
+        }
+    }
 }
 
 async function handleStandardCommand(command: string, args: {[key: string]: string}) {
-    const mcdevrc: {[key: string]: any} = JSON.parse(await readFile(".mcdevrc.json"));
     if(command){
         const paramArray = await Promise.all(Object.keys(args).map(async(param: string) => {
             let paramInput: string = '';
@@ -69,7 +90,7 @@ async function handleStandardCommand(command: string, args: {[key: string]: stri
             }else{
                 if(Object.keys(COMMAND_PARAMETERS_HANDLERS).includes(param.toLowerCase())){
                     const paramHandler = COMMAND_PARAMETERS_HANDLERS[param.toLowerCase()];
-                    paramInput = await paramHandler(mcdevrc);
+                    paramInput = await paramHandler({}, command.includes("retrieve") ? "retrieve" : "update");
                     if(!paramInput){
                         return paramInput;
                     }
@@ -105,13 +126,26 @@ async function buHandler(mcdevrc: {[key: string]: any}){
     return null;
 }
 
-async function typeHandler(mcdevrc: {[key: string]: any}){
-    if(Object.keys(mcdevrc).includes("metaDataTypes") && Object.keys(mcdevrc["metaDataTypes"]).includes("retrieve")){
-        const selectedTypes = await window.showQuickPick(
-            mcdevrc["metaDataTypes"]["retrieve"], 
+async function typeHandler(mcdevrcJson: {[key: string]: any}, supportedAction: string){
+    if(!supportedMdTypes.length){
+        const availableDTCommands: Array<DTCommand> = getCommandsListByType("admin").filter(cmd => cmd.isAvailable);
+        if(availableDTCommands.length){
+            const [ { command, parameters }]: Array<DTCommand> = availableDTCommands;
+            supportedMdTypes = await handleAdminCommand(
+                command, 
+                parameters.reduce((prev, curr) => ({...prev, [curr]: curr === "json" ? "--json" : curr}), {})
+            );
+        }
+    }
+    const supportedMdTypesByAction = supportedMdTypes.filter(
+        (mdType: SupportedMdTypes) => supportedAction in mdType.supports && mdType.supports[supportedAction]
+    );
+    const selectedTypes = await window.showQuickPick(
+        supportedMdTypesByAction.map((mdType: SupportedMdTypes) => ({id: mdType.apiName, label: mdType.name})), 
             { placeHolder: COMMAND_INPUT_TITLES['metaDataType'], canPickMany: true, ignoreFocusOut: true }
         );
-        return selectedTypes ? `"${selectedTypes}"` : undefined;
+    if(selectedTypes.length){
+        return `"${selectedTypes.map((type: {id: string, label: string}) => type.id).join(",")}"`;
     }
     return null;
 }
@@ -131,7 +165,7 @@ async function executeCommandBarSelection(selectedCredBU: string){
     // Gets list of types of Commands (admin, standard, templating) configured
     const cmdTypeSettingsList: Array<CommandOptionsSettings> = getCommandsTypes().map((type: {id:string, label: string}) => ({
         ...type, 
-        detail: `Example: ${getCommandsListByType(type.id).map(cmd => cmd.title)}` 
+        detail: `Example: ${getCommandsListByType(type.id).filter(cmd => cmd.isAvailable).map(cmd => cmd.title)}` 
     }));
 
     // Makes user select the command type
