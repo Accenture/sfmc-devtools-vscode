@@ -128,7 +128,6 @@ async function buHandler(mcdevrc: {[key: string]: any}){
 
 async function typeHandler(mcdevrcJson: {[key: string]: any}, supportedAction: string){
     if(!supportedMdTypes.length){
-        console.log("Get supported Types...");
         const availableDTCommands: Array<DTCommand> = getCommandsListByType("admin").filter(cmd => cmd.isAvailable);
         if(availableDTCommands.length){
             const [ { command, parameters }]: Array<DTCommand> = availableDTCommands;
