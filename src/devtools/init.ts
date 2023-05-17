@@ -1,7 +1,7 @@
 import { ExtensionContext } from "vscode";
-import { initHelper } from "./initHelper";
-import { noDevToolsHandler, noPrerequisitesHandler } from "./installHelper";
-import { arePreRequisitesInstalled, isDevToolsInstalled } from './prerequisites';
+import { initHelper } from "./helpers/initHelper";
+import { noDevToolsHandler, noPrerequisitesHandler } from "./helpers/installHelper";
+import { arePreRequisitesInstalled, isDevToolsInstalled } from "./prerequisites";
 
 export async function init(context: ExtensionContext){
     try{

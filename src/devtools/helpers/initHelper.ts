@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { window, ExtensionContext } from 'vscode';
-import { activateEditorSettings } from './editorSettings';
-import { execInWindowTerminal, isFileInFolder } from './utils';
+import { activateEditorSettings } from '../../editor/editorSettings';
+import { execInWindowTerminal } from '../../shared/utils/terminal';
+import { isFileInFolder } from '../../shared/utils/file';
 
 interface DevToolsForm {
     credentialName: string,

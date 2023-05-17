@@ -1,5 +1,5 @@
 import { ExtensionContext } from 'vscode';
-import { init } from './init';
+import { init } from './devtools/init';
 
 export function activate(context: ExtensionContext) {
 	init(context);

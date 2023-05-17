@@ -1,9 +1,9 @@
 import { window, ViewColumn, Uri, ExtensionContext, ProgressLocation } from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { execInTerminal } from './utils';
+import { execInTerminal } from '../../shared/utils/terminal';
 import { initHelper } from './initHelper';
-import { isDevToolsInstalled } from './prerequisites';
+import { isDevToolsInstalled } from '../prerequisites';
 
 const MESSAGES: {[key: string]: string } = {
     noPreRequisites: "The Pre-Requisites required to run SFMC DevTools are missing. Do you wish to install them?",

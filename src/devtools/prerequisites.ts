@@ -1,4 +1,4 @@
-import { execInTerminal } from './utils';
+import { execInTerminal } from "../shared/utils/terminal";
 
 const PREREQUISITES: { [key: string]: { cmdVersion: string, isValidVersion: (version: string) => RegExpMatchArray } } = {
     node: {
