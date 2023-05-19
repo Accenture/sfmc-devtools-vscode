@@ -1,15 +1,16 @@
-import { ChildProcess, exec } from 'child_process';
+import { execSync } from 'child_process';
 import { Terminal, window } from 'vscode';
 
 const DEVTOOLS_TERMINAL_NAME: string = 'sfmc-devtools'; // TODO
 
-export async function execInTerminal(command: string): Promise<string>{
-    return new Promise((resolve) => {
-        let result: string = '';
-        const process: ChildProcess = exec(command);
-        process.stdout.on('data', (data) => result = data);
-        process.on('close', () => resolve(result));
-    });
+export function executeSyncTerminalCommand(command: string): string {
+    try {
+        return execSync(command)
+            .toString()
+            .trim();
+    }catch(error){
+        throw new Error(`Error executing the command: ${command}`);
+    }
 }
 
 export async function execInWindowTerminal(command: string): Promise<void>{
