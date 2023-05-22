@@ -3,7 +3,6 @@
 'use strict';
 
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -35,16 +34,6 @@ const config = {
       }
     ]
   },
-  plugins: [
-    // @ts-ignore
-    new CopyPlugin({ 
-      patterns: [
-        {
-            from: path.resolve(__dirname, './node_modules/@salesforce-ux/design-system/assets'),
-            to: path.resolve(__dirname, 'dist/design-system')
-        },
-      ]
-    })
-  ]
+  plugins: []
 };
 module.exports = config;

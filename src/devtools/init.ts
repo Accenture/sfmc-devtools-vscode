@@ -21,7 +21,7 @@ export async function init(context: ExtensionContext){
             // }
         }else{
             // show prequisites installation page
-            prerequisites.noPrerequisitesHandler(missingPrerequisites);
+            prerequisites.noPrerequisitesHandler(context.extensionPath, missingPrerequisites);
         }
     }catch(exception){
         console.error(exception); // TODO

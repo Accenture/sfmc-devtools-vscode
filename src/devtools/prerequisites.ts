@@ -1,36 +1,61 @@
-import { execInTerminal } from "../shared/utils/terminal";
+import { prerequisitesConfig, NoPrerequisitesResponseOptions } from "../config/prerequisites.config";
+import { executeSyncTerminalCommand } from "../shared/utils/terminal";
+import { editorInput } from "../editor/editorInput";
+import { editorWebview } from "../editor/editorWebview";
 
-const PREREQUISITES: { [key: string]: { cmdVersion: string, isValidVersion: (version: string) => RegExpMatchArray } } = {
-    node: {
-        cmdVersion: 'node --version',
-        isValidVersion: (version: string) => version.match(/v\d*.\d*.\d*/)
-    },
-    git: {
-        cmdVersion: 'git --version',
-        isValidVersion: (version: string) => version.match(/git version \d*.\d*.\d*.*/)
-    }
+type PrerequisitesInstalledReturn = { 
+    prerequisitesInstalled: boolean, 
+    missingPrerequisites: string[]
 };
 
-async function arePreRequisitesInstalled(command: string): Promise<boolean>{
-    let prerequisitesList: Array<boolean> = [];
-    if(!command){
-        prerequisitesList = await Promise.all(Object.keys(PREREQUISITES).map(async (res) => {
-            const result: string = await execInTerminal(PREREQUISITES[res].cmdVersion);
-            return PREREQUISITES[res].isValidVersion(result) !== null;
-        }));
-    }else{
-        let result: string = await execInTerminal(PREREQUISITES[command].cmdVersion);
-        prerequisitesList.push(PREREQUISITES[command].isValidVersion(result) !== null);
-    }
-    return prerequisitesList.every((res: boolean) => res === true);
+function arePrerequisitesInstalled(): PrerequisitesInstalledReturn {
+    let prerequisiteResult: PrerequisitesInstalledReturn = { prerequisitesInstalled: true, missingPrerequisites: []};
+    Object.entries(prerequisitesConfig.packages).forEach(([prerequisite, command]: string[]) => {
+        try{
+            // executes each prerequisite command to check if they are installed in the system
+            // if not installed throws exception
+            executeSyncTerminalCommand(command);
+        }catch(error){
+            prerequisiteResult = { 
+                prerequisitesInstalled: false, 
+                missingPrerequisites: [...prerequisiteResult["missingPrerequisites"], prerequisite] 
+            };
+        }
+    });
+    return prerequisiteResult;
 };
 
-async function isDevToolsInstalled(): Promise<boolean> {
-    const result: string = await execInTerminal('mcdev --version');
-    return result.match(/\d*.\d*.\d*/) !== null;
+async function noPrerequisitesHandler(extensionPath: string, missingPrerequisites: string[]): Promise<void> {
+    // checks if the one or more prerequisites are missing to show the correct message. 
+    const missingPrerequisitesMessage: string = missingPrerequisites.length === 1 ? 
+        prerequisitesConfig.titles["onePrerequisiteMissing"].replace("{{prerequisites}}", missingPrerequisites[0]) : 
+        prerequisitesConfig.titles["multiplePrerequisitesMissing"].replace("{{prerequisites}}", missingPrerequisites.join(" and "));
+
+    const message: string = `${missingPrerequisitesMessage} ${prerequisitesConfig.titles.askPrerequisitesToUser}`;
+
+    // Asks if user wishes to follow the guide of how to install the prerequisites
+    const userResponse: string = await editorInput.handleShowInformationMessage(
+        message, 
+        Object.keys(NoPrerequisitesResponseOptions).filter((v) => isNaN(Number(v)))
+    );
+
+    // If yes creates an webview in vscode with a installation guide
+    if(userResponse && NoPrerequisitesResponseOptions[userResponse as keyof typeof NoPrerequisitesResponseOptions]){
+        editorWebview.create({
+            id: prerequisitesConfig.webview.id,
+            title: prerequisitesConfig.webview.title,
+            extensionPath: extensionPath,
+            filename: prerequisitesConfig.webview.filename,
+            handler: ({ command }: { command: string }) => {
+                if(command === "install"){
+                    return { dispose: true };
+                }
+            }
+        });
+    }
 }
 
-export {
-    arePreRequisitesInstalled,
-    isDevToolsInstalled
+export const prerequisites = {
+    arePrerequisitesInstalled,
+    noPrerequisitesHandler
 };
