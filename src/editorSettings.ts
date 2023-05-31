@@ -1,5 +1,6 @@
 import { commands, ExtensionContext, StatusBarAlignment, StatusBarItem, window } from "vscode";
 import { devToolsCommands } from "./devToolsCommands";
+import { log } from "./editorLogger";
 
 const DEVTOOLS_STATUS_BAR_CREDBU: string = "sfmc-devtools-vscext.credbu";
 const DEVTOOLS_STATUS_BAR_CREDBU_TITLE: string = "DT:Credential/BU";
@@ -18,7 +19,6 @@ export function activateEditorSettings(context: ExtensionContext){
 }
 
 function createCommandStatusBar( { subscriptions }: ExtensionContext){
-
     let statusBarCredBU: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 110);
     statusBarCredBU.command = DEVTOOLS_STATUS_BAR_CREDBU;
     statusBarCredBU.text = DEVTOOLS_STATUS_BAR_CREDBU_TITLE;
@@ -34,6 +34,7 @@ function createCommandStatusBar( { subscriptions }: ExtensionContext){
         commands.registerCommand(DEVTOOLS_STATUS_BAR_COMMAND, () => commandBarHandler(statusBarCredBU))
     );
     subscriptions.push(statusBarCredBU, statusBar);
+    log("info", "Activated command status bar...");
 }
 
 async function credentialBUHandler(statusBarCredBU: StatusBarItem){

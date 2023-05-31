@@ -2,7 +2,7 @@
 import { window, ExtensionContext } from 'vscode';
 import { activateEditorSettings } from './editorSettings';
 import { execInWindowTerminal, isFileInFolder } from './utils';
-
+import { log } from './editorLogger';
 interface DevToolsForm {
     credentialName: string,
     client_id: string,
@@ -29,13 +29,16 @@ const MESSAGES: {[key: string]: string } = {
 
 export async function initHelper(context: ExtensionContext){
     const isInitiated = await isProjectInitiated();
+    console.log("isInitiated ", isInitiated);
     if(!isInitiated){
+        log("info", "Request to initiate DevTools project...");
         let response = await window.showInformationMessage(MESSAGES['initDevToolsRequest'], ...["Yes", "No"]);
         if(response && response.toLowerCase() === "yes"){
             await initializeDevTools();
             activateEditorSettings(context);
         }
     }else{
+        log("info", "Activating editor settings...");
         activateEditorSettings(context);
     }
 }
@@ -73,6 +76,12 @@ async function initializeDevTools(){
 }
 
 async function isProjectInitiated(){
-    const fileExistsList = await Promise.all(INIT_DEVTOOLS_FILES.map(async file => await isFileInFolder(file)));
+    const fileExistsList = await Promise.all(INIT_DEVTOOLS_FILES.map(async file => {
+        const res = await isFileInFolder(file);
+        if(!res){
+            log("error", `File ${file} is missing...`);
+        }
+        return res;
+    }));
     return fileExistsList.every(res => res === true);
 }

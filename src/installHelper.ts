@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { execInTerminal } from './utils';
 import { initHelper } from './initHelper';
 import { isDevToolsInstalled } from './prerequisites';
+import { log } from './editorLogger';
 
 const MESSAGES: {[key: string]: string } = {
     noPreRequisites: "The Pre-Requisites required to run SFMC DevTools are missing. Do you wish to install them?",
@@ -53,10 +54,12 @@ async function noDevToolsHandler(context: ExtensionContext){
 }
 
 async function installDevTools(context: ExtensionContext){
+    log("info", "Installing DevTools...");
     await window.withProgress({ location: ProgressLocation.Notification }, async (progress) => {
         progress.report({ message: MESSAGES['installDevTools']});
         await execInTerminal(`npm install -g mcdev`);
         const hasDevTools: boolean = await isDevToolsInstalled();
+        console.log("hasDevTools ", hasDevTools);
         if(hasDevTools){
             window.showInformationMessage(MESSAGES['installDevToolsSuccess']);
             initHelper(context);

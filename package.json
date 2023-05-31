@@ -14,11 +14,13 @@
 		"Other"
 	],
 	"main": "./dist/extension.js",
-	"activationEvents": [
-		"onStartupFinished"
-	],
+	"activationEvents": [],
 	"contributes": {
 		"commands": [
+			{
+				"command": "sfmc-devtools-vscext.initializeDevTools",
+				"title": "SFMC DevTools: Initialize Extension"
+			},
 			{
 				"command": "sfmc-devtools-vscext.devToolsMenuActionRetrieve",
 				"title": "DT:Retrieve"

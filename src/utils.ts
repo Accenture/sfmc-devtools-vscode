@@ -1,5 +1,6 @@
 import { ChildProcess, exec } from 'child_process';
 import { Terminal, TextDocument, Uri, window, workspace } from 'vscode';
+import { log } from './editorLogger';
 
 const DEVTOOLS_TERMINAL_NAME: string = 'sfmc-devtools';
 
@@ -7,12 +8,17 @@ export async function execInTerminal(command: string): Promise<string>{
     return new Promise((resolve) => {
         let result: string = '';
         const process: ChildProcess = exec(command);
-        process.stdout.on('data', (data) => result = data);
+        process.stdout.on('data', (data) => {
+            console.log(`Terminal returned ${JSON.stringify(data)}`);
+            result = data.trim();
+        });
+        process.stderr.on('data', (data) => log("error", data.toString()));
         process.on('close', () => resolve(result));
     });
 }
 
 export async function execInWindowTerminal(command: string): Promise<void>{
+    log("info", `Running: ${command}`);
     const activeDevToolsTerminals: Array<Terminal> = window.terminals.filter(term => term.name === DEVTOOLS_TERMINAL_NAME);
     const devToolsTerminal: Terminal = activeDevToolsTerminals.length ?
         activeDevToolsTerminals[0] : 

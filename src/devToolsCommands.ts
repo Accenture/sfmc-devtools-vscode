@@ -1,6 +1,7 @@
 import { window } from "vscode";
 import * as commandsConfig from "./commands.json";
 import { execInTerminal, execInWindowTerminal, readFile } from "./utils";
+import { log } from "./editorLogger";
 
 interface DTCommand {
     id: string,
@@ -103,6 +104,7 @@ async function handleStandardCommand(command: string, args: {[key: string]: stri
                 execInWindowTerminal(`${command} ${paramArray.join(" ")}`);
             }catch(err){
                 console.error("err = ", err);
+                log("error", err);
             }
         }
     }
