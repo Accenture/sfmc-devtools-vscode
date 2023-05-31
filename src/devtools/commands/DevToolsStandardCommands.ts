@@ -47,8 +47,8 @@ class DevToolsStandardCommands extends DevToolsCommands {
                 }else{
                     // request user
                     console.log(this.getSupportedMdTypes());
-                    const supportedMdTypes = this.getSupportedMdTypes()
-                    .filter(mdType => mdType.supports.retrieve);
+                    // const supportedMdTypes = this.getSupportedMdTypes()
+                    // .filter(mdType => mdType.supports.retrieve);
                 }
             });
         }

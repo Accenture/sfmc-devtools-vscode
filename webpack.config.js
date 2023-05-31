@@ -6,12 +6,12 @@ const path = require('path');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
-  target: 'node', 
-	mode: 'none',
-  entry: './src/extension.ts', 
+  mode: "none",
+  target: "node",
+  entry: "./src/extension.ts", 
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'extension.js',
+    filename: 'extension.bundle.js',
     libraryTarget: 'commonjs2'
   },
   devtool: 'nosources-source-map',
@@ -34,6 +34,6 @@ const config = {
       }
     ]
   },
-  plugins: []
 };
+
 module.exports = config;

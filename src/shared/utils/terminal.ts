@@ -1,10 +1,13 @@
 import { execSync } from 'child_process';
-import { Terminal, window } from 'vscode';
+// import { Terminal, window } from 'vscode';
 
-const DEVTOOLS_TERMINAL_NAME: string = 'sfmc-devtools'; // TODO
+// const DEVTOOLS_TERMINAL_NAME: string = 'sfmc-devtools'; // TODO
 
 export function executeSyncTerminalCommand(command: string): string {
     try {
+        console.log(execSync(command)
+            .toString()
+            .trim());
         return execSync(command)
             .toString()
             .trim();
@@ -13,14 +16,14 @@ export function executeSyncTerminalCommand(command: string): string {
     }
 }
 
-export async function execInWindowTerminal(command: string): Promise<void>{
-    const activeDevToolsTerminals: Array<Terminal> = window.terminals.filter(term => term.name === DEVTOOLS_TERMINAL_NAME);
-    const devToolsTerminal: Terminal = activeDevToolsTerminals.length ?
-        activeDevToolsTerminals[0] : 
-        window.createTerminal(DEVTOOLS_TERMINAL_NAME);
-    devToolsTerminal.sendText(command);
-    devToolsTerminal.show();
-}
+// export async function execInWindowTerminal(command: string): Promise<void>{
+//     const activeDevToolsTerminals: Array<Terminal> = window.terminals.filter(term => term.name === DEVTOOLS_TERMINAL_NAME);
+//     const devToolsTerminal: Terminal = activeDevToolsTerminals.length ?
+//         activeDevToolsTerminals[0] : 
+//         window.createTerminal(DEVTOOLS_TERMINAL_NAME);
+//     devToolsTerminal.sendText(command);
+//     devToolsTerminal.show();
+// }
 
 
 

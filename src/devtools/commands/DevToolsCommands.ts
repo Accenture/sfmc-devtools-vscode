@@ -1,4 +1,4 @@
-import { execInTerminal } from "../../shared/utils/terminal";
+// import { execInTerminal } from "../../shared/utils/terminal";
 import * as commandsConfig from "./commands.config.json";
 
 interface DevToolsCommandSetting {
@@ -16,7 +16,7 @@ interface IDevToolsCommand {
 }
 
 abstract class DevToolsCommands implements IDevToolsCommand {
-    name: string;
+    name: string | undefined;
 
     abstract getCommand(id: string): void;
     abstract setSupportedMdTypes(mdTypes: {}[]): void;
@@ -36,7 +36,7 @@ abstract class DevToolsCommands implements IDevToolsCommand {
         if(runWindowTerminal){
             //execInWindowTerminal(command);
         }else{
-            return execInTerminal(command);
+            // return execInTerminal(command);
         }
     }
 

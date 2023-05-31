@@ -5,7 +5,7 @@ export enum NoPrerequisitesResponseOptions {
 };
 export const prerequisitesConfig: {
     packages: { node: string, git: string },
-    titles: { 
+    messages: { 
         onePrerequisiteMissing: string, 
         multiplePrerequisitesMissing: string,
         askPrerequisitesToUser: string
@@ -16,7 +16,7 @@ export const prerequisitesConfig: {
         node: "node -v",
         git: "git --version"
     },
-    titles: {
+    messages: {
         onePrerequisiteMissing: "Unfortunately the prerequesite {{prerequisites}} is missing.",
         multiplePrerequisitesMissing: "Unfortunately the prerequesites {{prerequisites}} are missing.",
         askPrerequisitesToUser: "Do you want to open the installation guide?"

@@ -1,4 +1,7 @@
 node_modules
+out
 dist
 logs
 .vscode
+.vscode-test
+coverage

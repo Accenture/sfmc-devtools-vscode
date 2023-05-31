@@ -28,13 +28,13 @@ function arePrerequisitesInstalled(): PrerequisitesInstalledReturn {
 async function noPrerequisitesHandler(extensionPath: string, missingPrerequisites: string[]): Promise<void> {
     // checks if the one or more prerequisites are missing to show the correct message. 
     const missingPrerequisitesMessage: string = missingPrerequisites.length === 1 ? 
-        prerequisitesConfig.titles["onePrerequisiteMissing"].replace("{{prerequisites}}", missingPrerequisites[0]) : 
-        prerequisitesConfig.titles["multiplePrerequisitesMissing"].replace("{{prerequisites}}", missingPrerequisites.join(" and "));
+        prerequisitesConfig.messages["onePrerequisiteMissing"].replace("{{prerequisites}}", missingPrerequisites[0]) : 
+        prerequisitesConfig.messages["multiplePrerequisitesMissing"].replace("{{prerequisites}}", missingPrerequisites.join(" and "));
 
-    const message: string = `${missingPrerequisitesMessage} ${prerequisitesConfig.titles.askPrerequisitesToUser}`;
+    const message: string = `${missingPrerequisitesMessage} ${prerequisitesConfig.messages.askPrerequisitesToUser}`;
 
     // Asks if user wishes to follow the guide of how to install the prerequisites
-    const userResponse: string = await editorInput.handleShowInformationMessage(
+    const userResponse: string | undefined = await editorInput.handleShowInformationMessage(
         message, 
         Object.keys(NoPrerequisitesResponseOptions).filter((v) => isNaN(Number(v)))
     );
@@ -50,6 +50,7 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
                 if(command === "install"){
                     return { dispose: true };
                 }
+                return { dispose: false };
             }
         });
     }

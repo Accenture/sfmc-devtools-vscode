@@ -1,12 +1,10 @@
 import { ExtensionContext } from "vscode";
-import { initHelper } from "./helpers/initHelper";
-import { noDevToolsHandler } from "./helpers/installHelper";
 import { prerequisites } from "./prerequisites";
 
 export async function init(context: ExtensionContext){
     try{
         // Checks if all the prerequesites are installed. If not returns the missing prerequisite name
-        const { prerequisitesInstalled, missingPrerequisites} = prerequisites.arePrerequisitesInstalled();
+        const { prerequisitesInstalled, missingPrerequisites } = prerequisites.arePrerequisitesInstalled();
 
         // if user has prequisites installed
         if(prerequisitesInstalled){
