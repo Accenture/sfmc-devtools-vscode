@@ -1,14 +1,28 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
+enum ViewColumn {
+  One = 1
+}
+
 const StatusBarAlignment = {};
 
 const window = {
   createStatusBarItem: jest.fn(() => ({
     show: jest.fn()
   })),
-  showErrorMessage: jest.fn(),
-  showWarningMessage: jest.fn(),
-  createTextEditorDecorationType: jest.fn()
+  showInformationMessage: jest.fn((_: string, ...items: string[]) => {
+    return items[0];
+  }),
+  createWebviewPanel: jest.fn(() => {
+    return {
+      webview: {
+        html: "",
+        asWebviewUri: ((uri: any) => uri),
+        onDidReceiveMessage: () => {}
+      },
+      dispose: () => {}
+    };
+  })
 };
 
 const workspace = {
@@ -26,10 +40,11 @@ const commands = {
   executeCommand: jest.fn()
 };
 
-export const vscode = {
+export {
   StatusBarAlignment,
   window,
   workspace,
   Uri,
-  commands
+  commands,
+  ViewColumn
 };

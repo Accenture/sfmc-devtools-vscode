@@ -5,9 +5,6 @@ import { execSync } from 'child_process';
 
 export function executeSyncTerminalCommand(command: string): string {
     try {
-        console.log(execSync(command)
-            .toString()
-            .trim());
         return execSync(command)
             .toString()
             .trim();
