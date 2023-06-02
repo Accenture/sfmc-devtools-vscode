@@ -4,6 +4,8 @@
 // // import { readFile } from "../shared/utils/file";
 // import { editorInput } from "../editor/editorInput";
 // import SupportedMetadataTypes from "../shared/interfaces/supportedMetadataTypes";
+import { mainConfig } from "../config/main.config";
+import { editorWorkspace } from "../editor/workspace";
 
 // interface DTStatusBarSettings {
 //     dtCredential: {
@@ -208,7 +210,7 @@
 //     }
 // }
 
-// export const devToolsExtension = {
+// export const devtoolsExtension = {
 //     init,
 //     DEVTOOLS_STATUS_BAR_CREDBU,
 //     DEVTOOLS_MENU_ACTION_COMMAND_RETRIEVE,
@@ -217,3 +219,13 @@
 //     handleCommandSelection,
 //     executeExplorerMenuAction
 // };
+
+async function isADevToolsProject(): Promise<boolean> {
+    const findMcdevFiles: boolean[] = await Promise.all(mainConfig.requiredFiles
+        .map(async(filename: string) => editorWorkspace.isFileInFolder(filename)));
+    return findMcdevFiles.every((result: boolean) => result === true);
+}
+
+export const devtoolsMain = {
+    isADevToolsProject
+};

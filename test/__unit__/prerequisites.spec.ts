@@ -1,5 +1,5 @@
 import { assert } from 'chai';
-import { prerequisites } from "../../src/devtools/prerequisites";
+import { devtoolsPrerequisites } from "../../src/devtools/prerequisites";
 import * as child_process from 'child_process';
 import * as fs from "fs";
 import { window } from '../__mocks__/vscode';
@@ -18,7 +18,7 @@ describe('Test: Pre-requisites module', () => {
 
     jest.spyOn(child_process, "execSync").mockImplementation(() => "v1.1.1");
 
-    const res = prerequisites.arePrerequisitesInstalled();
+    const res = devtoolsPrerequisites.arePrerequisitesInstalled();
 
     expect(child_process.execSync).toHaveBeenCalled();
     expect(child_process.execSync).toHaveReturnedWith("v1.1.1");
@@ -48,7 +48,7 @@ describe('Test: Pre-requisites module', () => {
       throw new Error("The package is not installed");
     });
 
-    const res = prerequisites.arePrerequisitesInstalled();
+    const res = devtoolsPrerequisites.arePrerequisitesInstalled();
 
     expect(child_process.execSync).toHaveBeenCalled();
     expect(child_process.execSync).toThrowError();
@@ -84,7 +84,7 @@ describe('Test: Pre-requisites module', () => {
     const extensionPath: string = "path/to/extension";
     const missingPrerequisites: string[] = ['node'];
 
-    await prerequisites.noPrerequisitesHandler(extensionPath, missingPrerequisites);
+    await devtoolsPrerequisites.noPrerequisitesHandler(extensionPath, missingPrerequisites);
 
     expect(fs.readFileSync).toHaveBeenCalled();
     expect(fs.readFileSync).toHaveReturnedWith("html_content_file");

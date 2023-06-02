@@ -11,6 +11,7 @@ async function handleQuickPickSelection(
     );
     return selectedOption;
 }
+
 async function handleShowInformationMessage(message: string, actions: string[]){
     const response: string | undefined = await window.showInformationMessage(message, ...actions);
     return response;

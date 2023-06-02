@@ -1,7 +1,7 @@
 import { prerequisitesConfig, NoPrerequisitesResponseOptions } from "../config/prerequisites.config";
 import { executeSyncTerminalCommand } from "../shared/utils/terminal";
-import { editorInput } from "../editor/editorInput";
-import { editorWebview } from "../editor/editorWebview";
+import { editorInput } from "../editor/input";
+import { editorWebview } from "../editor/webview";
 
 type PrerequisitesInstalledReturn = { 
     prerequisitesInstalled: boolean, 
@@ -56,7 +56,7 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
     }
 }
 
-export const prerequisites = {
+export const devtoolsPrerequisites = {
     arePrerequisitesInstalled,
     noPrerequisitesHandler
 };

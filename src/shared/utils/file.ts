@@ -11,11 +11,6 @@ import * as path from 'path';
 //     return '';
 // }
 
-export async function isFileInFolder(filename: string): Promise<boolean> {
-    const fileArray: Array<Uri> = await workspace.findFiles(filename);
-    return fileArray.length > 0;
-}
-
 function readFileSync(path: string): string {
     try{
         return fs.readFileSync(path, "utf-8");
