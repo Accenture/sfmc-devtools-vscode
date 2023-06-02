@@ -1,3 +1,5 @@
+import path from "path";
+
 function parseArrayJsonStringToArray(jsonStr: string): 
     {[key: string]: string | string[] | {[key: string]: string}} {
     return JSON.parse(jsonStr);
@@ -20,10 +22,16 @@ function mapObject(object: any): string {
         default:
             return object; 
     }
-    
 }
+
+function createFilePath(pathArray: string[]): string {
+    return path.join(...pathArray);
+}
+
+
 
 export const lib = {
     parseArrayJsonStringToArray,
-    mapObject
+    mapObject,
+    createFilePath
 };

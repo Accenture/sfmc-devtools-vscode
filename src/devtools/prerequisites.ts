@@ -2,6 +2,8 @@ import { prerequisitesConfig, NoPrerequisitesResponseOptions } from "../config/p
 import { executeSyncTerminalCommand } from "../shared/utils/terminal";
 import { editorInput } from "../editor/input";
 import { editorWebview } from "../editor/webview";
+import { log } from "../editor/output";
+import { devtoolsInstaller } from "./installer";
 
 interface PrerequisitesInstalledReturn { 
     prerequisitesInstalled: boolean, 
@@ -16,6 +18,7 @@ function arePrerequisitesInstalled(): PrerequisitesInstalledReturn {
             // if not installed throws exception
             executeSyncTerminalCommand(command);
         }catch(error){
+            log("debug", `${prerequisite} is not installed.`);
             prerequisiteResult = { 
                 prerequisitesInstalled: false, 
                 missingPrerequisites: [...prerequisiteResult["missingPrerequisites"], prerequisite] 
@@ -31,6 +34,8 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
         prerequisitesConfig.messages["onePrerequisiteMissing"].replace("{{prerequisites}}", missingPrerequisites[0]) : 
         prerequisitesConfig.messages["multiplePrerequisitesMissing"].replace("{{prerequisites}}", missingPrerequisites.join(" and "));
 
+    log("warning", missingPrerequisites);
+    
     const message: string = `${missingPrerequisitesMessage} ${prerequisitesConfig.messages.askPrerequisitesToUser}`;
 
     // Asks if user wishes to follow the guide of how to install the prerequisites
@@ -38,6 +43,8 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
         message, 
         Object.keys(NoPrerequisitesResponseOptions).filter((v) => isNaN(Number(v)))
     );
+
+    log("debug", `noPrerequisitesHandler: user response = ${userResponse}.`);
 
     // If yes creates an webview in vscode with a installation guide
     if(userResponse && NoPrerequisitesResponseOptions[userResponse as keyof typeof NoPrerequisitesResponseOptions]){
@@ -48,6 +55,7 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
             filename: prerequisitesConfig.webview.filename,
             handler: ({ command }: { command: string }) => {
                 if(command === "install"){
+                    devtoolsInstaller.installDevTools();
                     return { dispose: true };
                 }
                 return { dispose: false };

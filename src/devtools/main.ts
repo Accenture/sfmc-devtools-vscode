@@ -5,8 +5,11 @@
 // import { editorInput } from "../editor/editorInput";
 // import SupportedMetadataTypes from "../shared/interfaces/supportedMetadataTypes";
 import { mainConfig } from "../config/main.config";
-import { log } from "../editor/output";
+import { editorContext } from "../editor/context";
 import { editorWorkspace } from "../editor/workspace";
+import { log } from "../editor/output";
+import { PrerequisitesInstalledReturn, devtoolsPrerequisites } from "./prerequisites";
+import { devtoolsInstaller } from "./installer";
 
 // interface DTStatusBarSettings {
 //     dtCredential: {
@@ -232,10 +235,29 @@ async function isADevToolsProject(): Promise<boolean> {
     return findMcdevFiles.every((result: boolean) => result === true);
 }
 
-async function checkPrerequisitesAreInstalled(){
-    
+
+async function handleDevToolsRequirements(){
+    log("info", "Checking SFMC DevTools requirements...");
+    const prerequisites: PrerequisitesInstalledReturn = devtoolsPrerequisites.arePrerequisitesInstalled();
+    log("info", `SFMC Pre-Requisites ${
+        prerequisites.prerequisitesInstalled ? 'are' : 'are not'
+    } installed.`);
+    if(prerequisites.prerequisitesInstalled){
+        if(!devtoolsInstaller.isDevToolsInstalled()){
+            await devtoolsInstaller.noDevToolsHandler();
+            return;
+        }
+        log("info", "SFMC DevTools is installed.");
+    }else{
+        log("debug", `Missing Pre-requisites: [${prerequisites.missingPrerequisites}]`);
+        devtoolsPrerequisites.noPrerequisitesHandler(
+            editorContext.get().extensionPath,
+            prerequisites.missingPrerequisites
+        );
+    }
 }
 
 export const devtoolsMain = {
-    isADevToolsProject
+    isADevToolsProject,
+    handleDevToolsRequirements
 };

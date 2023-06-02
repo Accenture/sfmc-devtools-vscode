@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import { log } from '../../editor/output';
 // import { Terminal, window } from 'vscode';
 
 // const DEVTOOLS_TERMINAL_NAME: string = 'sfmc-devtools'; // TODO
@@ -9,6 +10,7 @@ export function executeSyncTerminalCommand(command: string): string {
             .toString()
             .trim();
     }catch(error){
+        log("error", error);
         throw new Error(`Error executing the command: ${command}`);
     }
 }

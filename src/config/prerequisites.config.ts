@@ -17,13 +17,13 @@ export const prerequisitesConfig: {
         git: "git --version"
     },
     messages: {
-        onePrerequisiteMissing: "Unfortunately the prerequesite {{prerequisites}} is missing.",
-        multiplePrerequisitesMissing: "Unfortunately the prerequesites {{prerequisites}} are missing.",
+        onePrerequisiteMissing: "Unfortunately the SFMC DevTools Pre-Requisite {{prerequisites}} is missing.",
+        multiplePrerequisitesMissing: "Unfortunately the SFMC DevTools Pre-Requisites {{prerequisites}} are missing.",
         askPrerequisitesToUser: "Do you want to open the installation guide?"
     },
     webview: {
         id: "prerequisitesPanel",
-        title: "Prequisites Installation",
+        title: "Prerequisites Installation",
         filename: "devtoolsPrerequisites"
     }
 };

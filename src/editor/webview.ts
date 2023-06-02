@@ -1,5 +1,7 @@
 import { window, WebviewPanel, Uri, ViewColumn } from "vscode";
-import { file } from "../shared/utils/file";
+import { editorWorkspace } from "./workspace";
+import { log } from "./output";
+import { lib } from "../shared/utils/lib";
 
 interface WebviewConfig {
     id: string,
@@ -9,7 +11,7 @@ interface WebviewConfig {
     handler: (data: any) => { dispose: boolean }
 };
 
-function create(config: WebviewConfig){
+async function create(config: WebviewConfig){
     try {
         const panel: WebviewPanel = window.createWebviewPanel(
             config.id,
@@ -18,21 +20,21 @@ function create(config: WebviewConfig){
             { enableScripts: true }
         );
 
-        let html: string = file.readFileSync(file.createFilePath([
+        let html: string = await editorWorkspace.readFile(lib.createFilePath([
             config.extensionPath,
             "src",
             "html",
             `${config.filename}.html`
         ]));
 
-        const sldsPath: string = file.createFilePath([
+        const sldsPath: string = lib.createFilePath([
             config.extensionPath,
             "src",
             "css",
             "salesforce-lightning-design-system.min.css"
         ]);
 
-        const jsPath: string = file.createFilePath([
+        const jsPath: string = lib.createFilePath([
             config.extensionPath,
             "src",
             "js",
@@ -52,9 +54,8 @@ function create(config: WebviewConfig){
             }
         });
         panel.webview.html = html;
-
     }catch(error){
-        console.error(error); // TODO
+        log("error", error);
     }
 }
 

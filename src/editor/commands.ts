@@ -12,6 +12,15 @@ function registerCommand(register: CommandRegister | CommandRegister[]): void {
         );
 }
 
+function executeCommand(command: string | string[]){
+    [command]
+        .flat()
+        .forEach(
+            (command: string) => commands.executeCommand(command)
+        );
+}
+
 export const editorCommands = {
-    registerCommand
+    registerCommand,
+    executeCommand
 };
