@@ -3,7 +3,7 @@ import { executeSyncTerminalCommand } from "../shared/utils/terminal";
 import { editorInput } from "../editor/input";
 import { editorWebview } from "../editor/webview";
 
-type PrerequisitesInstalledReturn = { 
+interface PrerequisitesInstalledReturn { 
     prerequisitesInstalled: boolean, 
     missingPrerequisites: string[]
 };
@@ -56,7 +56,12 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
     }
 }
 
-export const devtoolsPrerequisites = {
+const devtoolsPrerequisites = {
     arePrerequisitesInstalled,
     noPrerequisitesHandler
+};
+
+export {
+    PrerequisitesInstalledReturn,
+    devtoolsPrerequisites
 };

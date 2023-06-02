@@ -5,6 +5,7 @@
 // import { editorInput } from "../editor/editorInput";
 // import SupportedMetadataTypes from "../shared/interfaces/supportedMetadataTypes";
 import { mainConfig } from "../config/main.config";
+import { log } from "../editor/output";
 import { editorWorkspace } from "../editor/workspace";
 
 // interface DTStatusBarSettings {
@@ -221,9 +222,18 @@ import { editorWorkspace } from "../editor/workspace";
 // };
 
 async function isADevToolsProject(): Promise<boolean> {
+    log("info", "Checking if folder is a SFMC DevTools project...");
+    log("debug", `DevTools files: [${mainConfig.requiredFiles}]`);
     const findMcdevFiles: boolean[] = await Promise.all(mainConfig.requiredFiles
         .map(async(filename: string) => editorWorkspace.isFileInFolder(filename)));
+    log("info", 
+        `Folder ${findMcdevFiles.every((result: boolean) => result === true) ? 'is' : 'is not'} a SFMC DevTools project.`
+    );
     return findMcdevFiles.every((result: boolean) => result === true);
+}
+
+async function checkPrerequisitesAreInstalled(){
+    
 }
 
 export const devtoolsMain = {

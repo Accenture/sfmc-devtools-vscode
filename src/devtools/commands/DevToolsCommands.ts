@@ -12,7 +12,7 @@ interface DevToolsCommandSetting {
 }
 
 interface IDevToolsCommand {
-    runDTCommand: (command: () => void, args: {[key: string]: string}) => void
+    runDevToolsCommand: (command: () => void, args: {[key: string]: string}) => void
 }
 
 abstract class DevToolsCommands implements IDevToolsCommand {
@@ -22,7 +22,7 @@ abstract class DevToolsCommands implements IDevToolsCommand {
     abstract setSupportedMdTypes(mdTypes: {}[]): void;
     abstract run(id: string, args: {[key: string]: string | boolean}, handleResult?: (res:any) => void): void;
 
-    runDTCommand(command: (...args: any) => void, args: {[key: string]: string}, handleResult?: (res:any) => void): void {
+    runDevToolsCommand(command: (...args: any) => void, args: {[key: string]: string}, handleResult?: (res:any) => void): void {
         if(command !== undefined){
             const dtCommand = command.bind(this);
             dtCommand(args, handleResult);

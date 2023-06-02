@@ -2,44 +2,51 @@ import { ExtensionContext, editorContext } from "../editor/context";
 import { StatusBarItem, editorContainers } from "../editor/containers";
 import { editorCommands } from "../editor/commands";
 import { containersConfig } from "../config/containers.config";
-import { devtoolsMain } from "./main";
+import { log } from "../editor/output";
 
-async function activate(){
-
+function activate(isDevtoolsProject: boolean){
+    log("info", "Activating Status Bar Options...");
     const { subscriptions }: ExtensionContext = editorContext.get();
     // Check which status bar should be displayed
-    // if .mcdevrc.json AND .mcdev-auth.json in folder then DT:Credentials && DT:Command
-    // else DT: Initialize
-    const isDevtoolsProject: boolean = await devtoolsMain.isADevToolsProject();
+    // if .mcdevrc.json AND .mcdev-auth.json in folder then mcdev:Credential/BU && mcdev:Command
+    // else mcdev: Initialize
     let statusBarContainer: StatusBarItem | StatusBarItem[];
     let statusBarCommand: string | string[];
     if(isDevtoolsProject){
-        // create status bar with DT:Credentials and DT:Command
+        // create status bar with mcdev: Credential/BU and mcdev: Command
         statusBarContainer = editorContainers.displayStatusBarItem(
             [ 
                 editorContainers.createStatusBarItem(
-                    containersConfig.statusBarDTCredentialBUCommand,
-                    containersConfig.statusBarDTCredentialBUTitle
+                    containersConfig.statusBarMCDEVCredentialBUCommand,
+                    containersConfig.statusBarMCDEVCredentialBUTitle
                 ),
                 editorContainers.createStatusBarItem(
-                    containersConfig.statusBarDTCommandCommand,
-                    containersConfig.statusBarDTCommandTitle
+                    containersConfig.statusBarMCDEVCommandCommand,
+                    containersConfig.statusBarMCDEVCommandTitle
                 )
             ]
         );
         statusBarCommand = [
-            containersConfig.statusBarDTCredentialBUCommand,
-            containersConfig.statusBarDTCommandCommand
+            containersConfig.statusBarMCDEVCredentialBUCommand,
+            containersConfig.statusBarMCDEVCommandCommand
         ];
+        log("debug", 
+            `StatusBar: [${
+                [containersConfig.statusBarMCDEVCredentialBUTitle, containersConfig.statusBarMCDEVCommandTitle]
+            }]`
+        );
     }else{
-        // create status bar with DT: Initialize
+        // create status bar with mcdev: Initialize
         statusBarContainer = editorContainers.displayStatusBarItem(
             editorContainers.createStatusBarItem(
-                containersConfig.statusBarDTInitializeCommand,
-                containersConfig.statusBarDTInitializeTitle
+                containersConfig.statusBarMCDEVInitializeCommand,
+                containersConfig.statusBarMCDEVInitializeTitle
             )
         );
-        statusBarCommand = containersConfig.statusBarDTInitializeCommand;
+        statusBarCommand = containersConfig.statusBarMCDEVInitializeCommand;
+        log("debug", 
+            `StatusBar: [${[containersConfig.statusBarMCDEVInitializeTitle]}]`
+        );
     }
     // adds the Status Bar Items to be displayed
     subscriptions.push(...[statusBarContainer].flat());

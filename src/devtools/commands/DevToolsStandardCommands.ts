@@ -22,7 +22,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
     }
 
     run(id: string, args: {[key: string]: string}): void {
-        this.runDTCommand(this.getCommand(id), args);
+        this.runDevToolsCommand(this.getCommand(id), args);
     }
 
     setSupportedMdTypes(mdTypes: SupportedMetadataTypes[]): void {
