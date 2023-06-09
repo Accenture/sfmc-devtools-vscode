@@ -10,6 +10,10 @@ import { editorWorkspace } from "../editor/workspace";
 import { log } from "../editor/output";
 import { PrerequisitesInstalledReturn, devtoolsPrerequisites } from "./prerequisites";
 import { devtoolsInstaller } from "./installer";
+import { devtoolsContainers } from "./containers";
+import DevToolsCommands from "./commands/DevToolsCommands";
+import { editorInput } from "../editor/input";
+import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
 
 // interface DTStatusBarSettings {
 //     dtCredential: {
@@ -235,8 +239,7 @@ async function isADevToolsProject(): Promise<boolean> {
     return findMcdevFiles.every((result: boolean) => result === true);
 }
 
-
-async function handleDevToolsRequirements(){
+async function handleDevToolsRequirements(): Promise<void>{
     log("info", "Checking SFMC DevTools requirements...");
     const prerequisites: PrerequisitesInstalledReturn = devtoolsPrerequisites.arePrerequisitesInstalled();
     log("info", `SFMC Pre-Requisites ${
@@ -248,16 +251,113 @@ async function handleDevToolsRequirements(){
             return;
         }
         log("info", "SFMC DevTools is installed.");
-    }else{
-        log("debug", `Missing Pre-requisites: [${prerequisites.missingPrerequisites}]`);
-        devtoolsPrerequisites.noPrerequisitesHandler(
-            editorContext.get().extensionPath,
-            prerequisites.missingPrerequisites
-        );
+        // activate status bar immediately when isDevToolsProject is false 
+        devtoolsContainers.activateStatusBar(true);
+
+        // init DevTools Commands
+        DevToolsCommands.init();
+        return;
+    }
+    log("debug", `Missing Pre-requisites: [${prerequisites.missingPrerequisites}]`);
+    devtoolsPrerequisites.noPrerequisitesHandler(
+        editorContext.get().extensionPath,
+        prerequisites.missingPrerequisites
+    );
+}
+
+function handleStatusBarActions(action: string){
+    log("debug", "Setting Status Bar Actions...");
+    log("debug", `Action: ${action}`);
+    switch(action.toLowerCase()){
+        case "credentialbu":
+            changeCredentialsBU();
+            break;
+        case "command":
+            console.log("command");
+            break;
+        case "initialize":
+            initialize();
+            break;
+        default:
+            log("error", `main_handleStatusBarActions: Invalid Status Bar Action '${action}'`);
+    }
+}
+
+async function getCredentialsBU(): Promise<{[key: string]: string[] } | undefined >{
+    try{
+        // gets the project workspace uri path
+        const folderPath: string = editorWorkspace.getWorkspaceURIPath();
+
+        // retrieves all the content inside the file that contains the mcdev credentials
+        const credBUContent: string = 
+            await editorWorkspace.readFile(`${folderPath}/${mainConfig.credentialsFilename}`);
+
+        // parses the content from text to JSON
+        const parsedCredBUContent: any = JSON.parse(credBUContent);
+
+        // return a json with each credential associated with a list of its business units
+        if(parsedCredBUContent && "credentials" in parsedCredBUContent){
+            return Object.keys(parsedCredBUContent.credentials)
+                .reduce((prev: {}, credential: string) => {
+                    const { businessUnits } = parsedCredBUContent.credentials[credential];
+                    if(businessUnits && Object.keys(businessUnits).length){
+                        return { ...prev, [credential]: Object.keys(businessUnits) };
+                    }else{
+                        log("error", `Could not find any business units for the credential '${credential}'`);
+                        return {...prev };
+                    }
+                }, {});
+        }
+        log("error", `Could not find any credentials in the '${mainConfig.credentialsFilename}' file.`);
+        return;
+    }catch(error){
+        log("error", `main_getCredentialsBU: ${error}`);
+        return;
+    }
+}
+
+function initialize(){
+    log("info", "Initializing SFMC DevTools project...");
+}
+
+async function changeCredentialsBU(){
+    log("info", "Changing SFMC DevTools credententials/bu...");
+    const credentialsBUList = await getCredentialsBU();
+
+    if(credentialsBUList){
+        // Configures all placeholder as an selectable option
+        const allPlaceholderOption: InputOptionsSettings = {
+            id: mainConfig.allPlaceholder.toLowerCase(),
+            label: mainConfig.allPlaceholder,
+            detail: ""
+        };
+        // Configures all credential names as selectable options
+        const credentialsOptions: InputOptionsSettings[] = Object.keys(credentialsBUList)
+            .map((credential: string) => ({
+                id: credential.toLowerCase(),
+                label: credential,
+                detail: ""
+            }));
+
+        // Requests user to select one credential option
+        const selectedCredential: InputOptionsSettings | undefined = 
+            await editorInput.handleQuickPickSelection(
+                [allPlaceholderOption, ...credentialsOptions],
+                mainConfig.messages.selectCredential,
+                false
+            );
+
+        if(selectedCredential){
+            if(selectedCredential.id === mainConfig.allPlaceholder.toLowerCase()){
+                // if user selects *All* then status bar should be replaced with it
+                devtoolsContainers.modifyStatusBar("credentialbu", selectedCredential.label);
+            }
+        }
     }
 }
 
 export const devtoolsMain = {
     isADevToolsProject,
-    handleDevToolsRequirements
+    handleDevToolsRequirements,
+    handleStatusBarActions
 };

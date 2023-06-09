@@ -10,11 +10,10 @@ async function run(){
         // If it's already a mcdev project it will check if prerequisites and devtools are installed
         if(isDevtoolsProject){
             await devtoolsMain.handleDevToolsRequirements();
+            return;
         }
-
-        // Activate status bar option based on if it's a mcd\ev project or not
-        devtoolsContainers.activate(isDevtoolsProject);
-        
+        // activate status bar immediately when isDevToolsProject is false 
+        devtoolsContainers.activate(false);
     }catch(error){
         log("error", error);
     }

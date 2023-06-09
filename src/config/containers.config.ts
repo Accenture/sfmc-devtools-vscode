@@ -1,16 +1,21 @@
 export const containersConfig: {
-    
-    statusBarMCDEVCredentialBUTitle: string,
-    statusBarMCDEVCredentialBUCommand: string,
-    statusBarMCDEVCommandTitle: string,
-    statusBarMCDEVCommandCommand: string,
-    statusBarMCDEVInitializeTitle: string,
-    statusBarMCDEVInitializeCommand: string
+    statusBarDevToolsCredentialBUName: string,
+    statusBarDevToolsCredentialBUTitle: string,
+    statusBarDevToolsCredentialBUCommand: string,
+    statusBarDevToolsCommandName: string,
+    statusBarDevToolsCommandTitle: string,
+    statusBarDevToolsCommandCommand: string,
+    statusBarDevToolsInitializeName: string,
+    statusBarDevToolsInitializeTitle: string,
+    statusBarDevToolsInitializeCommand: string
 } = {
-    statusBarMCDEVCredentialBUTitle: "mcdev: Credential/BU",
-    statusBarMCDEVCredentialBUCommand: "sfmc-devtools-vscext.mcdevCredentialBU",
-    statusBarMCDEVCommandTitle: "mcdev: Command",
-    statusBarMCDEVCommandCommand: "sfmc-devtools-vscext.mcdevCommand",
-    statusBarMCDEVInitializeTitle: "mcdev: Initialize",
-    statusBarMCDEVInitializeCommand: "sfmc-devtools-vscext.mcdevInitialize"
+    statusBarDevToolsCredentialBUName: "devtoolscredentialbu",
+    statusBarDevToolsCredentialBUTitle: "Credential/BU",
+    statusBarDevToolsCredentialBUCommand: "sfmc-devtools-vscext.devtoolsCredentialBU",
+    statusBarDevToolsCommandName: "devtoolscommand",
+    statusBarDevToolsCommandTitle: "Command",
+    statusBarDevToolsCommandCommand: "sfmc-devtools-vscext.devtoolsCommand",
+    statusBarDevToolsInitializeName: "devtoolsinitialize",
+    statusBarDevToolsInitializeTitle: "Initialize",
+    statusBarDevToolsInitializeCommand: "sfmc-devtools-vscext.devtoolsInitialize"
 };

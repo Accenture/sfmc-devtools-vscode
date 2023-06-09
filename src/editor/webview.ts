@@ -1,6 +1,5 @@
 import { window, WebviewPanel, Uri, ViewColumn } from "vscode";
 import { editorWorkspace } from "./workspace";
-import { log } from "./output";
 import { lib } from "../shared/utils/lib";
 
 interface WebviewConfig {
@@ -55,7 +54,7 @@ async function create(config: WebviewConfig){
         });
         panel.webview.html = html;
     }catch(error){
-        log("error", error);
+        throw new Error(`Webview creation error: ${error}`);
     }
 }
 

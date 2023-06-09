@@ -8,7 +8,8 @@ export const installerConfig: {
     package: { mcdev: { version: string, install: string } },
     messages: {
         noDevToolsInstalled: string,
-        askUserToInstallDevTools: string
+        askUserToInstallDevTools: string,
+        installingDevToolsProgress: string
     }
 } = {
     package: { 
@@ -16,6 +17,7 @@ export const installerConfig: {
     },
     messages: {
         noDevToolsInstalled: "SFMC DevTools could not be located on your system.",
-        askUserToInstallDevTools: "Would you like to install SFMC DevTools?"
+        askUserToInstallDevTools: "Would you like to install SFMC DevTools?",
+        installingDevToolsProgress: "Please wait while SFMC DevTools is being installed (window will reload after completation)."
     }
 };

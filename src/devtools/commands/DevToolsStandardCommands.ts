@@ -1,3 +1,4 @@
+import { log } from "../../editor/output";
 import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
 import DevToolsCommands from "./DevToolsCommands";
 
@@ -15,6 +16,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
         super();
         this.commandsConfig = DevToolsCommands.getCommandsListByType(this.type);
         this.supportedMdTypes = [];
+        log("debug", "DevToolsStandardCommands Class created");
     }
     
     getCommand(id: string):  () => void {
@@ -22,7 +24,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
     }
 
     run(id: string, args: {[key: string]: string}): void {
-        this.runDevToolsCommand(this.getCommand(id), args);
+        this.runCommand(this.getCommand(id), args);
     }
 
     setSupportedMdTypes(mdTypes: SupportedMetadataTypes[]): void {
@@ -65,8 +67,6 @@ class DevToolsStandardCommands extends DevToolsCommands {
     deploy(args: {[key: string]: string}){
         console.log("Standard - Deploy Method args = ", args);
     }
-
-
 }
 
 export default DevToolsStandardCommands;

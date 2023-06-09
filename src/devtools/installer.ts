@@ -19,12 +19,19 @@ function isDevToolsInstalled(): boolean {
 function installDevTools(){
     try{
         log("info", "Installing SFMC DevTools...");
-        executeSyncTerminalCommand(installerConfig.package.mcdev.install);
+
+        editorInput.handleInProgressMessage(
+            "Notification",
+            installerConfig.messages.installingDevToolsProgress,
+            () => executeSyncTerminalCommand(installerConfig.package.mcdev.install)
+        );
+        
         log("info", "Reloading workspace window...");
         // Reloads the workspace after DevTools installation
         editorWorkspace.reloadWorkspace();
     }catch(error){
         log("warning", "Something went wrong! SFMC DevTools installation failed.");
+        log("error", error);
     }
 }
 

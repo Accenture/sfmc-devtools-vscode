@@ -3,6 +3,9 @@
 	"displayName": "sfmc-devtools-vscode",
 	"description": "Accenture Salesforce Marketing Cloud DevTools Vscode Extension",
 	"version": "0.0.1",
+	"peerDependencies": {
+        "mcdev": ">=5.1.0"
+    },
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Accenture/sfmc-devtools-vscode.git"

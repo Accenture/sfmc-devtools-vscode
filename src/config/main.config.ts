@@ -1,5 +1,13 @@
 export const mainConfig: {
-    requiredFiles: string[]
+    credentialsFilename: string,
+    requiredFiles: string[],
+    allPlaceholder: string,
+    messages: { selectCredential: string }
 } = {
-    requiredFiles: [".mcdevrc.json", ".mcdev-auth.json"]
+    credentialsFilename: ".mcdevrc.json",
+    requiredFiles: [".mcdevrc.json", ".mcdev-auth.json"],
+    allPlaceholder: "*All*",
+    messages: {
+        selectCredential: "Select on of the credentials below..."
+    }
 };

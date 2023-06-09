@@ -54,8 +54,9 @@ import { window, StatusBarItem, StatusBarAlignment } from "vscode";
 //     );
 // }
 
-function createStatusBarItem(command: string, title: string): StatusBarItem {
+function createStatusBarItem(command: string, title: string, name: string): StatusBarItem {
     let statusBar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 110);
+    statusBar.name = name;
     statusBar.command = command;
     statusBar.text = title;
     return statusBar;

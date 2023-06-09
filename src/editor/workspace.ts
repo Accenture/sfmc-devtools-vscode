@@ -1,5 +1,18 @@
-import { workspace, Uri, TextDocument } from "vscode";
+import { workspace, Uri, TextDocument, WorkspaceFolder } from "vscode";
 import { editorCommands } from "./commands";
+
+function getWorkspaceURIPath(): string {
+    const wsFolder: readonly WorkspaceFolder[] | undefined = workspace.workspaceFolders;
+    if(wsFolder){
+        const [{ uri }] = wsFolder;
+        if(uri && "path" in uri){
+            return uri.path;
+        }
+        throw new Error("Failed to find Worspace Uri PATH.");
+    }else{
+        throw new Error("Could not get Workspace Folder.");
+    }
+}
 
 async function isFileInFolder(filename: string): Promise<boolean> {
     const fileArray: Uri[] = await workspace.findFiles(filename);
@@ -18,5 +31,6 @@ function reloadWorkspace(){
 export const editorWorkspace = {
     isFileInFolder,
     readFile,
-    reloadWorkspace
+    reloadWorkspace,
+    getWorkspaceURIPath
 };
