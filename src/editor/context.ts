@@ -7,5 +7,4 @@ const editorContext: EditorContext = {
     set: (context: ExtensionContext) => contextInstance = context,
     get: () => contextInstance 
 };
-
 export { ExtensionContext, editorContext };

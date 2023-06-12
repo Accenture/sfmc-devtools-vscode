@@ -25,7 +25,7 @@ async function readFile(path: string): Promise<string>{
 }
 
 function reloadWorkspace(){
-    editorCommands.executeCommand("workbench.action.reloadWindow");
+    editorCommands.executeCommand("workbench.action.reloadWindow", []);
 }
 
 export const editorWorkspace = {

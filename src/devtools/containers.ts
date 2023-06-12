@@ -1,17 +1,18 @@
+import { containersConfig } from "../config/containers.config";
+import { devtoolsMain } from "./main";
 import { ExtensionContext, editorContext } from "../editor/context";
 import { StatusBarItem, editorContainers } from "../editor/containers";
 import { editorCommands } from "../editor/commands";
-import { containersConfig } from "../config/containers.config";
 import { log } from "../editor/output";
-import { devtoolsMain } from "./main";
     
 // Contains all the status bars that are displayed in the extension
 let statusBarContainer: StatusBarItem | StatusBarItem[];
 
-function activateStatusBar(isDevtoolsProject: boolean){
+function activateStatusBar(isDevtoolsProject: boolean, commandPrefix: string): void {
     log("info", "Activating Status Bar Options...");
     const { subscriptions }: ExtensionContext = editorContext.get();
-    
+
+    // Gets the command prefix for
     let statusBarCommand: string | string[];
 
     // Check which status bar should be displayed
@@ -31,12 +32,12 @@ function activateStatusBar(isDevtoolsProject: boolean){
             [ 
                 editorContainers.createStatusBarItem(
                     containersConfig.statusBarDevToolsCredentialBUCommand,
-                    containersConfig.statusBarDevToolsCredentialBUTitle,
+                    `${commandPrefix}: ${containersConfig.statusBarDevToolsCredentialBUTitle}`,
                     containersConfig.statusBarDevToolsCredentialBUName
                 ),
                 editorContainers.createStatusBarItem(
                     containersConfig.statusBarDevToolsCommandCommand,
-                    containersConfig.statusBarDevToolsCommandTitle,
+                    `${commandPrefix}: ${containersConfig.statusBarDevToolsCommandTitle}`,
                     containersConfig.statusBarDevToolsCommandName
                 )
             ]
@@ -58,7 +59,7 @@ function activateStatusBar(isDevtoolsProject: boolean){
         statusBarContainer = editorContainers.displayStatusBarItem(
             editorContainers.createStatusBarItem(
                 containersConfig.statusBarDevToolsInitializeCommand,
-                containersConfig.statusBarDevToolsInitializeTitle,
+                `${commandPrefix}: ${containersConfig.statusBarDevToolsInitializeTitle}`,
                 containersConfig.statusBarDevToolsInitializeName
             )
         );
@@ -74,25 +75,62 @@ function activateStatusBar(isDevtoolsProject: boolean){
     [statusBarCommand].flat().forEach((command: string) => editorCommands.registerCommand({
         command,
         callbackAction: () => {
-            const [ _, key ]: string[] = command.split(".mcdev");
+            const [ _, key ]: string[] = command.split(".devtools");
             return devtoolsMain.handleStatusBarActions(key);
         }
     }));
 }
 
-function modifyStatusBar(statusBarId: string, statusBarText: string){
-    console.log(typeof statusBarContainer);
+function modifyStatusBar(statusBarId: string, commandPrefix: string, statusBarText: string): void {
     if(statusBarContainer && Array.isArray(statusBarContainer)){
         const [ statusBar ] = statusBarContainer.filter(
-            (sb: StatusBarItem) => sb.name === `mcdev${statusBarId}`
+            (sb: StatusBarItem) => sb.name === `devtools${statusBarId}`
         );
         if(statusBar){
-            statusBar.text = `mcdev: ${statusBarText}`;
+            statusBar.text = `${commandPrefix}: ${statusBarText}`;
         }
     }
 }
 
+function isCredentialBUSelected(): boolean {
+    return statusBarContainer &&
+        Array.isArray(statusBarContainer) &&
+        statusBarContainer.filter(
+            (sb: StatusBarItem) => 
+            sb.name === containersConfig.statusBarDevToolsCredentialBUName && 
+            !sb.text.includes(`${containersConfig.statusBarDevToolsCredentialBUTitle}`)
+        ).length > 0;
+}
+
+function getCredentialsBUName(): string | undefined {
+    if(statusBarContainer && Array.isArray(statusBarContainer)){
+        const [ statusBar ] = statusBarContainer.filter(
+            (sb: StatusBarItem) => 
+            sb.name === containersConfig.statusBarDevToolsCredentialBUName && 
+            !sb.text.includes(`${containersConfig.statusBarDevToolsCredentialBUTitle}`)
+        );
+        return statusBar.text;
+    }
+    return;
+}
+
+function activateContextMenuCommands(){
+    [
+        containersConfig.contextMenuRetrieveCommand, 
+        containersConfig.contextMenuDeployCommand
+    ].forEach((command: string) => editorCommands.registerCommand({
+        command,
+        callbackAction: () => {
+            const [ _, key ]: string[] = command.split(".devtools");
+            return devtoolsMain.handleContextMenuActions(key);
+        }
+    }));
+}
+
 export const devtoolsContainers = {
     activateStatusBar,
-    modifyStatusBar
+    modifyStatusBar,
+    isCredentialBUSelected,
+    getCredentialsBUName,
+    activateContextMenuCommands
 };

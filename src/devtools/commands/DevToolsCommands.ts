@@ -1,16 +1,7 @@
 // import { execInTerminal } from "../../shared/utils/terminal";
-import { log } from "../../editor/output";
 import * as commandsConfig from "./commands.config.json";
-
-interface DevToolsCommandSetting {
-    id: string,
-    title: string,
-    description: string,
-    command: string,
-    requiredParams: Array<string>,
-    optionalParams: Array<string>,
-    isAvailable: boolean
-}
+import { log } from "../../editor/output";
+import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
 
 interface IDevToolsCommand {
     runCommand: (command: () => void, args: {[key: string]: string}) => void
@@ -18,7 +9,7 @@ interface IDevToolsCommand {
 
 abstract class DevToolsCommands implements IDevToolsCommand {
 
-    name: string | undefined;
+    static readonly commandPrefix: string = "mcdev";
     static commandMap: {[key: string]: DevToolsCommands} | undefined;
 
     abstract getCommand(id: string): void;
@@ -43,7 +34,6 @@ abstract class DevToolsCommands implements IDevToolsCommand {
         }
     }
 
-
     static init(){
         log("info", "Initializing DevTools Commands...");
         if(!this.commandMap){
@@ -60,6 +50,10 @@ abstract class DevToolsCommands implements IDevToolsCommand {
             }, {});
             log("debug", `DevToolsCommands: [${Object.keys(this.commandMap)}]`);
         }
+    }
+
+    static run(settings: DevToolsCommandSetting){
+
     }
 
     static getAllCommandTypes(): Array<string>{

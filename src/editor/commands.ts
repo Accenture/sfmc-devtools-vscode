@@ -12,11 +12,11 @@ function registerCommand(register: CommandRegister | CommandRegister[]): void {
         );
 }
 
-function executeCommand(command: string | string[]){
+function executeCommand(command: string | string[], args: (string | boolean)[]){
     [command]
         .flat()
         .forEach(
-            (command: string) => commands.executeCommand(command)
+            (command: string) => commands.executeCommand(command, ...args)
         );
 }
 

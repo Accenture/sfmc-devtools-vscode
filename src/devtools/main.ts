@@ -1,9 +1,3 @@
-// import DevToolsCommands from "./commands/DevToolsCommands";
-// import DevToolsAdminCommands from "./commands/DevToolsAdminCommands";
-// import DevToolsStandardCommands from "./commands/DevToolsStandardCommands";
-// // import { readFile } from "../shared/utils/file";
-// import { editorInput } from "../editor/editorInput";
-// import SupportedMetadataTypes from "../shared/interfaces/supportedMetadataTypes";
 import { mainConfig } from "../config/main.config";
 import { editorContext } from "../editor/context";
 import { editorWorkspace } from "../editor/workspace";
@@ -14,129 +8,10 @@ import { devtoolsContainers } from "./containers";
 import DevToolsCommands from "./commands/DevToolsCommands";
 import { editorInput } from "../editor/input";
 import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
+import DevToolsCommandSetting from "../shared/interfaces/devToolsCommandSetting";
+import { editorCommands } from "../editor/commands";
 
-// interface DTStatusBarSettings {
-//     dtCredential: {
-//         command: string,
-//         title: string
-//     },
-//     dtCommand: {
-//         command: string,
-//         title: string
-//     }
-// };
 
-// const DEVTOOLS_STATUS_BAR_CREDBU: DTStatusBarSettings = {
-//     dtCredential: {
-//         command: "sfmc-devtools-vscode.credbu",
-//         title: "DT:Credential/BU"
-//     },
-//     dtCommand: {
-//         command: "sfmc-devtools-vscode.command",
-//         title: "DT:Command"
-//     }
-// };
-
-// const DEVTOOLS_MENU_ACTION_COMMAND_RETRIEVE: string = "sfmc-devtools-vscode.devToolsMenuActionRetrieve";
-// const DEVTOOLS_MENU_ACTION_COMMAND_DEPLOY: string = "sfmc-devtools-vscode.devToolsMenuActionDeploy";
-
-// const COMMAND_INPUT_TITLES: { [key: string]: string } = {
-//     credentialsName: "Select one of the credentials...",
-//     bussinessUnit: "Select one of the business units...",
-//     selectType: "Select the DevTools Command Type...",
-//     selectCmd: "Select the DevTools Command...",
-//     metaDataType: "Select one or more metadata types..."
-// };
-
-// const DEVTOOLS_EXTENSION_CONFIG: {[key: string]: any } = {
-//     mcdevrcFile:  ".mcdevrc.json",
-//     allPlaceholder: "*All*",
-//     devToolsClasses: [
-//         DevToolsAdminCommands, 
-//         DevToolsStandardCommands
-//     ],
-//     getClassName: (type: string) => `DevTools${type}Commands`
-// };
-
-// // eslint-disable-next-line @typescript-eslint/naming-convention
-// let devTools_commands_types_map: {[key: string]: DevToolsCommands} = {};
-
-// async function init(): Promise<void> {
-//     devTools_commands_types_map = DevToolsCommands.getAllCommandTypes()
-//         .reduce((prev: {}, type: string) => {
-//             const [ dtCommand ] = DEVTOOLS_EXTENSION_CONFIG.devToolsClasses
-//                 .filter((dtClass: DevToolsCommands) => dtClass.name !== undefined &&
-//                     dtClass.name.toLowerCase() === DEVTOOLS_EXTENSION_CONFIG.getClassName(type).toLowerCase());
-//             if(dtCommand !== undefined){
-//                 return {
-//                     ...prev,
-//                     [type.toLowerCase()]: new dtCommand(editorInput)
-//                 };
-//             }
-//             return {...prev};
-//     }, {});
-//     const mdTypes: SupportedMetadataTypes[] | undefined = await getSupportedMetadataTypes();
-//     if(mdTypes){
-//         Object.values(devTools_commands_types_map).forEach(
-//             (command: DevToolsCommands) => command.setSupportedMdTypes(mdTypes)
-//         );
-//     }
-// }
-
-// function convertToCmdOptSettings(options: Array<string | {id: string, title: string, description: string}>){
-//     return options.map((opt: string | {id: string, title: string, description: string}) => {
-//         if(typeof opt === "string"){
-//             return {id: opt.toLowerCase(), label: opt, detail: ""};
-//         }
-//         if(typeof opt === "object"){
-//             return {id: opt.id.toLowerCase(), label: opt.title, detail: opt.description};
-//         }
-//         return undefined;
-//     }).filter(val => val !== undefined);
-// }
-
-// async function getAllCredentials(): Promise<{ [key: string]: string[]; }> {
-//     const { credentials }: { credentials: any } = JSON.parse(await readFile(DEVTOOLS_EXTENSION_CONFIG.mcdevrcFile));
-//     if(Object.keys(credentials).length){
-//         const credentialsList: {[key: string]: Array<string>} = Object.keys(credentials)
-//             .reduce((prev, curr) => {
-//                 // get business units
-//                 const { businessUnits } = credentials[curr];
-//                 const buList = businessUnits ? Object.keys(businessUnits) : [];
-//                 return {...prev, [curr]: buList};
-//             }, {});
-//         return credentialsList;
-//     }
-//     return {};
-// }
-
-// async function handleCredentialChange(){
-//     const { allPlaceholder } = DEVTOOLS_EXTENSION_CONFIG;
-//     const credentials: {[key: string]: Array<string>} = await getAllCredentials();
-//     const selectedCredentialName = await editorInput.handleQuickPickSelection(
-//         convertToCmdOptSettings([allPlaceholder, ...Object.keys(credentials)]),
-//         COMMAND_INPUT_TITLES["credentialsName"],
-//         false
-//     );
-//     if(selectedCredentialName && selectedCredentialName.id && selectedCredentialName.label){
-//         if(selectedCredentialName.id === allPlaceholder.toLowerCase()){
-//             return allPlaceholder;
-//         }
-//         const selectedBusinessUnit = await editorInput.handleQuickPickSelection(
-//             convertToCmdOptSettings([ allPlaceholder ,...credentials[selectedCredentialName.label]]),
-//             COMMAND_INPUT_TITLES["bussinessUnit"],
-//             false
-//         );
-//         if(selectedBusinessUnit && selectedBusinessUnit.id && selectedBusinessUnit.label){
-//             return `${selectedCredentialName.label}/`+
-//                 `${selectedBusinessUnit.id === allPlaceholder.toLowerCase() ? allPlaceholder : selectedBusinessUnit.label}`;
-//         }
-//     }
-// }
-
-// function handleSupportedMetadataTypes(){
-    
-// }
 
 // async function handleCommandSelection(credentialBU: string){
 //     const typesList: Array<string> = DevToolsCommands.getAllCommandTypes();
@@ -218,15 +93,35 @@ import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
 //     }
 // }
 
-// export const devtoolsExtension = {
-//     init,
-//     DEVTOOLS_STATUS_BAR_CREDBU,
-//     DEVTOOLS_MENU_ACTION_COMMAND_RETRIEVE,
-//     DEVTOOLS_MENU_ACTION_COMMAND_DEPLOY,
-//     handleCredentialChange,
-//     handleCommandSelection,
-//     executeExplorerMenuAction
-// };
+async function initDevToolsExtension(){
+
+    try{
+        log("info", "Running SFMC DevTools extension...");
+        const isDevtoolsProject: boolean = await isADevToolsProject();
+        
+        // Executes the command setContext to indicate if the project
+	    // is a DevTools Project or not
+        editorCommands.executeCommand(
+            "setContext", 
+            [`sfmc-devtools-vscext.isDevToolsProject`, isDevtoolsProject]
+        );
+
+        // activate the context menus options
+        devtoolsContainers.activateContextMenuCommands();
+
+        // If it's already a mcdev project it will check if prerequisites and devtools are installed
+        if(isDevtoolsProject){
+            await handleDevToolsRequirements();
+            return;
+        }
+
+        // activate status bar immediately when isDevToolsProject is false 
+        devtoolsContainers.activateStatusBar(false, DevToolsCommands.commandPrefix);
+
+    }catch(error){
+        log("error", `main_initDevToolsExtension: ${error}`);
+    }
+}
 
 async function isADevToolsProject(): Promise<boolean> {
     log("info", "Checking if folder is a SFMC DevTools project...");
@@ -252,7 +147,7 @@ async function handleDevToolsRequirements(): Promise<void>{
         }
         log("info", "SFMC DevTools is installed.");
         // activate status bar immediately when isDevToolsProject is false 
-        devtoolsContainers.activateStatusBar(true);
+        devtoolsContainers.activateStatusBar(true, DevToolsCommands.commandPrefix);
 
         // init DevTools Commands
         DevToolsCommands.init();
@@ -269,17 +164,29 @@ function handleStatusBarActions(action: string){
     log("debug", "Setting Status Bar Actions...");
     log("debug", `Action: ${action}`);
     switch(action.toLowerCase()){
-        case "credentialbu":
+        case "sbcredentialbu":
             changeCredentialsBU();
             break;
-        case "command":
-            console.log("command");
+        case "sbcommand":
+            handleDevToolsCommandSelection();
             break;
-        case "initialize":
+        case "sbinitialize":
             initialize();
             break;
         default:
             log("error", `main_handleStatusBarActions: Invalid Status Bar Action '${action}'`);
+    }
+}
+
+function handleContextMenuActions(action: string){
+    log("debug", "Setting Context Menu Actions...");
+    log("debug", `Action: ${action}`);
+    switch(action.toLowerCase()){
+        case "cmretrieve" || "cmdeploy":
+            console.log("cm action");
+            break;
+        default:
+            log("error", `main_handleContextMenuActions: Invalid Status Bar Action '${action}'`);
     }
 }
 
@@ -308,7 +215,7 @@ async function getCredentialsBU(): Promise<{[key: string]: string[] } | undefine
                     }
                 }, {});
         }
-        log("error", `Could not find any credentials in the '${mainConfig.credentialsFilename}' file.`);
+        log("error", `main_getCredentialsBU: Could not find any credentials in the '${mainConfig.credentialsFilename}' file.`);
         return;
     }catch(error){
         log("error", `main_getCredentialsBU: ${error}`);
@@ -316,13 +223,10 @@ async function getCredentialsBU(): Promise<{[key: string]: string[] } | undefine
     }
 }
 
-function initialize(){
-    log("info", "Initializing SFMC DevTools project...");
-}
-
 async function changeCredentialsBU(){
     log("info", "Changing SFMC DevTools credententials/bu...");
-    const credentialsBUList = await getCredentialsBU();
+    const credentialsBUList: {[key: string]: string[]} | undefined = 
+        await getCredentialsBU();
 
     if(credentialsBUList){
         // Configures all placeholder as an selectable option
@@ -348,16 +252,117 @@ async function changeCredentialsBU(){
             );
 
         if(selectedCredential){
+            log("debug", `User selected '${selectedCredential.label}' credential.`);
             if(selectedCredential.id === mainConfig.allPlaceholder.toLowerCase()){
                 // if user selects *All* then status bar should be replaced with it
-                devtoolsContainers.modifyStatusBar("credentialbu", selectedCredential.label);
+                devtoolsContainers.modifyStatusBar(
+                    "credentialbu", 
+                    DevToolsCommands.commandPrefix, 
+                    selectedCredential.label
+                );
+            }else{
+                const businessUnitsList: string[] = credentialsBUList[selectedCredential.label];
+
+                // Configures all business units names as selectable options
+                const businessUnitOptions: InputOptionsSettings[] = businessUnitsList
+                    .map((businessUnit: string) => ({
+                        id: businessUnit.toLowerCase(),
+                        label: businessUnit,
+                        detail: ""
+                    }));
+
+                // Requests user to select all or one Business Unit
+                const selectedBU: InputOptionsSettings | undefined = 
+                    await editorInput.handleQuickPickSelection(
+                        [allPlaceholderOption, ...businessUnitOptions],
+                        mainConfig.messages.selectBusinessUnit,
+                        false
+                );
+                
+                if(selectedBU){
+                    log("debug", `User selected '${selectedBU.label}' business unit.`);
+
+                    // Modify the credential status bar icon to contain the 
+                    // selected Credential + selected Business Unit
+                    devtoolsContainers.modifyStatusBar(
+                        "credentialbu", 
+                        DevToolsCommands.commandPrefix, 
+                        `${selectedCredential.label}/${selectedBU.label}`
+                    );
+                }
+            }
+        }
+    }else{
+        log("error", "main_changeCredentialsBU: CredentialBU List is undefined.");
+    }
+}
+
+async function handleDevToolsCommandSelection(){
+    log("info", "Selecting SFMC DevTools command...");
+    const devToolsCommandTypes: string[] = DevToolsCommands.getAllCommandTypes();
+    
+    if(devToolsCommandTypes){
+        // Configures all commandTypes names as selectable options
+        const commandTypesOptions: InputOptionsSettings[] = devToolsCommandTypes
+            .map((commandType: string) => ({
+                id: commandType.toLowerCase(),
+                label: commandType,
+                detail: ""
+        }));
+
+        // Requests user to select one DevTools Command Type
+        const selectedCommandType: InputOptionsSettings | undefined = 
+            await editorInput.handleQuickPickSelection(
+                commandTypesOptions,
+                mainConfig.messages.selectCommandType,
+                false
+        );
+
+        if(selectedCommandType){
+            log("debug", `User selected in ${selectedCommandType.label} DevTools Command type.`);
+            const commands: DevToolsCommandSetting[] = 
+                DevToolsCommands.getCommandsListByType(selectedCommandType.id);
+
+            // Configures all devtools commands as selectable options
+            const commandsOptions: InputOptionsSettings[] = commands
+                .map((command: DevToolsCommandSetting) => ({
+                    id: command.id.toLowerCase(),
+                    label: command.title,
+                    detail: command.description
+                }));
+            // Requests user to select one DevTools Command Type
+            const selectedCommandOption: InputOptionsSettings | undefined = 
+                await editorInput.handleQuickPickSelection(
+                    commandsOptions,
+                    mainConfig.messages.selectCommand,
+                    false
+            );
+
+            if(selectedCommandOption){
+                log("debug", `User selected in ${selectedCommandOption.label} DevTools Command.`);
+                if(devtoolsContainers.isCredentialBUSelected()){
+                    log("info", "Credential/BU is selected...");
+                    const selectedCredentialBU: string | undefined = 
+                        devtoolsContainers.getCredentialsBUName();
+                    if(selectedCredentialBU){
+                        // execute DevTools Command
+                    }else{
+                        log("error", `main_handleDevToolsCommandSelection: Failed to retrieve Credential/BU.`);
+                    }
+                }else{
+                    // show error TODO
+                }
             }
         }
     }
 }
 
+function initialize(){
+    log("debug", "Initialize DevTools status bar command");
+}
+
 export const devtoolsMain = {
-    isADevToolsProject,
-    handleDevToolsRequirements,
-    handleStatusBarActions
+    initDevToolsExtension,
+    handleStatusBarActions,
+    handleContextMenuActions
 };

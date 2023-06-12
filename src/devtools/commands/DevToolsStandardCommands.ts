@@ -3,10 +3,10 @@ import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTyp
 import DevToolsCommands from "./DevToolsCommands";
 
 class DevToolsStandardCommands extends DevToolsCommands {
+    setSupportedMdTypes(mdTypes: {}[]): void {
+        throw new Error("Method not implemented.");
+    }
 
-    private readonly type: string = "standard";
-    private supportedMdTypes: SupportedMetadataTypes[];
-    private commandsConfig;
     private commandsList: { [key: string]: (...args: any) => void; } = {
         retrieve: this.retrieve.bind(this),
         deploy: this.deploy.bind(this)
@@ -14,8 +14,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
 
     constructor(){
         super();
-        this.commandsConfig = DevToolsCommands.getCommandsListByType(this.type);
-        this.supportedMdTypes = [];
+
         log("debug", "DevToolsStandardCommands Class created");
     }
     
@@ -27,41 +26,33 @@ class DevToolsStandardCommands extends DevToolsCommands {
         this.runCommand(this.getCommand(id), args);
     }
 
-    setSupportedMdTypes(mdTypes: SupportedMetadataTypes[]): void {
-        this.supportedMdTypes = mdTypes;
-    };
-
-    getSupportedMdTypes(): {}[] {
-        return this.supportedMdTypes;
-    };
-
     retrieve(args: {[key: string]: string}){
         console.log("Standard - Retrieve Method args = ", args);
-        let [{ command, requiredParams, optionalParams }] = 
-            this.commandsConfig.filter(({ id }: { id: string }) => id.toLowerCase() === "retrieve");
-        if(!command){
-            // throw error
-        }
-        if(requiredParams && requiredParams.length){
-            requiredParams.forEach((param: string) => {
-                if(param in args && args[param]){
-                    command = command.replace(`{{${param}}}`, args[param]);
-                }else{
-                    // request user
-                    console.log(this.getSupportedMdTypes());
-                    // const supportedMdTypes = this.getSupportedMdTypes()
-                    // .filter(mdType => mdType.supports.retrieve);
-                }
-            });
-        }
-        if(optionalParams && optionalParams){
-            optionalParams.forEach((param: string) => {
-                command = command.replace(`{{${param}}}`,
-                param in args ? args[param] : "");
-            });
-        }
-        console.log(command);
-        this.executeCommand(command, true);
+        // let [{ command, requiredParams, optionalParams }] = 
+        //     this.commandsConfig.filter(({ id }: { id: string }) => id.toLowerCase() === "retrieve");
+        // if(!command){
+        //     // throw error
+        // }
+        // if(requiredParams && requiredParams.length){
+        //     requiredParams.forEach((param: string) => {
+        //         if(param in args && args[param]){
+        //             command = command.replace(`{{${param}}}`, args[param]);
+        //         }else{
+        //             // request user
+        //             // console.log(this.getSupportedMdTypes());
+        //             // const supportedMdTypes = this.getSupportedMdTypes()
+        //             // .filter(mdType => mdType.supports.retrieve);
+        //         }
+        //     });
+        // }
+        // if(optionalParams && optionalParams){
+        //     optionalParams.forEach((param: string) => {
+        //         command = command.replace(`{{${param}}}`,
+        //         param in args ? args[param] : "");
+        //     });
+        // }
+        // console.log(command);
+        // this.executeCommand(command, true);
     }
 
     deploy(args: {[key: string]: string}){
