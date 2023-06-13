@@ -15,7 +15,7 @@ export const mainConfig: {
     messages: {
         selectCredential: "Select all or one of the credentials below...",
         selectBusinessUnit: "Select all or one of the business units below...",
-        selectCommandType: "Select on DevTools command type...",
+        selectCommandType: "Select one DevTools command type...",
         selectCommand: "Select one DevToolsCommand "
     }
 };

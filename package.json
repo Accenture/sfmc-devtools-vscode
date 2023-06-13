@@ -23,24 +23,24 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "sfmc-devtools-vscext.devToolsCMRetrieve",
+				"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
 				"title": "mcdev: Retrieve"
 			},
 			{
-				"command": "sfmc-devtools-vscext.devToolsCMDeploy",
+				"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 				"title": "mcdev: Deploy"
 			}
 		],
 		"menus": {
 			"explorer/context": [
 				{
-					"when": "explorerResourceIsFolder && resourceFilename == retrieve && sfmc-devtools-vscext.isDevToolsProject",
-					"command": "sfmc-devtools-vscext.devToolsCMRetrieve",
+					"when": "resourcePath =~ /retrieve/ && sfmc-devtools-vscext.isDevToolsProject",
+					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
 					"group": "devtools"
 				},
 				{
-					"when": "explorerResourceIsFolder && resourceFilename == deploy && sfmc-devtools-vscext.isDevToolsProject",
-					"command": "sfmc-devtools-vscext.devToolsCMDeploy",
+					"when": "resourcePath =~ /deploy/ && sfmc-devtools-vscext.isDevToolsProject",
+					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				}
 			]

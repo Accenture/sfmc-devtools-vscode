@@ -28,10 +28,13 @@ function createFilePath(pathArray: string[]): string {
     return path.join(...pathArray);
 }
 
-
+function capitalizeFirstLetter(text: string): string {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 export const lib = {
     parseArrayJsonStringToArray,
     mapObject,
-    createFilePath
+    createFilePath,
+    capitalizeFirstLetter
 };

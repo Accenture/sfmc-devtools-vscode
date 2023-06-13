@@ -4,6 +4,7 @@ import { ExtensionContext, editorContext } from "../editor/context";
 import { StatusBarItem, editorContainers } from "../editor/containers";
 import { editorCommands } from "../editor/commands";
 import { log } from "../editor/output";
+import DevToolsCommands from "./commands/DevToolsCommands";
     
 // Contains all the status bars that are displayed in the extension
 let statusBarContainer: StatusBarItem | StatusBarItem[];
@@ -102,14 +103,15 @@ function isCredentialBUSelected(): boolean {
         ).length > 0;
 }
 
-function getCredentialsBUName(): string | undefined {
+function getCredentialsBUName(commandPrefix: string): string | undefined {
     if(statusBarContainer && Array.isArray(statusBarContainer)){
-        const [ statusBar ] = statusBarContainer.filter(
+        const [ { text } ] = statusBarContainer.filter(
             (sb: StatusBarItem) => 
             sb.name === containersConfig.statusBarDevToolsCredentialBUName && 
             !sb.text.includes(`${containersConfig.statusBarDevToolsCredentialBUTitle}`)
         );
-        return statusBar.text;
+        const [ _, credentialbu ] = text.split(`${commandPrefix}:`);
+        return credentialbu.trim();
     }
     return;
 }
@@ -120,9 +122,9 @@ function activateContextMenuCommands(){
         containersConfig.contextMenuDeployCommand
     ].forEach((command: string) => editorCommands.registerCommand({
         command,
-        callbackAction: () => {
+        callbackAction: ({ path }: { path: string }) => {
             const [ _, key ]: string[] = command.split(".devtools");
-            return devtoolsMain.handleContextMenuActions(key);
+            return devtoolsMain.handleContextMenuActions(key, path);
         }
     }));
 }

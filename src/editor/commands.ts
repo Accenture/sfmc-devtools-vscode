@@ -2,7 +2,7 @@ import { commands } from "vscode";
 
 interface CommandRegister {
     command: string,
-    callbackAction: () => void
+    callbackAction: (reg: { path: string }) => void
 }
 function registerCommand(register: CommandRegister | CommandRegister[]): void {
     [register]

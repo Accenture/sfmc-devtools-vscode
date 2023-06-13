@@ -20,6 +20,6 @@ export const containersConfig: {
     statusBarDevToolsInitializeName: "devtoolsinitialize",
     statusBarDevToolsInitializeTitle: "Initialize",
     statusBarDevToolsInitializeCommand: "sfmc-devtools-vscext.devtoolsSBInitialize",
-    contextMenuRetrieveCommand: "sfmc-devtools-vscext.devToolsCMRetrieve",
-    contextMenuDeployCommand: "sfmc-devtools-vscext.devToolsCMDeploy"
+    contextMenuRetrieveCommand: "sfmc-devtools-vscext.devtoolsCMRetrieve",
+    contextMenuDeployCommand: "sfmc-devtools-vscext.devtoolsCMDeploy"
 };

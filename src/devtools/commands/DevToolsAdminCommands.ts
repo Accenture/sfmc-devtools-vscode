@@ -1,54 +1,67 @@
-// import { parseArrayJsonStringToArray } from "../../shared/utils/lib";
-// import DevToolsCommands from "./DevToolsCommands";
+import { log } from "../../editor/output";
+import DevToolsCommands from "./DevToolsCommands";
+import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
+import DevToolsCommandRunner from "../../shared/interfaces/devToolsCommandRunner";
+import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
 
-// class DevToolsAdminCommands extends DevToolsCommands {
+class DevToolsAdminCommands extends DevToolsCommands {
 
-//     private readonly type: string = "admin";
-//     private commandsConfig;
-//     private supportedMdType: {}[];
-//     private commandsList: { [key: string]: (...args: any) => void; } = {
-//         init: this.init,
-//         etypes: this.explainTypes
-//     };
+    private commandMethods: {
+        [key: string]: (
+            config: DevToolsCommandSetting, 
+            args: {[key: string]: any }, 
+            handleResult: (result: any) => void) 
+                => void
+    } = {};
+    private metadataTypes: SupportedMetadataTypes[] = [];
+    constructor(){
+        super();
+        log("debug", "DevToolsAdminCommands Class created");
+        this.commandMethods = {
+            init: this.init.bind(this),
+            etypes: this.explainTypes.bind(this)
+        };
+    }
 
-//     constructor(){
-//         super();
-//         this.commandsConfig = DevToolsCommands.getCommandsListByType(this.type);
-//         this.supportedMdType = [];
-//     }
+    run(commandRunner: DevToolsCommandRunner): void {
+        const { 
+            commandId, 
+            commandConfig,
+            commandArgs,
+            commandResultHandler 
+        }: DevToolsCommandRunner = commandRunner;
 
-//     getCommand(id: string): () => void {
-//         return this.commandsList[id];
-//     }
+        log("debug", `Running DevTools Admin Command for id '${commandId}'.`);
+        if(commandId in this.commandMethods){
+            this.commandMethods[commandId](commandConfig, commandArgs, commandResultHandler);
+        }else{
+            log("error", `DevTools Admin Command method for id '${commandId}' is not implemented.`);
+        }
+    }
 
-//     setSupportedMdTypes(mdTypes: {}[]): void {
-//         this.supportedMdType = mdTypes;
-//     };
+    setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void {
+        this.metadataTypes = mdTypes;
+    }
 
-//     getSupportedMdTypes(): {}[] {
-//         return this.supportedMdType;
-//     };
+    init(commandConfig: DevToolsCommandSetting, args: {[key: string]: any}){
+        log("info", `Running DevTools Admin Command: Explain Types...`);
+        console.log(commandConfig);
+        console.log(args);
+    }
 
-//     run(id: string, args: {[key: string]: string }, handleResult: (res: any) => void): void {
-//         this.runDTCommand(this.getCommand(id), args, handleResult);
-//     }
+    explainTypes(config: DevToolsCommandSetting, args: {[key: string]: any }, handleResult: (result: any) => void){
+        log("info", `Running DevTools Admin Command: Explain Types...`);
+        let command: string = "";
+        if("command" in config && config.command){
+            command = config.command;
+            log("debug", `Explain types basic command: ${command}`);
+            command = command.replace("{{json}}", args.json ? "--json" : "");
+            log("debug", `Explain types final command: ${command}`);
+            const result = this.executeCommand(command);
+            handleResult(result);
+        }
+    }
 
-//     init(args: {[key: string]: string}){
-//         console.log("Admin - Init Command - args = ", args);
-//     }
+}
 
-//     // async explainTypes(args: {[key: string]: string}, handleResult?: (res: any) => void){
-//     //     console.log("Admin - Explain Types Command - args = ", args);
-//     //     let [{ command }] = this.commandsConfig.filter(({ id }: { id: string }) => id.toLowerCase() === "etypes");
-//     //     if(!command){
-//     //         // throw error
-//     //     }
-//     //     command = command.replace("{{json}}", args["json"] ? "--json" : "");
-//     //     const mdTypes: string = await this.executeCommand(command, false);
-//     //     if(handleResult !== undefined ){
-//     //         handleResult(parseArrayJsonStringToArray(mdTypes));
-//     //     }   
-//     // }
-// }
-
-// export default DevToolsAdminCommands;
+export default DevToolsAdminCommands;

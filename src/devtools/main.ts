@@ -1,15 +1,17 @@
 import { mainConfig } from "../config/main.config";
-import { editorContext } from "../editor/context";
-import { editorWorkspace } from "../editor/workspace";
-import { log } from "../editor/output";
 import { PrerequisitesInstalledReturn, devtoolsPrerequisites } from "./prerequisites";
-import { devtoolsInstaller } from "./installer";
-import { devtoolsContainers } from "./containers";
 import DevToolsCommands from "./commands/DevToolsCommands";
-import { editorInput } from "../editor/input";
 import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
 import DevToolsCommandSetting from "../shared/interfaces/devToolsCommandSetting";
+import { devtoolsInstaller } from "./installer";
+import { devtoolsContainers } from "./containers";
+import { editorInput } from "../editor/input";
+import { editorContext } from "../editor/context";
+import { editorWorkspace } from "../editor/workspace";
 import { editorCommands } from "../editor/commands";
+import { log } from "../editor/output";
+
+
 
 
 
@@ -168,7 +170,7 @@ function handleStatusBarActions(action: string){
             changeCredentialsBU();
             break;
         case "sbcommand":
-            handleDevToolsCommandSelection();
+            handleDevToolsSBCommand();
             break;
         case "sbinitialize":
             initialize();
@@ -178,15 +180,18 @@ function handleStatusBarActions(action: string){
     }
 }
 
-function handleContextMenuActions(action: string){
+function handleContextMenuActions(action: string, path: string){
     log("debug", "Setting Context Menu Actions...");
-    log("debug", `Action: ${action}`);
+    log("debug", `Action: ${action} Path: ${path}`);
     switch(action.toLowerCase()){
-        case "cmretrieve" || "cmdeploy":
-            console.log("cm action");
+        case "cmretrieve":
+            handleDevToolsCMCommand("retrieve", path);
+            break;
+        case "cmdeploy":
+            handleDevToolsCMCommand("deploy", path);
             break;
         default:
-            log("error", `main_handleContextMenuActions: Invalid Status Bar Action '${action}'`);
+            log("error", `main_handleContextMenuActions: Invalid Context Menu Action '${action}'`);
     }
 }
 
@@ -297,16 +302,16 @@ async function changeCredentialsBU(){
     }
 }
 
-async function handleDevToolsCommandSelection(){
-    log("info", "Selecting SFMC DevTools command...");
-    const devToolsCommandTypes: string[] = DevToolsCommands.getAllCommandTypes();
+async function handleDevToolsSBCommand(){
+    log("info", "Selecting SB SFMC DevTools command...");
+    const devToolsCommandTypes: {id: string, title: string}[] = DevToolsCommands.getAllCommandTypes();
     
     if(devToolsCommandTypes){
         // Configures all commandTypes names as selectable options
         const commandTypesOptions: InputOptionsSettings[] = devToolsCommandTypes
-            .map((commandType: string) => ({
-                id: commandType.toLowerCase(),
-                label: commandType,
+            .map(({ id, title }: {id: string, title: string}) => ({
+                id: id.toLowerCase(),
+                label: title,
                 detail: ""
         }));
 
@@ -343,9 +348,15 @@ async function handleDevToolsCommandSelection(){
                 if(devtoolsContainers.isCredentialBUSelected()){
                     log("info", "Credential/BU is selected...");
                     const selectedCredentialBU: string | undefined = 
-                        devtoolsContainers.getCredentialsBUName();
+                        devtoolsContainers.getCredentialsBUName(DevToolsCommands.commandPrefix);
                     if(selectedCredentialBU){
                         // execute DevTools Command
+                        DevToolsCommands.runCommand(
+                            selectedCommandType.id,
+                            selectedCommandOption.id,
+                            { bu: selectedCredentialBU.replace(mainConfig.allPlaceholder, "'*'") },
+                            (result: any) => console.log(result) 
+                        );
                     }else{
                         log("error", `main_handleDevToolsCommandSelection: Failed to retrieve Credential/BU.`);
                     }
@@ -359,6 +370,67 @@ async function handleDevToolsCommandSelection(){
 
 function initialize(){
     log("debug", "Initialize DevTools status bar command");
+}
+
+function handleDevToolsCMCommand(action: string, path: string){
+    log("info", "Selecting CM SFMC DevTools command...");
+
+    let args: {[key: string]: string } = {};
+    const [ projectPath, cmPath ]: string[] = path.split(`/${action}/`);;
+
+    const workspaceUriFolder = editorWorkspace.getWorkspaceURIPath();
+
+    log("debug", `Current workspace folder path: ${workspaceUriFolder}`);
+    log("debug", `Context Menu Action path: ${projectPath}`);
+
+    log("debug", `Context Menu Action outside of project directory? = ${workspaceUriFolder !== projectPath}`);
+
+    if(projectPath && !cmPath && projectPath.endsWith(`/${action}`)){
+        args = { bu: `"*"` };
+    }
+
+    if(cmPath){
+        let [ credName, bUnit, type, ...keys ]: string[] = cmPath.split("/");
+        let key: string = "";
+        // If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder 
+        if(type === "asset" && keys.length){
+            // Gets the asset subfolder and asset key
+            const [ assetFolder, assetKey ] = keys;
+            if(!assetKey){
+                // if user only selected an asset subfolder
+                // type will be changed to "asset-[name of the asset subfolder]"
+                type = `${type}-${assetFolder}`;
+            }
+            // if user selects a file inside a subfolder of asset
+            // the key will be the name of the file 
+            keys = assetKey ? [ assetKey ] : [];
+        }
+    
+        if(keys.length){
+            const [ typeKey ]: string[] = keys;
+            key = `"${typeKey.startsWith(".") ?
+                '.' + typeKey.substring(1).split(".")[0] : 
+                typeKey.split(".")[0]
+            }"`;
+        }
+
+        // result 1 - credential/*
+        // result 2 - credential/bu
+        // result 3 - credential/bu "metadata"
+        // result 4 - credential/bu "metadata" "key"
+        args = {
+            bu: `${credName}/${bUnit ? bUnit : '*'}`, 
+            mdtype: type ? `"${type}"` : "",
+            key: key,
+        };
+    }
+    log("debug", `CM args passed to DevTools command: ${JSON.stringify(args)}`);
+    DevToolsCommands.runCommand(
+        "",
+        action,
+        args,
+        (result: any) => console.log(result)
+    )
 }
 
 export const devtoolsMain = {
