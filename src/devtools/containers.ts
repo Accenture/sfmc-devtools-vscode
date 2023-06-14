@@ -4,7 +4,6 @@ import { ExtensionContext, editorContext } from "../editor/context";
 import { StatusBarItem, editorContainers } from "../editor/containers";
 import { editorCommands } from "../editor/commands";
 import { log } from "../editor/output";
-import DevToolsCommands from "./commands/DevToolsCommands";
     
 // Contains all the status bars that are displayed in the extension
 let statusBarContainer: StatusBarItem | StatusBarItem[];

@@ -3,11 +3,11 @@ import * as commandsConfig from "./commands.config.json";
 import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
 import DevToolsCommandRunner from "../../shared/interfaces/devToolsCommandRunner";
 import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
+import InputOptionsSettings from "../../shared/interfaces/inputOptionsSettings";
 import { editorInput } from "../../editor/input";
 import { log } from "../../editor/output";
 import { lib } from "../../shared/utils/lib";
 import { executeSyncTerminalCommand } from "../../shared/utils/terminal";
-import InputOptionsSettings from "../../shared/interfaces/inputOptionsSettings";
 
 abstract class DevToolsCommands {
 
@@ -75,6 +75,16 @@ abstract class DevToolsCommands {
             return mdTypes;
         }
         return;
+    }
+
+    hasPlaceholders(command: string): boolean {
+        const pattern: RegExp = /{{.*?}}/g;
+        return pattern.test(command);
+    }
+
+    async handleUserInputBox(placeholderText: string): Promise<string | undefined> {
+        const response: string | undefined = await editorInput.handleShowInputBox(placeholderText);
+        return response;
     }
 
     static init(path: string){

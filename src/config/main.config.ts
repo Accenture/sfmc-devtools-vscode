@@ -6,7 +6,9 @@ export const mainConfig: {
         selectCredential: string, 
         selectBusinessUnit: string,
         selectCommandType: string,
-        selectCommand: string
+        selectCommand: string,
+        initDevTools: string,
+        initiatingDevTools: string,
     }
 } = {
     credentialsFilename: ".mcdevrc.json",
@@ -16,6 +18,8 @@ export const mainConfig: {
         selectCredential: "Select all or one of the credentials below...",
         selectBusinessUnit: "Select all or one of the business units below...",
         selectCommandType: "Select one DevTools command type...",
-        selectCommand: "Select one DevToolsCommand "
+        selectCommand: "Select one DevTools Command...",
+        initDevTools: "Do you wish to initialize SFMC DevTools project in the current directory?",
+        initiatingDevTools: "Initiating SFMC DevTools project..."
     }
 };

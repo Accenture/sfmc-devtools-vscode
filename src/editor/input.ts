@@ -17,6 +17,11 @@ async function handleShowInformationMessage(message: string, actions: string[]):
     return response;
 }
 
+async function handleShowInputBox(placeHolder: string): Promise<string | undefined> {
+    const response: string | undefined = await window.showInputBox({ placeHolder, ignoreFocusOut: true});
+    return response;
+}
+
 async function handleInProgressMessage(local: string, reportMessage: string, callbackFn: () => void ){
     await window.withProgress({ location: ProgressLocation[local as keyof typeof ProgressLocation]},
         async(progress) => {
@@ -29,5 +34,6 @@ async function handleInProgressMessage(local: string, reportMessage: string, cal
 export const editorInput = {
     handleQuickPickSelection,
     handleShowInformationMessage,
-    handleInProgressMessage
+    handleInProgressMessage,
+    handleShowInputBox
 };

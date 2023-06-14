@@ -4,7 +4,15 @@
         "title": "Admin Command",
         "isAvailable": true,
         "commands": [
-            {"id":"init", "title": "Init", "command": "mcdev init", "requiredParams": [], "optionalParams": [], "description": "Initates SFMC DevTools or adds additional credentials to your project.", "isAvailable": true}, 
+            {
+                "id":"init", 
+                "title": "Init", 
+                "command": "mcdev init --y.credentialName {{credentialName}} --y.client_id {{client_id}} --y.client_secret {{client_secret}} --y.auth_url {{auth_url}} --y.gitRemoteUrl {{gitRemoteUrl}} --y.account_id {{account_id}}", 
+                "requiredParams": ["credentialName", "client_id", "client_secret", "auth_url", "gitRemoteUrl", "account_id"], 
+                "optionalParams": [], 
+                "description": "Initates SFMC DevTools or adds additional credentials to your project.", 
+                "isAvailable": true
+            }, 
             {"id":"join", "title": "Join", "command": "", "requiredParams": [], "optionalParams": [], "description": "Clones an existing project from git.", "isAvailable": false}, 
             {"id":"upgrade", "title": "Upgrade", "command": "", "requiredParams": [], "optionalParams": [], "description": "Add NPM dependencies and IDE configuration files to your project.", "isAvailable": false}, 
             {"id":"rbus", "title": "Reload BUs", "command": "", "requiredParams": [], "optionalParams": [], "description": "Loads the list of available BUs from the server and saves it in your project.", "isAvailable": false}, 

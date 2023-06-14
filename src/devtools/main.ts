@@ -10,6 +10,7 @@ import { editorContext } from "../editor/context";
 import { editorWorkspace } from "../editor/workspace";
 import { editorCommands } from "../editor/commands";
 import { log } from "../editor/output";
+import { InstallDevToolsResponseOptions } from "../config/installer.config";
 
 async function initDevToolsExtension(){
 
@@ -29,7 +30,7 @@ async function initDevToolsExtension(){
 
         // If it's already a mcdev project it will check if prerequisites and devtools are installed
         if(isDevtoolsProject){
-            await handleDevToolsRequirements();
+            await handleDevToolsRequirements(true);
             return;
         }
 
@@ -52,7 +53,7 @@ async function isADevToolsProject(): Promise<boolean> {
     return findMcdevFiles.every((result: boolean) => result === true);
 }
 
-async function handleDevToolsRequirements(): Promise<void>{
+async function handleDevToolsRequirements(isDevToolsProject: boolean): Promise<void>{
     log("info", "Checking SFMC DevTools requirements...");
     const prerequisites: PrerequisitesInstalledReturn = devtoolsPrerequisites.arePrerequisitesInstalled();
     log("info", `SFMC Pre-Requisites ${
@@ -64,8 +65,12 @@ async function handleDevToolsRequirements(): Promise<void>{
             return;
         }
         log("info", "SFMC DevTools is installed.");
-        // activate status bar immediately when isDevToolsProject is false 
-        devtoolsContainers.activateStatusBar(true, DevToolsCommands.commandPrefix);
+
+        // Needs to check if it's a DevTools Project or not
+        if(isDevToolsProject){
+            // activate status bar immediately when isDevToolsProject is true 
+            devtoolsContainers.activateStatusBar(true, DevToolsCommands.commandPrefix);
+        }
 
         // init DevTools Commands
         DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
@@ -285,8 +290,23 @@ async function handleDevToolsSBCommand(){
     }
 }
 
-function initialize(){
-    log("debug", "Initialize DevTools status bar command");
+async function initialize(){
+    await handleDevToolsRequirements(false);
+
+    const userResponse: string | undefined = await editorInput.handleShowInformationMessage(
+        mainConfig.messages.initDevTools, 
+        Object.keys(InstallDevToolsResponseOptions).filter((v) => isNaN(Number(v)))
+    );
+
+    if(userResponse && 
+        InstallDevToolsResponseOptions[userResponse as keyof typeof InstallDevToolsResponseOptions]){
+            log("info", "Initializing SFMC DevTools project...");
+            DevToolsCommands.runCommand("", "init", editorWorkspace.getWorkspaceURIPath(), [], (result: any) => {
+                log("debug", result);
+                editorWorkspace.reloadWorkspace();
+            });
+
+    }
 }
 
 function handleDevToolsCMCommand(action: string, path: string){
