@@ -2,10 +2,10 @@ import { ProgressLocation, window } from "vscode";
 import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
 
 async function handleQuickPickSelection(
-    optionsList: Array<InputOptionsSettings>, 
+    optionsList: InputOptionsSettings[], 
     placeHolder: string, 
-    canPickMany: boolean): Promise<InputOptionsSettings | undefined > {
-    const selectedOption = await window.showQuickPick(
+    canPickMany: boolean): Promise<InputOptionsSettings | InputOptionsSettings[] | undefined > {
+    const selectedOption: InputOptionsSettings | InputOptionsSettings[] | undefined = await window.showQuickPick(
         optionsList, 
         { placeHolder: placeHolder, canPickMany: canPickMany, ignoreFocusOut: true }
     );

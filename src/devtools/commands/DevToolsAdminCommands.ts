@@ -9,7 +9,8 @@ class DevToolsAdminCommands extends DevToolsCommands {
     private commandMethods: {
         [key: string]: (
             config: DevToolsCommandSetting, 
-            args: {[key: string]: any }, 
+            args: {[key: string]: any },
+            path: string,
             handleResult: (result: any) => void) 
                 => void
     } = {};
@@ -28,12 +29,13 @@ class DevToolsAdminCommands extends DevToolsCommands {
             commandId, 
             commandConfig,
             commandArgs,
+            commandPath,
             commandResultHandler 
         }: DevToolsCommandRunner = commandRunner;
 
         log("debug", `Running DevTools Admin Command for id '${commandId}'.`);
         if(commandId in this.commandMethods){
-            this.commandMethods[commandId](commandConfig, commandArgs, commandResultHandler);
+            this.commandMethods[commandId](commandConfig, commandArgs, commandPath, commandResultHandler);
         }else{
             log("error", `DevTools Admin Command method for id '${commandId}' is not implemented.`);
         }
@@ -43,22 +45,25 @@ class DevToolsAdminCommands extends DevToolsCommands {
         this.metadataTypes = mdTypes;
     }
 
-    init(commandConfig: DevToolsCommandSetting, args: {[key: string]: any}){
+    init(commandConfig: DevToolsCommandSetting, args: {[key: string]: any}, path: string, handleResult: (result: any) => void){
         log("info", `Running DevTools Admin Command: Explain Types...`);
-        console.log(commandConfig);
-        console.log(args);
+
     }
 
-    explainTypes(config: DevToolsCommandSetting, args: {[key: string]: any }, handleResult: (result: any) => void){
+    async explainTypes(config: DevToolsCommandSetting, args: {[key: string]: any }, path: string, handleResult: (result: any) => void){
         log("info", `Running DevTools Admin Command: Explain Types...`);
-        let command: string = "";
         if("command" in config && config.command){
-            command = config.command;
-            log("debug", `Explain types basic command: ${command}`);
-            command = command.replace("{{json}}", args.json ? "--json" : "");
-            log("debug", `Explain types final command: ${command}`);
-            const result = this.executeCommand(command);
-            handleResult(result);
+            const commandConfigured: string | undefined = 
+                await this.configureCommandWithParameters(
+                    config, 
+                    { json: "json" in args && args.json ? "--json" : ""},
+                    []
+                );
+            log("debug", `Explain types final command: ${commandConfigured}`);
+            const commandResult = this.executeCommand(commandConfigured, path);
+            handleResult(commandResult);
+        }else{
+            log("error", "DevToolsAdminCommand_explainTypes: Command is empty or missing the configuration.");
         }
     }
 

@@ -4,6 +4,7 @@ interface DevToolsCommandRunner{
     commandId: string,
     commandConfig: DevToolsCommandSetting,
     commandArgs: { [key: string]: any },
+    commandPath: string,
     commandResultHandler: (result: any) => void
 }
 

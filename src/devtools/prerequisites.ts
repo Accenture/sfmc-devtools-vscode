@@ -4,6 +4,7 @@ import { editorInput } from "../editor/input";
 import { editorWebview } from "../editor/webview";
 import { log } from "../editor/output";
 import { devtoolsInstaller } from "./installer";
+import { editorWorkspace } from "../editor/workspace";
 
 interface PrerequisitesInstalledReturn { 
     prerequisitesInstalled: boolean, 
@@ -16,7 +17,10 @@ function arePrerequisitesInstalled(): PrerequisitesInstalledReturn {
         try{
             // executes each prerequisite command to check if they are installed in the system
             // if not installed throws exception
-            executeSyncTerminalCommand(command);
+            executeSyncTerminalCommand(
+                command,
+                editorWorkspace.getWorkspaceURIPath()
+            );
         }catch(error){
             log("debug", `${prerequisite} is not installed.`);
             prerequisiteResult = { 

@@ -16,7 +16,7 @@
                 "title": "Explain Types", 
                 "command": "mcdev explainTypes {{json}}", 
                 "requiredParams": [], 
-                "optionalParams": ["--json"], 
+                "optionalParams": ["json"], 
                 "description": "Explains metadata types that can be retrieved.", 
                 "isAvailable": true
             }
@@ -30,8 +30,8 @@
             {
                 "id":"retrieve", 
                 "title": "Retrieve", 
-                "command": "mcdev retrieve {{bu}} {{mdtype}} {{key}}", 
-                "requiredParams": ["bu", "mdtype"],
+                "command": "mcdev retrieve {{bu}} {{mdtypes}} {{key}}", 
+                "requiredParams": ["bu", "mdtypes"],
                 "optionalParams": ["key"],
                 "description": "Retrieves metadata of a business unit.", 
                 "isAvailable": true
@@ -39,8 +39,8 @@
             {
                 "id":"deploy", 
                 "title": "Deploy", 
-                "command": "mcdev deploy", 
-                "requiredParams": ["bu", "mdtype"],
+                "command": "mcdev deploy {{bu}} {{mdtypes}} {{key}}", 
+                "requiredParams": ["bu", "mdtypes"],
                 "optionalParams": ["key"],
                 "description": "Deploys local metadata to a business unit.", 
                 "isAvailable": true

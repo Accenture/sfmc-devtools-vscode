@@ -1,17 +1,20 @@
 import { InstallDevToolsResponseOptions, installerConfig } from "../config/installer.config";
 import { editorWorkspace } from "../editor/workspace";
+import { editorInput } from "../editor/input";
 import { log } from "../editor/output";
 import { executeSyncTerminalCommand } from "../shared/utils/terminal";
-import { editorInput } from "../editor/input";
 
 function isDevToolsInstalled(): boolean {
     try{
         // executes mcdev --versio command to check if mcdev is installed
         // if not installed throws exception
-        executeSyncTerminalCommand(installerConfig.package.mcdev.version);
+        executeSyncTerminalCommand(
+            installerConfig.package.mcdev.version,
+            editorWorkspace.getWorkspaceURIPath()
+        );
         return true;
     }catch(error){
-        log("debug", "mcdev is not installed.");
+        log("error", `installer_isDevToolsInstalled: Failed to check if DevTools is installed: ${error}`);
         return false;
     }
 }
@@ -23,7 +26,10 @@ function installDevTools(){
         editorInput.handleInProgressMessage(
             "Notification",
             installerConfig.messages.installingDevToolsProgress,
-            () => executeSyncTerminalCommand(installerConfig.package.mcdev.install)
+            () => executeSyncTerminalCommand(
+                    installerConfig.package.mcdev.install,
+                    editorWorkspace.getWorkspaceURIPath()
+                )
         );
         
         log("info", "Reloading workspace window...");
@@ -31,7 +37,7 @@ function installDevTools(){
         editorWorkspace.reloadWorkspace();
     }catch(error){
         log("warning", "Something went wrong! SFMC DevTools installation failed.");
-        log("error", error);
+        log("error", `installer_installDevTools: Failed to install DevTools: ${error}`);
     }
 }
 

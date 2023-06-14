@@ -2,10 +2,12 @@
 import * as commandsConfig from "./commands.config.json";
 import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
 import DevToolsCommandRunner from "../../shared/interfaces/devToolsCommandRunner";
+import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
+import { editorInput } from "../../editor/input";
 import { log } from "../../editor/output";
 import { lib } from "../../shared/utils/lib";
 import { executeSyncTerminalCommand } from "../../shared/utils/terminal";
-import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
+import InputOptionsSettings from "../../shared/interfaces/inputOptionsSettings";
 
 abstract class DevToolsCommands {
 
@@ -15,12 +17,67 @@ abstract class DevToolsCommands {
     abstract run(commandRunner: DevToolsCommandRunner): void;
     abstract setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void;
 
-    executeCommand(command: string){
-        console.log('Final Command = ', command);
-        return executeSyncTerminalCommand(command);
+    executeCommand(command: string, path: string){
+        log("info", `Running DevTools Command: ${command}`);
+        return executeSyncTerminalCommand(command, path);
     }
 
-    static init(){
+    async configureCommandWithParameters(
+        config: DevToolsCommandSetting, 
+        args: {[key: string]: string },
+        mdTypes: SupportedMetadataTypes[]): Promise<string> {
+
+        let { command } = config;
+        // Configured required Params
+        if("requiredParams" in config && config.requiredParams.length){
+            for(const param of config.requiredParams){
+                if(param in args && args[param]){
+                    command = command.replace(`{{${param}}}`, args[param]);
+                }else{
+                    // Requests user
+                    if(param.toLowerCase() === "mdtypes" && mdTypes.length){
+                        const userSelecteMDTypes: string | undefined = 
+                            await this.handleMetadataTypeRequest(mdTypes);
+                        if(userSelecteMDTypes){
+                            command = command.replace(`{{${param}}}`, `"${userSelecteMDTypes}"`);
+                        }
+                    }
+                }
+            }
+        }
+        // Configured optional Params
+        if("optionalParams" in config && config.optionalParams.length){
+            config.optionalParams.forEach((param: string) => {
+                command = command.replace(`{{${param}}}`, param in args ? args[param] : "");
+            });
+        }
+        return command;
+    }
+
+    async handleMetadataTypeRequest(mdTypes: SupportedMetadataTypes[]): Promise<string | undefined> {
+        const mdTypeInputOptions: InputOptionsSettings[] = 
+            mdTypes.map((mdType: SupportedMetadataTypes) => ({
+                id: mdType.apiName,
+                label: mdType.name,
+                detail: ""
+            }));
+        const userResponse: InputOptionsSettings | InputOptionsSettings[] | undefined = 
+            await editorInput.handleQuickPickSelection(
+                mdTypeInputOptions,
+                "Please select one or multiple metadata types...",
+                true
+            );
+        if(userResponse && Array.isArray(userResponse)){
+            const mdTypes: string = `${userResponse.map((response: InputOptionsSettings) => response.id)}`;
+            log("debug", 
+                `User selected metadata types: "${mdTypes}"`
+            );
+            return mdTypes;
+        }
+        return;
+    }
+
+    static init(path: string){
         log("info", "Initializing DevTools Commands...");
         if(!this.commandMap){
             const commandTypes: {id: string}[] = this.getAllCommandTypes();
@@ -42,7 +99,13 @@ abstract class DevToolsCommands {
 
         log("debug", `DevToolsCommands: [${Object.keys(this.commandMap)}]`);
         log("info", "Get DevTools Supported Metadata Types.");
-        this.runCommand("admin", "etypes", { json: true }, ((result: any) => {
+        this.runCommand(
+            "admin", 
+            "etypes", 
+            path, 
+            { json: true }, 
+            ((result: any) => {
+
             // Parses the list of supported mtdata types
             const parsedResult: SupportedMetadataTypes[] = JSON.parse(result);
             if(parsedResult && parsedResult.length){
@@ -58,7 +121,12 @@ abstract class DevToolsCommands {
         }));
     }
 
-    static runCommand(typeId: string, commandId: string, args: any, handleResult: (result: any)=> void ){
+    static runCommand(
+        typeId: string, 
+        commandId: string, 
+        commandPath: string, 
+        args: any, 
+        handleResult: (result: any)=> void) {
         // When the DevTools command type is unknown to the application
         if(!typeId && commandId){
             const [{ id }]: { id: string }[] = 
@@ -89,6 +157,7 @@ abstract class DevToolsCommands {
                         commandId,
                         commandConfig,
                         commandArgs: args,
+                        commandPath,
                         commandResultHandler: handleResult
                     });
                     return;

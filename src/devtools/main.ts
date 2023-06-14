@@ -11,90 +11,6 @@ import { editorWorkspace } from "../editor/workspace";
 import { editorCommands } from "../editor/commands";
 import { log } from "../editor/output";
 
-
-
-
-
-// async function handleCommandSelection(credentialBU: string){
-//     const typesList: Array<string> = DevToolsCommands.getAllCommandTypes();
-//     const selectedType = await editorInput.handleQuickPickSelection(
-//         convertToCmdOptSettings(typesList),
-//         COMMAND_INPUT_TITLES["selectType"],
-//         false);
-//     if(selectedType && selectedType.id){
-//         const commandsList = DevToolsCommands.getCommandsListByType(selectedType.id);
-//         const selectedDTCommand = await editorInput.handleQuickPickSelection(
-//             convertToCmdOptSettings(commandsList),
-//             COMMAND_INPUT_TITLES["selectCmd"],
-//             false
-//         );
-//         if(selectedDTCommand && selectedDTCommand.id){
-//             const dtClass: DevToolsCommands = devTools_commands_types_map[selectedType.id];
-//             if(dtClass !== undefined){
-//                 dtClass.run(selectedDTCommand.id, {
-//                     bu: credentialBU.toLowerCase() === DEVTOOLS_EXTENSION_CONFIG.allPlaceholder.toLowerCase() ? '"*"' : credentialBU
-//                 });
-//             }
-//         }
-//     }
-// }
-
-// async function getSupportedMetadataTypes(): Promise<SupportedMetadataTypes[] | undefined> {
-//     const { admin }: { admin?: DevToolsCommands } = devTools_commands_types_map;
-//     if(admin !== undefined){
-//         return await new Promise<SupportedMetadataTypes[]>((resolve) => {
-//             admin.run("etypes", { json: true }, (result: SupportedMetadataTypes[]) => {
-//                 resolve(result);
-//             });
-//         });
-//     }else{
-//         // throw exception TODO
-//         return;
-//     }
-// }
-
-// function executeExplorerMenuAction(action: string, path: string){
-//     // Separates the selected folder/file path by the retrieve or deploy action    
-//     const [ path1, path2 ]: Array<string> = path.split(`/${action}/`);
-//     // Retrieves the all the standard devtools commands
-//     const { standard }: { standard?: DevToolsCommands} = devTools_commands_types_map;
-//     if(standard !== undefined){
-//         let args: {[key: string]: string} = {};
-//         // The user clicked on the top folder (retrieve or deploy)
-//         if(path1 && !path2 && path1.endsWith(`/${action}`)){
-//             args = {bu: `"*"`};
-//         }
-//         // The user clicked on a folder/file inside the top folder (retrieve or deploy)
-//         if(path2){
-//             let [ credName, bUnit, type, ...keys ]: Array<string> = path2.split("/");
-//             // If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder 
-//             if(type === "asset" && keys.length){
-//                 // Gets the asset subfolder and asset key
-//                 const [ assetFolder, assetKey ] = keys;
-//                 if(!assetKey){
-//                     // if user only selected an asset subfolder
-//                     // type will be changed to "asset-[name of the asset subfolder]"
-//                     type = `${type}-${assetFolder}`;
-//                 }
-//                 // if user selects a file inside a subfolder of asset
-//                 // the key will be the name of the file 
-//                 keys = assetKey ? [ assetKey ] : [];
-//             }
-
-//             // result 1 - credential/*
-//             // result 2 - credential/bu
-//             // result 3 - credential/bu "metadata"
-//             // result 4 - credential/bu "metadata" "key"
-//             args = {
-//                 bu: `${credName}/${bUnit ? bUnit : '*'}`, 
-//                 mdtype: type ? `"${type}"` : "",
-//                 key: keys.length ? `"${keys[0].split(".")[0]}"` : "",
-//             };
-//         }
-//         standard.run(action, args);
-//     }
-// }
-
 async function initDevToolsExtension(){
 
     try{
@@ -152,7 +68,7 @@ async function handleDevToolsRequirements(): Promise<void>{
         devtoolsContainers.activateStatusBar(true, DevToolsCommands.commandPrefix);
 
         // init DevTools Commands
-        DevToolsCommands.init();
+        DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
         return;
     }
     log("debug", `Missing Pre-requisites: [${prerequisites.missingPrerequisites}]`);
@@ -249,14 +165,14 @@ async function changeCredentialsBU(){
             }));
 
         // Requests user to select one credential option
-        const selectedCredential: InputOptionsSettings | undefined = 
+        const selectedCredential: InputOptionsSettings | InputOptionsSettings[] | undefined = 
             await editorInput.handleQuickPickSelection(
                 [allPlaceholderOption, ...credentialsOptions],
                 mainConfig.messages.selectCredential,
                 false
             );
 
-        if(selectedCredential){
+        if(selectedCredential && !Array.isArray(selectedCredential)){
             log("debug", `User selected '${selectedCredential.label}' credential.`);
             if(selectedCredential.id === mainConfig.allPlaceholder.toLowerCase()){
                 // if user selects *All* then status bar should be replaced with it
@@ -277,14 +193,14 @@ async function changeCredentialsBU(){
                     }));
 
                 // Requests user to select all or one Business Unit
-                const selectedBU: InputOptionsSettings | undefined = 
+                const selectedBU: InputOptionsSettings | InputOptionsSettings[] | undefined = 
                     await editorInput.handleQuickPickSelection(
                         [allPlaceholderOption, ...businessUnitOptions],
                         mainConfig.messages.selectBusinessUnit,
                         false
                 );
                 
-                if(selectedBU){
+                if(selectedBU && !Array.isArray(selectedBU)){
                     log("debug", `User selected '${selectedBU.label}' business unit.`);
 
                     // Modify the credential status bar icon to contain the 
@@ -316,14 +232,14 @@ async function handleDevToolsSBCommand(){
         }));
 
         // Requests user to select one DevTools Command Type
-        const selectedCommandType: InputOptionsSettings | undefined = 
+        const selectedCommandType: InputOptionsSettings | InputOptionsSettings[] | undefined = 
             await editorInput.handleQuickPickSelection(
                 commandTypesOptions,
                 mainConfig.messages.selectCommandType,
                 false
         );
 
-        if(selectedCommandType){
+        if(selectedCommandType && !Array.isArray(selectedCommandType)){
             log("debug", `User selected in ${selectedCommandType.label} DevTools Command type.`);
             const commands: DevToolsCommandSetting[] = 
                 DevToolsCommands.getCommandsListByType(selectedCommandType.id);
@@ -336,14 +252,14 @@ async function handleDevToolsSBCommand(){
                     detail: command.description
                 }));
             // Requests user to select one DevTools Command Type
-            const selectedCommandOption: InputOptionsSettings | undefined = 
+            const selectedCommandOption: InputOptionsSettings | InputOptionsSettings[] | undefined = 
                 await editorInput.handleQuickPickSelection(
                     commandsOptions,
                     mainConfig.messages.selectCommand,
                     false
             );
 
-            if(selectedCommandOption){
+            if(selectedCommandOption && !Array.isArray(selectedCommandOption)){
                 log("debug", `User selected in ${selectedCommandOption.label} DevTools Command.`);
                 if(devtoolsContainers.isCredentialBUSelected()){
                     log("info", "Credential/BU is selected...");
@@ -354,8 +270,9 @@ async function handleDevToolsSBCommand(){
                         DevToolsCommands.runCommand(
                             selectedCommandType.id,
                             selectedCommandOption.id,
+                            editorWorkspace.getWorkspaceURIPath(),
                             { bu: selectedCredentialBU.replace(mainConfig.allPlaceholder, "'*'") },
-                            (result: any) => console.log(result) 
+                            (result: any) => log("info", result)
                         );
                     }else{
                         log("error", `main_handleDevToolsCommandSelection: Failed to retrieve Credential/BU.`);
@@ -420,7 +337,7 @@ function handleDevToolsCMCommand(action: string, path: string){
         // result 4 - credential/bu "metadata" "key"
         args = {
             bu: `${credName}/${bUnit ? bUnit : '*'}`, 
-            mdtype: type ? `"${type}"` : "",
+            mdtypes: type ? `"${type}"` : "",
             key: key,
         };
     }
@@ -428,9 +345,10 @@ function handleDevToolsCMCommand(action: string, path: string){
     DevToolsCommands.runCommand(
         "",
         action,
+        projectPath,
         args,
-        (result: any) => console.log(result)
-    )
+        (result: any) => log("info", result)
+    );
 }
 
 export const devtoolsMain = {
