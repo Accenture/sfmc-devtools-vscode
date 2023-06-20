@@ -3,7 +3,7 @@ import { editorContext } from './editor/context';
 import { devtoolsMain } from './devtools/main';
 import { log } from './editor/output';
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
 	log("info", "Activating extension...");
 	log("debug", "Setting context...");
 	editorContext.set(context);

@@ -1,4 +1,4 @@
-import { ProgressLocation, window } from "vscode";
+import { Progress, ProgressLocation, window } from "vscode";
 import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
 
 async function handleQuickPickSelection(
@@ -22,18 +22,20 @@ async function handleShowInputBox(placeHolder: string): Promise<string | undefin
     return response;
 }
 
-async function handleInProgressMessage(local: string, reportMessage: string, callbackFn: () => void ){
+async function handleInProgressMessage(local: string, callbackFn: (progress: Progress<{message: string, increment?: number}>) => Promise<void> ){
     await window.withProgress({ location: ProgressLocation[local as keyof typeof ProgressLocation]},
-        async(progress) => {
-            progress.report({ message: reportMessage });
-            callbackFn();
-        }
+        async(progress) => callbackFn(progress)
     );
+}
+
+function handleShowErrorMessage(message: string){
+    window.showErrorMessage(message);
 }
 
 export const editorInput = {
     handleQuickPickSelection,
     handleShowInformationMessage,
     handleInProgressMessage,
-    handleShowInputBox
+    handleShowInputBox,
+    handleShowErrorMessage
 };

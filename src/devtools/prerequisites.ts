@@ -1,34 +1,52 @@
 import { prerequisitesConfig, NoPrerequisitesResponseOptions } from "../config/prerequisites.config";
-import { executeSyncTerminalCommand } from "../shared/utils/terminal";
+import { devtoolsInstaller } from "./installer";
+import { terminal } from "../shared/utils/terminal";
 import { editorInput } from "../editor/input";
 import { editorWebview } from "../editor/webview";
-import { log } from "../editor/output";
-import { devtoolsInstaller } from "./installer";
 import { editorWorkspace } from "../editor/workspace";
+import { log } from "../editor/output";
 
 interface PrerequisitesInstalledReturn { 
     prerequisitesInstalled: boolean, 
     missingPrerequisites: string[]
 };
 
-function arePrerequisitesInstalled(): PrerequisitesInstalledReturn {
+async function arePrerequisitesInstalled(): Promise<PrerequisitesInstalledReturn> {
     let prerequisiteResult: PrerequisitesInstalledReturn = { prerequisitesInstalled: true, missingPrerequisites: []};
-    Object.entries(prerequisitesConfig.packages).forEach(([prerequisite, command]: string[]) => {
-        try{
-            // executes each prerequisite command to check if they are installed in the system
-            // if not installed throws exception
-            executeSyncTerminalCommand(
+    for (const [prerequisite, command] of Object.entries(prerequisitesConfig.packages)){
+        await new Promise<void>(resolve => {
+            terminal.executeTerminalCommand({
                 command,
-                editorWorkspace.getWorkspaceURIPath()
-            );
-        }catch(error){
-            log("debug", `${prerequisite} is not installed.`);
-            prerequisiteResult = { 
-                prerequisitesInstalled: false, 
-                missingPrerequisites: [...prerequisiteResult["missingPrerequisites"], prerequisite] 
-            };
-        }
-    });
+                args: [],
+                cwd: editorWorkspace.getWorkspaceURIPath(),
+                handleResult: (error: string | null, output: string | null, code: number | null) => {
+                    if (error) {
+                        log("error",
+                            `[prerequisites_arePrerequisitesInstalled] Missing Pre-Requisite '${prerequisite}': ${error}`
+                        );
+                        prerequisiteResult = {
+                            prerequisitesInstalled: false,
+                            missingPrerequisites: [
+                                ...prerequisiteResult.missingPrerequisites,
+                                prerequisite
+                            ]
+                        };
+                    }
+                    if (output) {
+                        log("debug",
+                            `[prerequisites_arePrerequisitesInstalled] '${prerequisite}': ${output}`
+                        );
+                    }
+                    if (code !== null) {
+                        log("debug",
+                            `[prerequisites_arePrerequisitesInstalled] Exit Code: '${code}'`
+                        );
+                        resolve();
+                    }
+                }
+            });
+        });
+    }
     return prerequisiteResult;
 };
 
@@ -37,8 +55,6 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
     const missingPrerequisitesMessage: string = missingPrerequisites.length === 1 ? 
         prerequisitesConfig.messages["onePrerequisiteMissing"].replace("{{prerequisites}}", missingPrerequisites[0]) : 
         prerequisitesConfig.messages["multiplePrerequisitesMissing"].replace("{{prerequisites}}", missingPrerequisites.join(" and "));
-
-    log("warning", missingPrerequisites);
     
     const message: string = `${missingPrerequisitesMessage} ${prerequisitesConfig.messages.askPrerequisitesToUser}`;
 
@@ -48,7 +64,9 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
         Object.keys(NoPrerequisitesResponseOptions).filter((v) => isNaN(Number(v)))
     );
 
-    log("debug", `noPrerequisitesHandler: user response = ${userResponse}.`);
+    log("debug", 
+        `[prerequisites_noPrerequisitesHandler] User Response = ${userResponse}.`
+    );
 
     // If yes creates an webview in vscode with a installation guide
     if(userResponse && NoPrerequisitesResponseOptions[userResponse as keyof typeof NoPrerequisitesResponseOptions]){

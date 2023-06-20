@@ -32,9 +32,22 @@ function capitalizeFirstLetter(text: string): string {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+function waitTime(timeInMs: number, handleFn: () => void){
+    setTimeout(() => handleFn(), timeInMs);
+}
+
+function getProjectNameFromPath(projectPath: string): string {
+    const projectName : string | undefined = projectPath.split("/").pop();
+    if(!projectName){
+        throw new Error(`[lib_getProjectNameFromPath]: Failed to retrieve project name from path: ${projectPath}`);
+    }
+    return projectName;
+}
 export const lib = {
     parseArrayJsonStringToArray,
     mapObject,
     createFilePath,
-    capitalizeFirstLetter
+    capitalizeFirstLetter,
+    waitTime,
+    getProjectNameFromPath
 };

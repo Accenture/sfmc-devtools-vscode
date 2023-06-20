@@ -11,10 +11,9 @@ class DevToolsAdminCommands extends DevToolsCommands {
             config: DevToolsCommandSetting, 
             args: {[key: string]: any },
             path: string,
-            handleResult: (result: any) => void) 
+            handleResult: (result?: any) => void) 
                 => void
     } = {};
-    private metadataTypes: SupportedMetadataTypes[] = [];
     constructor(){
         super();
         log("debug", "DevToolsAdminCommands Class created");
@@ -41,11 +40,9 @@ class DevToolsAdminCommands extends DevToolsCommands {
         }
     }
 
-    setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void {
-        this.metadataTypes = mdTypes;
-    }
+    setMetadataTypes(_: SupportedMetadataTypes[]): void {}
 
-    async init(config: DevToolsCommandSetting, args: {[key: string]: any}, path: string, handleResult: (result: any) => void){
+    async init(config: DevToolsCommandSetting, _: {[key: string]: any}, path: string, handleResult: (result?: any) => void){
         log("info", `Running DevTools Admin Command: Init...`);
         const initArgs: {[key: string]: string } = {};
         if("command" in config && config.command){
@@ -73,8 +70,8 @@ class DevToolsAdminCommands extends DevToolsCommands {
                 return;
             }
             log("debug", `Init final command: ${commandConfigured}`);
-            const commandResult = this.executeCommand(commandConfigured, path);
-            handleResult(commandResult);
+            await this.executeCommand(commandConfigured, path, true);
+            handleResult();
         }else{
             log("error", "DevToolsAdminCommand_Init: Command is empty or missing the configuration.");
         }
@@ -82,22 +79,28 @@ class DevToolsAdminCommands extends DevToolsCommands {
     }
 
     async explainTypes(config: DevToolsCommandSetting, args: {[key: string]: any }, path: string, handleResult: (result: any) => void){
-        log("info", `Running DevTools Admin Command: Explain Types...`);
-        if("command" in config && config.command){
-            const commandConfigured: string | undefined = 
-                await this.configureCommandWithParameters(
-                    config, 
-                    { json: "json" in args && args.json ? "--json" : ""},
-                    []
-                );
-            log("debug", `Explain types final command: ${commandConfigured}`);
-            const commandResult = this.executeCommand(commandConfigured, path);
-            handleResult(commandResult);
-        }else{
-            log("error", "DevToolsAdminCommand_explainTypes: Command is empty or missing the configuration.");
+        try{
+            log("info", `Running DevTools Admin Command: Explain Types...`);
+            if("command" in config && config.command){
+                const commandConfigured: string | undefined = 
+                    await this.configureCommandWithParameters(
+                        config, 
+                        { json: "json" in args && args.json ? "--json" : ""},
+                        []
+                    );
+                log("debug", `Explain types final command: ${commandConfigured}`);
+                const commandResult = await this.executeCommand(
+                    commandConfigured, 
+                    path, 
+                    !("json" in args));
+                handleResult(commandResult);
+            }else{
+                log("error", "DevToolsAdminCommand_explainTypes: Command is empty or missing the configuration.");
+            }
+        }catch(error){
+            log("error", `DevToolsAdminCommand_explainTypes Error: ${error}`);
         }
     }
-
 }
 
 export default DevToolsAdminCommands;

@@ -67,7 +67,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
             }
 
             log("debug", `Retrieve Command configured: ${commandConfigured}`);
-            const commandResult: string = this.executeCommand(commandConfigured, path);
+            const commandResult: Promise<unknown> = this.executeCommand(commandConfigured, path, true);
             handleResult(commandResult);
         }else{
             log("error", "DevToolsStandardCommand_retrieve: Command is empty or missing the configuration.");
@@ -96,7 +96,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
             }
 
             log("debug", `Deploy Command configured: ${commandConfigured}`);
-            const commandResult: string = this.executeCommand(commandConfigured, path);
+            const commandResult: Promise<unknown> = this.executeCommand(commandConfigured, path, true);
             handleResult(commandResult);
         }else{
             log("error", "DevToolsStandardCommand_deploy: Command is empty or missing the configuration.");

@@ -7,7 +7,7 @@ import InputOptionsSettings from "../../shared/interfaces/inputOptionsSettings";
 import { editorInput } from "../../editor/input";
 import { log } from "../../editor/output";
 import { lib } from "../../shared/utils/lib";
-import { executeSyncTerminalCommand } from "../../shared/utils/terminal";
+import { terminal } from "../../shared/utils/terminal";
 
 abstract class DevToolsCommands {
 
@@ -17,9 +17,33 @@ abstract class DevToolsCommands {
     abstract run(commandRunner: DevToolsCommandRunner): void;
     abstract setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void;
 
-    executeCommand(command: string, path: string){
+    executeCommand(command: string, path: string, showOnTerminal: boolean): Promise<string>{
         log("info", `Running DevTools Command: ${command}`);
-        return executeSyncTerminalCommand(command, path);
+        return new Promise<string>(async resolve => {
+                terminal.executeTerminalCommand({
+                command: command,
+                args: [],
+                cwd: path,
+                handleResult(error: string | null, output: string | null, code: number | null) {
+                    if(code !== null){
+                        log("debug", `[DevToolsCommands_executeCommand] Exit Code: '${code}'`);
+                        resolve("");
+                    }
+                    if (error) {
+                        log("error",
+                            `[DevToolsCommands_executeCommand] Exit Code: ${error}`
+                        );
+                    }
+                    if (output) {
+                        if(showOnTerminal){
+                            log("debug",  output);
+                        }else{
+                            resolve(output);
+                        }
+                    }
+                },
+            });
+        });
     }
 
     async configureCommandWithParameters(
@@ -27,6 +51,7 @@ abstract class DevToolsCommands {
         args: {[key: string]: string },
         mdTypes: SupportedMetadataTypes[]): Promise<string> {
 
+        log("debug", `ConfigureCommandWithParameters: ${JSON.stringify(config)}`);
         let { command } = config;
         // Configured required Params
         if("requiredParams" in config && config.requiredParams.length){
@@ -115,7 +140,6 @@ abstract class DevToolsCommands {
             path, 
             { json: true }, 
             ((result: any) => {
-
             // Parses the list of supported mtdata types
             const parsedResult: SupportedMetadataTypes[] = JSON.parse(result);
             if(parsedResult && parsedResult.length){
@@ -136,7 +160,7 @@ abstract class DevToolsCommands {
         commandId: string, 
         commandPath: string, 
         args: any, 
-        handleResult: (result: any)=> void) {
+        handleResult: (result: any) => void) {
         // When the DevTools command type is unknown to the application
         if(!typeId && commandId){
             const [{ id }]: { id: string }[] = 

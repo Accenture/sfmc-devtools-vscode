@@ -18,6 +18,6 @@ export const installerConfig: {
     messages: {
         noDevToolsInstalled: "SFMC DevTools could not be located on your system.",
         askUserToInstallDevTools: "Would you like to install SFMC DevTools?",
-        installingDevToolsProgress: "Please wait while SFMC DevTools is being installed (window will reload after completation)."
+        installingDevToolsProgress: "Please wait while SFMC DevTools is being installed..."
     }
 };

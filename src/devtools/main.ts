@@ -8,45 +8,44 @@ import { devtoolsContainers } from "./containers";
 import { editorInput } from "../editor/input";
 import { editorContext } from "../editor/context";
 import { editorWorkspace } from "../editor/workspace";
-import { editorCommands } from "../editor/commands";
 import { log } from "../editor/output";
 import { InstallDevToolsResponseOptions } from "../config/installer.config";
+import { lib } from "../shared/utils/lib";
 
-async function initDevToolsExtension(){
+async function initDevToolsExtension(): Promise<void>{
 
     try{
         log("info", "Running SFMC DevTools extension...");
-        const isDevtoolsProject: boolean = await isADevToolsProject();
         
-        // Executes the command setContext to indicate if the project
-	    // is a DevTools Project or not
-        editorCommands.executeCommand(
-            "setContext", 
-            [`sfmc-devtools-vscext.isDevToolsProject`, isDevtoolsProject]
-        );
-
         // activate the context menus options
         devtoolsContainers.activateContextMenuCommands();
 
         // If it's already a mcdev project it will check if prerequisites and devtools are installed
-        if(isDevtoolsProject){
+        if(await isADevToolsProject()){
             await handleDevToolsRequirements(true);
             return;
+        }else{
+            // activate status bar immediately when isDevToolsProject is false 
+            devtoolsContainers.activateStatusBar(false, DevToolsCommands.commandPrefix);
+            if(await anySubFolderIsDevToolsProject()){
+                log("debug", "One or more subfolders is a DevTools project.");
+                // init DevTools Commands
+                DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
+            }
         }
-
-        // activate status bar immediately when isDevToolsProject is false 
-        devtoolsContainers.activateStatusBar(false, DevToolsCommands.commandPrefix);
-
     }catch(error){
-        log("error", `main_initDevToolsExtension: ${error}`);
+        log("error", `[main_initDevToolsExtension] Error: ${error}`);
     }
 }
 
-async function isADevToolsProject(): Promise<boolean> {
+async function isADevToolsProject(projectName?: string): Promise<boolean> {
     log("info", "Checking if folder is a SFMC DevTools project...");
     log("debug", `DevTools files: [${mainConfig.requiredFiles}]`);
+
     const findMcdevFiles: boolean[] = await Promise.all(mainConfig.requiredFiles
-        .map(async(filename: string) => editorWorkspace.isFileInFolder(filename)));
+        .map(async(filename: string) => editorWorkspace.isFileInFolder(
+            `${projectName || '' }${filename}`
+        )));
     log("info", 
         `Folder ${findMcdevFiles.every((result: boolean) => result === true) ? 'is' : 'is not'} a SFMC DevTools project.`
     );
@@ -55,12 +54,13 @@ async function isADevToolsProject(): Promise<boolean> {
 
 async function handleDevToolsRequirements(isDevToolsProject: boolean): Promise<void>{
     log("info", "Checking SFMC DevTools requirements...");
-    const prerequisites: PrerequisitesInstalledReturn = devtoolsPrerequisites.arePrerequisitesInstalled();
+    const prerequisites: PrerequisitesInstalledReturn = await devtoolsPrerequisites.arePrerequisitesInstalled();
     log("info", `SFMC Pre-Requisites ${
         prerequisites.prerequisitesInstalled ? 'are' : 'are not'
     } installed.`);
     if(prerequisites.prerequisitesInstalled){
-        if(!devtoolsInstaller.isDevToolsInstalled()){
+        const isDevToolsInstalled: boolean = await devtoolsInstaller.isDevToolsInstalled();
+        if(!isDevToolsInstalled){
             await devtoolsInstaller.noDevToolsHandler();
             return;
         }
@@ -83,7 +83,19 @@ async function handleDevToolsRequirements(isDevToolsProject: boolean): Promise<v
     );
 }
 
-function handleStatusBarActions(action: string){
+async function anySubFolderIsDevToolsProject(): Promise<boolean> {
+    const subFolders: string[] = await editorWorkspace.getWorkspaceSubFolders();
+    if(subFolders.length){
+        const subFolderProjects: boolean[] = 
+            await Promise.all(subFolders.map(async (sf: string) => await isADevToolsProject(sf + "/")));
+        return subFolderProjects.some((sfResult: boolean) => sfResult);
+    }else{
+        log("debug", "Workspace don't contain any sub folders.");
+    }
+    return false;
+}
+
+function handleStatusBarActions(action: string): void {
     log("debug", "Setting Status Bar Actions...");
     log("debug", `Action: ${action}`);
     switch(action.toLowerCase()){
@@ -101,7 +113,7 @@ function handleStatusBarActions(action: string){
     }
 }
 
-function handleContextMenuActions(action: string, path: string){
+function handleContextMenuActions(action: string, path: string): void {
     log("debug", "Setting Context Menu Actions...");
     log("debug", `Action: ${action} Path: ${path}`);
     switch(action.toLowerCase()){
@@ -141,15 +153,16 @@ async function getCredentialsBU(): Promise<{[key: string]: string[] } | undefine
                     }
                 }, {});
         }
-        log("error", `main_getCredentialsBU: Could not find any credentials in the '${mainConfig.credentialsFilename}' file.`);
-        return;
+        log("error", 
+            `[main_getCredentialsBU] Error: Could not find any credentials in the '${mainConfig.credentialsFilename}' file.`
+        );
     }catch(error){
-        log("error", `main_getCredentialsBU: ${error}`);
-        return;
+        log("error", `[main_getCredentialsBU] Error: ${error}`);
     }
+    return;
 }
 
-async function changeCredentialsBU(){
+async function changeCredentialsBU(): Promise<void>{
     log("info", "Changing SFMC DevTools credententials/bu...");
     const credentialsBUList: {[key: string]: string[]} | undefined = 
         await getCredentialsBU();
@@ -219,11 +232,11 @@ async function changeCredentialsBU(){
             }
         }
     }else{
-        log("error", "main_changeCredentialsBU: CredentialBU List is undefined.");
+        log("error", "[main_changeCredentialsBU] Error: CredentialBU List is undefined.");
     }
 }
 
-async function handleDevToolsSBCommand(){
+async function handleDevToolsSBCommand(): Promise<void>{
     log("info", "Selecting SB SFMC DevTools command...");
     const devToolsCommandTypes: {id: string, title: string}[] = DevToolsCommands.getAllCommandTypes();
     
@@ -280,7 +293,9 @@ async function handleDevToolsSBCommand(){
                             (result: any) => log("info", result)
                         );
                     }else{
-                        log("error", `main_handleDevToolsCommandSelection: Failed to retrieve Credential/BU.`);
+                        log("error",
+                            `[main_handleDevToolsCommandSelection] Error: Failed to retrieve Credential/BU.`
+                        );
                     }
                 }else{
                     // show error TODO
@@ -290,7 +305,7 @@ async function handleDevToolsSBCommand(){
     }
 }
 
-async function initialize(){
+async function initialize(): Promise<void>{
     await handleDevToolsRequirements(false);
 
     const userResponse: string | undefined = await editorInput.handleShowInformationMessage(
@@ -301,74 +316,97 @@ async function initialize(){
     if(userResponse && 
         InstallDevToolsResponseOptions[userResponse as keyof typeof InstallDevToolsResponseOptions]){
             log("info", "Initializing SFMC DevTools project...");
-            DevToolsCommands.runCommand("", "init", editorWorkspace.getWorkspaceURIPath(), [], (result: any) => {
-                log("debug", result);
-                editorWorkspace.reloadWorkspace();
+            DevToolsCommands.runCommand("", "init", editorWorkspace.getWorkspaceURIPath(), [], () => {
+                log("info", "Reloading VSCode workspace window...");
+                lib.waitTime(5000, () => editorWorkspace.reloadWorkspace());
             });
-
     }
 }
 
-function handleDevToolsCMCommand(action: string, path: string){
+async function handleDevToolsCMCommand(action: string, path: string): Promise<void>{
     log("info", "Selecting CM SFMC DevTools command...");
+    try{
 
-    let args: {[key: string]: string } = {};
-    const [ projectPath, cmPath ]: string[] = path.split(`/${action}/`);;
+        let args: {[key: string]: string } = {};
+        let [ projectPath, cmPath ]: string[] = path.split(`/${action}`);
 
-    const workspaceUriFolder = editorWorkspace.getWorkspaceURIPath();
+        const workspaceFolderPath: string = editorWorkspace.getWorkspaceURIPath();
 
-    log("debug", `Current workspace folder path: ${workspaceUriFolder}`);
-    log("debug", `Context Menu Action path: ${projectPath}`);
+        log("debug", `Current workspace folder path: ${workspaceFolderPath}`);
+        log("debug", `Project path: ${projectPath}`);
+        log("debug", `Context Menu path: ${cmPath}`);
 
-    log("debug", `Context Menu Action outside of project directory? = ${workspaceUriFolder !== projectPath}`);
+        log("info", `Project ${workspaceFolderPath === projectPath ? 'is': 'is not'} the workspace folder.`);
 
-    if(projectPath && !cmPath && projectPath.endsWith(`/${action}`)){
-        args = { bu: `"*"` };
-    }
+        // Check if context menu being triggered is from outside of the workspace folder
+        if(workspaceFolderPath !== projectPath){
+            const projectName: string = lib.getProjectNameFromPath(projectPath);
+            const isSubFolderDevToolsProject: boolean = 
+                await isADevToolsProject(
+                    projectName + "/"
+                );
+            log("info", 
+                `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
+            );
+            if(!isSubFolderDevToolsProject){
+                editorInput.handleShowErrorMessage(`Folder '${projectName}' is not a SFMC DevTools Project.`);
+                return;
+            } 
+        }
 
-    if(cmPath){
-        let [ credName, bUnit, type, ...keys ]: string[] = cmPath.split("/");
-        let key: string = "";
-        // If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder 
-        if(type === "asset" && keys.length){
-            // Gets the asset subfolder and asset key
-            const [ assetFolder, assetKey ] = keys;
-            if(!assetKey){
-                // if user only selected an asset subfolder
-                // type will be changed to "asset-[name of the asset subfolder]"
-                type = `${type}-${assetFolder}`;
+        if(projectPath && !cmPath){
+            args = { bu: `"*"` };
+            log("debug", `Updated project path for '${action} "*"': ${projectPath}.`);
+        }
+
+        if(cmPath){
+            let [ credName, bUnit, type, ...keys ]: string[] = cmPath.substring(1).split("/");
+            let key: string = "";
+            // If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder 
+            if(type === "asset" && keys.length){
+                // Gets the asset subfolder and asset key
+                const [ assetFolder, assetKey ] = keys;
+                if(!assetKey){
+                    // if user only selected an asset subfolder
+                    // type will be changed to "asset-[name of the asset subfolder]"
+                    type = `${type}-${assetFolder}`;
+                }
+                // if user selects a file inside a subfolder of asset
+                // the key will be the name of the file 
+                keys = assetKey ? [ assetKey ] : [];
             }
-            // if user selects a file inside a subfolder of asset
-            // the key will be the name of the file 
-            keys = assetKey ? [ assetKey ] : [];
-        }
-    
-        if(keys.length){
-            const [ typeKey ]: string[] = keys;
-            key = `"${typeKey.startsWith(".") ?
-                '.' + typeKey.substring(1).split(".")[0] : 
-                typeKey.split(".")[0]
-            }"`;
+        
+            if(keys.length){
+                const [ typeKey ]: string[] = keys;
+                key = `"${typeKey.startsWith(".") ?
+                    '.' + typeKey.substring(1).split(".")[0] : 
+                    typeKey.split(".")[0]
+                }"`;
+            }
+
+            // result 1 - credential/*
+            // result 2 - credential/bu
+            // result 3 - credential/bu "metadata"
+            // result 4 - credential/bu "metadata" "key"
+            args = {
+                bu: `${credName}/${bUnit ? bUnit : '*'}`, 
+                mdtypes: type ? `"${type}"` : "",
+                key: key,
+            };
         }
 
-        // result 1 - credential/*
-        // result 2 - credential/bu
-        // result 3 - credential/bu "metadata"
-        // result 4 - credential/bu "metadata" "key"
-        args = {
-            bu: `${credName}/${bUnit ? bUnit : '*'}`, 
-            mdtypes: type ? `"${type}"` : "",
-            key: key,
-        };
+        log("debug", `CM args passed to DevTools command: ${JSON.stringify(args)}`);
+        DevToolsCommands.runCommand(
+            "",
+            action,
+            projectPath,
+            args,
+            (result: any) => log("info", result)
+        );
+
+    }catch(error){
+        log("error", `[main_handleDevToolsCMCommand] Error: ${error}`);
     }
-    log("debug", `CM args passed to DevTools command: ${JSON.stringify(args)}`);
-    DevToolsCommands.runCommand(
-        "",
-        action,
-        projectPath,
-        args,
-        (result: any) => log("info", result)
-    );
 }
 
 export const devtoolsMain = {

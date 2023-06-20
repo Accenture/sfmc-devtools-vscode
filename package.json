@@ -34,12 +34,12 @@
 		"menus": {
 			"explorer/context": [
 				{
-					"when": "resourcePath =~ /retrieve/ && sfmc-devtools-vscext.isDevToolsProject",
+					"when": "resourcePath =~ /retrieve/",
 					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
 					"group": "devtools"
 				},
 				{
-					"when": "resourcePath =~ /deploy/ && sfmc-devtools-vscext.isDevToolsProject",
+					"when": "resourcePath =~ /deploy/",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				}
