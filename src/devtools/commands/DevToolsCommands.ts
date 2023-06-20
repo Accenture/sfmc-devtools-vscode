@@ -210,7 +210,7 @@ abstract class DevToolsCommands {
             return;
         }
         log("error", 
-            `DevToolsCommands_runCommand: Command Map is not configured configured.`
+            `[DevToolsCommands_runCommand] Error: Command Map is not configured configured.`
         );
     }
 
@@ -227,6 +227,14 @@ abstract class DevToolsCommands {
         const { commands } = commandsConfig[type.toLowerCase() as keyof typeof commandsConfig];
         return commands ? 
             commands.filter((command: DevToolsCommandSetting) => command.isAvailable) : [];
+    }
+
+    static requiresCredentials(id: string): boolean {
+        if(id in commandsConfig){
+            return commandsConfig[id as keyof typeof commandsConfig].requireCredentials;
+        }
+        log("error", `[DevToolsCommands_runCommand] Error: Failed to retrieve ${id} from commands configuration.`);
+        return false;
     }
 }
 

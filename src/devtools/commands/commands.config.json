@@ -3,6 +3,7 @@
         "id": "admin",
         "title": "Admin Command",
         "isAvailable": true,
+        "requireCredentials": false,
         "commands": [
             {
                 "id":"init", 
@@ -34,6 +35,7 @@
         "id": "standard",
         "title": "Standard Command",
         "isAvailable": true,
+        "requireCredentials": true,
         "commands": [
             {
                 "id":"retrieve", 
@@ -69,6 +71,7 @@
         "id": "templating",
         "title": "Templating",
         "isAvailable": false,
+        "requireCredentials": false,
         "commands": [
             {"id":"rtemp", "title": "Retrieve As Template", "command": "mcdev delete", "requiredParams": [], "optionalParams": [], "description": "Retrieves a specific metadata file by name from the server for templating.", "isAvailable": false},
             {"id":"btemp", "title": "Build Template", "command": "mcdev delete", "requiredParams": [], "optionalParams": [], "description": "Builds a template out of a specific metadata file already in your retrieve folder.", "isAvailable": false},

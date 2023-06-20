@@ -1,6 +1,12 @@
 import { Progress, ProgressLocation, window } from "vscode";
 import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
 
+enum NotificationMessage {
+    info,
+    warning,
+    error
+};
+
 async function handleQuickPickSelection(
     optionsList: InputOptionsSettings[], 
     placeHolder: string, 
@@ -12,7 +18,7 @@ async function handleQuickPickSelection(
     return selectedOption;
 }
 
-async function handleShowInformationMessage(message: string, actions: string[]): Promise<string | undefined> {
+async function handleShowOptionsMessage(message: string, actions: string[]): Promise<string | undefined> {
     const response: string | undefined = await window.showInformationMessage(message, ...actions);
     return response;
 }
@@ -28,14 +34,26 @@ async function handleInProgressMessage(local: string, callbackFn: (progress: Pro
     );
 }
 
-function handleShowErrorMessage(message: string){
-    window.showErrorMessage(message);
+function handleShowNotificationMessage(level: keyof typeof NotificationMessage, message: string){
+    switch(level){
+        case "info":
+            window.showInformationMessage(message);
+            break;
+        case "warning":
+            window.showWarningMessage(message);
+            break;
+        case "error":
+            window.showErrorMessage(message);
+            break;
+        default:
+            window.showInformationMessage(message);
+    }
 }
 
 export const editorInput = {
     handleQuickPickSelection,
-    handleShowInformationMessage,
+    handleShowOptionsMessage,
     handleInProgressMessage,
     handleShowInputBox,
-    handleShowErrorMessage
+    handleShowNotificationMessage
 };

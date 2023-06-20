@@ -298,7 +298,26 @@ async function handleDevToolsSBCommand(): Promise<void>{
                         );
                     }
                 }else{
-                    // show error TODO
+                    if(DevToolsCommands.requiresCredentials(selectedCommandType.id)){
+                        log("debug", 
+                            `Crendentials are required to be selected first for type '${selectedCommandType.id}'`
+                        );
+                        editorInput.handleShowNotificationMessage("warning", 
+                            `${mainConfig.messages.selectedCredentialsBU} '${
+                                lib.capitalizeFirstLetter(selectedCommandOption.id)
+                            }'...`
+                        );
+                        lib.waitTime(1000, () => changeCredentialsBU());
+                    }else{
+                        // execute DevTools Command
+                        DevToolsCommands.runCommand(
+                            selectedCommandType.id,
+                            selectedCommandOption.id,
+                            editorWorkspace.getWorkspaceURIPath(),
+                            {},
+                            (result: any) => log("info", result)
+                        );
+                    }
                 }
             }
         }
@@ -308,7 +327,7 @@ async function handleDevToolsSBCommand(): Promise<void>{
 async function initialize(): Promise<void>{
     await handleDevToolsRequirements(false);
 
-    const userResponse: string | undefined = await editorInput.handleShowInformationMessage(
+    const userResponse: string | undefined = await editorInput.handleShowOptionsMessage(
         mainConfig.messages.initDevTools, 
         Object.keys(InstallDevToolsResponseOptions).filter((v) => isNaN(Number(v)))
     );
@@ -356,7 +375,7 @@ async function handleDevToolsCMCommand(action: string, path: string): Promise<vo
                 `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
             );
             if(!isSubFolderDevToolsProject){
-                editorInput.handleShowErrorMessage(`Folder '${projectName}' is not a SFMC DevTools Project.`);
+                editorInput.handleShowNotificationMessage("error",`Folder '${projectName}' is not a SFMC DevTools Project.`);
                 return;
             } 
         }
