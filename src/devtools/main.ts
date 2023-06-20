@@ -327,8 +327,15 @@ async function handleDevToolsCMCommand(action: string, path: string): Promise<vo
     log("info", "Selecting CM SFMC DevTools command...");
     try{
 
-        let args: {[key: string]: string } = {};
+        let args: {[key: string]: string | boolean } = {};
         let [ projectPath, cmPath ]: string[] = path.split(`/${action}`);
+
+        if(action === "deploy" && !path.includes(action)){
+            log("debug", "Context Menu Command Deploy From Retrieve folder...");
+            // Action Deploy from Retrieve was triggered
+            [ projectPath, cmPath ] = path.split(`/retrieve`);
+            args = { fromRetrieve: true };
+        }
 
         const workspaceFolderPath: string = editorWorkspace.getWorkspaceURIPath();
 
@@ -389,6 +396,7 @@ async function handleDevToolsCMCommand(action: string, path: string): Promise<vo
             // result 3 - credential/bu "metadata"
             // result 4 - credential/bu "metadata" "key"
             args = {
+                ...args,
                 bu: `${credName}/${bUnit ? bUnit : '*'}`, 
                 mdtypes: type ? `"${type}"` : "",
                 key: key,

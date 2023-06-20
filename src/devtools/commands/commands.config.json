@@ -47,9 +47,9 @@
             {
                 "id":"deploy", 
                 "title": "Deploy", 
-                "command": "mcdev deploy {{bu}} {{mdtypes}} {{key}}", 
+                "command": "mcdev deploy {{bu}} {{mdtypes}} {{key}} {{fromRetrieve}}", 
                 "requiredParams": ["bu", "mdtypes"],
-                "optionalParams": ["key"],
+                "optionalParams": ["key", "fromRetrieve"],
                 "description": "Deploys local metadata to a business unit.", 
                 "isAvailable": true
             },

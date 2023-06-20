@@ -85,7 +85,7 @@ class DevToolsAdminCommands extends DevToolsCommands {
                 const commandConfigured: string | undefined = 
                     await this.configureCommandWithParameters(
                         config, 
-                        { json: "json" in args && args.json ? "--json" : ""},
+                        args,
                         []
                     );
                 log("debug", `Explain types final command: ${commandConfigured}`);

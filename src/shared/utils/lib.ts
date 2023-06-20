@@ -39,7 +39,7 @@ function waitTime(timeInMs: number, handleFn: () => void){
 function getProjectNameFromPath(projectPath: string): string {
     const projectName : string | undefined = projectPath.split("/").pop();
     if(!projectName){
-        throw new Error(`[lib_getProjectNameFromPath]: Failed to retrieve project name from path: ${projectPath}`);
+        throw new Error(`[lib_getProjectNameFromPath]: Failed to retrieve last folder name from path: ${projectPath}`);
     }
     return projectName;
 }

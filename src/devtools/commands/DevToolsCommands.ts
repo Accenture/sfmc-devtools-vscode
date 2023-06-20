@@ -73,6 +73,9 @@ abstract class DevToolsCommands {
         // Configured optional Params
         if("optionalParams" in config && config.optionalParams.length){
             config.optionalParams.forEach((param: string) => {
+                if(typeof args[param] === "boolean"){
+                    args[param] = `--${param}`;
+                }
                 command = command.replace(`{{${param}}}`, param in args ? args[param] : "");
             });
         }

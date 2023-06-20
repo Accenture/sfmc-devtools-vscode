@@ -39,7 +39,7 @@
 					"group": "devtools"
 				},
 				{
-					"when": "resourcePath =~ /deploy/",
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown))",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				}
