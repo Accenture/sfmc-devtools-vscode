@@ -59,7 +59,7 @@ async function noPrerequisitesHandler(extensionPath: string, missingPrerequisite
     const message: string = `${missingPrerequisitesMessage} ${prerequisitesConfig.messages.askPrerequisitesToUser}`;
 
     // Asks if user wishes to follow the guide of how to install the prerequisites
-    const userResponse: string | undefined = await editorInput.handleShowInformationMessage(
+    const userResponse: string | undefined = await editorInput.handleShowOptionsMessage(
         message, 
         Object.keys(NoPrerequisitesResponseOptions).filter((v) => isNaN(Number(v)))
     );

@@ -1,6 +1,3 @@
-// import { commands, ExtensionContext, StatusBarAlignment, StatusBarItem, window } from "vscode";
-// import { devToolsExtension } from "../devtools/extension";
-
 import { window, StatusBarItem, StatusBarAlignment } from "vscode";
 
 function createStatusBarItem(command: string, title: string, name: string): StatusBarItem {

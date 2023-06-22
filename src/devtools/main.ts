@@ -113,15 +113,15 @@ function handleStatusBarActions(action: string): void {
     }
 }
 
-function handleContextMenuActions(action: string, path: string): void {
+function handleContextMenuActions(action: string, selectedFiles: string[]): void {
     log("debug", "Setting Context Menu Actions...");
-    log("debug", `Action: ${action} Path: ${path}`);
+    log("debug", `Action: ${action} Number of Selected Files: ${selectedFiles.length}`);
     switch(action.toLowerCase()){
         case "cmretrieve":
-            handleDevToolsCMCommand("retrieve", path);
+            handleDevToolsCMCommand("retrieve", selectedFiles);
             break;
         case "cmdeploy":
-            handleDevToolsCMCommand("deploy", path);
+            handleDevToolsCMCommand("deploy", selectedFiles);
             break;
         default:
             log("error", `main_handleContextMenuActions: Invalid Context Menu Action '${action}'`);
@@ -342,99 +342,192 @@ async function initialize(): Promise<void>{
     }
 }
 
-async function handleDevToolsCMCommand(action: string, path: string): Promise<void>{
+async function handleDevToolsCMCommand(action: string, selectedPaths: string[]): Promise<void>{
     log("info", "Selecting CM SFMC DevTools command...");
     try{
 
-        let args: {[key: string]: string | boolean } = {};
-        let [ projectPath, cmPath ]: string[] = path.split(`/${action}`);
+        type ArgsConfig = { bu: string, mdtypes: string | string[], key: string | string[], fromRetrieve: boolean};
+        type ProjectConfig = { path: string, args: ArgsConfig[] };
+        let filesType: string[] = [], folderType: string[] = [];
 
-        if(action === "deploy" && !path.includes(action)){
-            log("debug", "Context Menu Command Deploy From Retrieve folder...");
-            // Action Deploy from Retrieve was triggered
-            [ projectPath, cmPath ] = path.split(`/retrieve`);
-            args = { fromRetrieve: true };
+        // Separates files and folders into different arrays
+        for(const path of selectedPaths){
+            await editorWorkspace.isFile(path) ?
+                filesType.push(path) :
+                folderType.push(path);
         }
 
-        const workspaceFolderPath: string = editorWorkspace.getWorkspaceURIPath();
-
-        log("debug", `Current workspace folder path: ${workspaceFolderPath}`);
-        log("debug", `Project path: ${projectPath}`);
-        log("debug", `Context Menu path: ${cmPath}`);
-
-        log("info", `Project ${workspaceFolderPath === projectPath ? 'is': 'is not'} the workspace folder.`);
-
-        // Check if context menu being triggered is from outside of the workspace folder
-        if(workspaceFolderPath !== projectPath){
-            const projectName: string = lib.getProjectNameFromPath(projectPath);
-            const isSubFolderDevToolsProject: boolean = 
-                await isADevToolsProject(
-                    projectName + "/"
-                );
-            log("info", 
-                `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
-            );
-            if(!isSubFolderDevToolsProject){
-                editorInput.handleShowNotificationMessage("error",`Folder '${projectName}' is not a SFMC DevTools Project.`);
-                return;
-            } 
+        // Removes duplicate files (eg. some files have the same name with md and json)
+        if(filesType.length){
+            filesType = lib.removeDuplicates(
+                lib.removeExtensionFromFile(filesType)
+            ) as string[];
         }
+        console.log(folderType);
+        console.log(filesType);
 
-        if(projectPath && !cmPath){
-            args = { bu: `"*"` };
-            log("debug", `Updated project path for '${action} "*"': ${projectPath}.`);
-        }
+        const configureArgsProject = async (action: string, selectedPaths: string[]): Promise<{[key: string]: ProjectConfig}> => {
 
-        if(cmPath){
-            let [ credName, bUnit, type, ...keys ]: string[] = cmPath.substring(1).split("/");
-            let key: string = "";
-            // If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder 
-            if(type === "asset" && keys.length){
-                // Gets the asset subfolder and asset key
-                const [ assetFolder, assetKey ] = keys;
-                if(!assetKey){
-                    // if user only selected an asset subfolder
-                    // type will be changed to "asset-[name of the asset subfolder]"
-                    type = `${type}-${assetFolder}`;
+            const projectArgsMap: {[key: string]: ProjectConfig} = {};
+
+            // gets workspace directory
+            const workspaceFolderPath: string = editorWorkspace.getWorkspaceURIPath();
+
+            for(const filePath of selectedPaths){
+
+                let projectName: string = "";
+                let [ projectPath, cmPath ]: string[] = [];
+                let args: ArgsConfig[] = [];
+                let fromRetrieve: boolean = false;
+
+                if(filePath.includes(action)){
+                    // Action Retrieve or Deploy were triggered from their folder
+                    [ projectPath, cmPath ] = filePath.split(`/${action}`);
+                }else{
+                    if(action === "deploy"){
+                        log("debug", "Context Menu Command Deploy From Retrieve folder...");
+                        // Action Deploy from Retrieve was triggered (fromRetrieve)
+                        [ projectPath, cmPath ] = filePath.split(`/retrieve`);
+                        fromRetrieve = true;
+                    }else{
+                        // error
+                    }
                 }
-                // if user selects a file inside a subfolder of asset
-                // the key will be the name of the file 
-                keys = assetKey ? [ assetKey ] : [];
-            }
-        
-            if(keys.length){
-                const [ typeKey ]: string[] = keys;
-                key = `"${typeKey.startsWith(".") ?
-                    '.' + typeKey.substring(1).split(".")[0] : 
-                    typeKey.split(".")[0]
-                }"`;
-            }
 
-            // result 1 - credential/*
-            // result 2 - credential/bu
-            // result 3 - credential/bu "metadata"
-            // result 4 - credential/bu "metadata" "key"
-            args = {
-                ...args,
-                bu: `${credName}/${bUnit ? bUnit : '*'}`, 
-                mdtypes: type ? `"${type}"` : "",
-                key: key,
-            };
+                // Gets the project folder name
+                projectName = lib.getProjectNameFromPath(projectPath);
+
+                log("debug", `Current workspace folder path: ${workspaceFolderPath}`);
+                log("debug", `Project Name: ${projectName}`);
+                log("debug", `Project path: ${projectPath}`);
+                log("debug", `Context Menu path: ${cmPath}`);
+
+                log("info", `Project ${workspaceFolderPath === projectPath ? 'is': 'is not'} the workspace folder.`);
+
+                // Check if context menu being triggered is from outside of the workspace folder
+                if(workspaceFolderPath !== projectPath){
+                    // Check if folder is a DevTools project
+                    const isSubFolderDevToolsProject: boolean = 
+                        await isADevToolsProject( projectName + "/" );
+                    log("info", 
+                        `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
+                    );
+                    if(!isSubFolderDevToolsProject){
+                        editorInput.handleShowNotificationMessage("error",`Folder '${projectName}' is not a SFMC DevTools Project.`);
+                        return {};
+                    } 
+                }
+
+                // Checks if the project name is already in the map
+                if(!(projectName in projectArgsMap)){
+                    projectArgsMap[projectName] = {
+                        path: projectPath,
+                        args: []
+                    };
+                }
+
+                args = projectArgsMap[projectName].args;
+
+                // When user only clicks on retrieve or deploy folder
+                if(projectPath && !cmPath){
+                    let filteredByBU: ArgsConfig[] = 
+                        args.filter(({ bu }: ArgsConfig) => bu !== undefined && bu === `"*"`);
+                    if(!filteredByBU.length){
+                        args = [...args, { bu: `"*"`, mdtypes: [], key: [], fromRetrieve}];
+                    }
+                    log("debug", `Updated project path for '${action} "*"': ${projectPath}.`);
+                }
+                
+                // When user clicks inside a retrieve or deploy folder
+                if(cmPath){
+                    let [ credName, bUnit, type, ...keys ]: string[] = cmPath.substring(1).split("/");
+                    let key: string = "";
+
+                    // If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder 
+                    if(type === "asset" && keys.length){
+                        // Gets the asset subfolder and asset key
+                        const [ assetFolder, assetKey ] = keys;
+                        if(!assetKey){
+                            // if user only selected an asset subfolder
+                            // type will be changed to "asset-[name of the asset subfolder]"
+                            type = `${type}-${assetFolder}`;
+                        }
+                        // if user selects a file inside a subfolder of asset
+                        // the key will be the name of the file 
+                        keys = assetKey ? [ assetKey ] : [];
+                    }
+
+                    key = keys.length ? keys[0] : "";
+
+                    let filteredByBU: ArgsConfig[] = 
+                        args.filter(({ bu }: ArgsConfig) => bu !== undefined && bu === `${credName}/${bUnit ? bUnit : '*'}`);
+
+                    if(filteredByBU.length){
+                        let newArgs: ArgsConfig = {
+                            bu: filteredByBU[0].bu,
+                            mdtypes: lib.removeNonValues(
+                                (lib.removeDuplicates([...filteredByBU[0]['mdtypes'], type]) as string[]) 
+                            ) as string[],
+                            key: lib.removeNonValues(
+                                (lib.removeDuplicates([...filteredByBU[0]['key'], key]) as string[])
+                            ) as string[],
+                            fromRetrieve: filteredByBU[0].fromRetrieve
+                        };
+                        args = [
+                            ...args.filter(({ bu }: ArgsConfig) => bu !== `${credName}/${bUnit ? bUnit : '*'}`),
+                            newArgs
+                        ];
+                    }else{
+                        args = [
+                            ...args, 
+                            { 
+                                bu: `${credName}/${bUnit ? bUnit : '*'}`, 
+                                mdtypes: lib.removeNonValues([type]) as string[], 
+                                key: lib.removeNonValues([key]) as string[], 
+                                fromRetrieve
+                            }
+                        ];
+                    }
+                }
+                projectArgsMap[projectName].args = args;
+            }
+            return projectArgsMap;
+        };
+
+        for(const optionType of [filesType, folderType]){
+            if(optionType.length){
+                const projectMap: {[key: string]: ProjectConfig}  = 
+                    await configureArgsProject(action, optionType);
+                    console.log(projectMap);
+                await Promise.all(Object.keys(projectMap).map(async (projName: string) => {
+                    log("debug", `Running DevTools Command for project ${projName}`);
+                    let { path, args }: ProjectConfig = projectMap[projName];
+                    args = args.map((arg: ArgsConfig) => ({
+                        ...arg,
+                        mdtypes: arg.mdtypes.length 
+                            ? `"${(arg.mdtypes as string[]).join(",")}"` 
+                            : "",
+                        key: arg.key.length ? `"${(arg.key as string[]).join(",")}"`: ""
+                    }));
+
+                    for(const dtArgs of args){
+                        log("debug", `Action: ${action} Args: ${JSON.stringify(dtArgs)}`);
+                        DevToolsCommands.runCommand(
+                            "",
+                            action,
+                            path,
+                            dtArgs,
+                            (result: any) => log("info", `${action} Result: ${result}`)
+                        );
+                    }
+                }));
+            }
         }
-
-        log("debug", `CM args passed to DevTools command: ${JSON.stringify(args)}`);
-        DevToolsCommands.runCommand(
-            "",
-            action,
-            projectPath,
-            args,
-            (result: any) => log("info", result)
-        );
-
     }catch(error){
         log("error", `[main_handleDevToolsCMCommand] Error: ${error}`);
     }
 }
+
 
 export const devtoolsMain = {
     initDevToolsExtension,

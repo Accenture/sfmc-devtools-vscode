@@ -73,8 +73,12 @@ abstract class DevToolsCommands {
         // Configured optional Params
         if("optionalParams" in config && config.optionalParams.length){
             config.optionalParams.forEach((param: string) => {
+                console.log(param + ' ---> ', args[param]);
                 if(typeof args[param] === "boolean"){
-                    args[param] = `--${param}`;
+                    // if args[paran] is true it puts in the command the format --param (eg --json --fromRetrieve)
+                    args[param] = args[param] 
+                        ? `--${param}`
+                        : "";
                 }
                 command = command.replace(`{{${param}}}`, param in args ? args[param] : "");
             });
@@ -158,7 +162,7 @@ abstract class DevToolsCommands {
         }));
     }
 
-    static runCommand(
+    static async runCommand(
         typeId: string, 
         commandId: string, 
         commandPath: string, 

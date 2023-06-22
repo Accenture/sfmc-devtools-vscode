@@ -1,4 +1,4 @@
-import { workspace, Uri, TextDocument, WorkspaceFolder, FileType } from "vscode";
+import { workspace, Uri, TextDocument, WorkspaceFolder, FileType, FileStat } from "vscode";
 import { editorCommands } from "./commands";
 
 function getWorkspaceURI(): Uri {
@@ -38,10 +38,27 @@ function reloadWorkspace(){
     editorCommands.executeCommand("workbench.action.reloadWindow", []);
 }
 
+function getFilesURIPath(files: Uri | Uri[]){
+    return [files]
+        .flat()
+        .map((file: Uri) => file.path);
+}
+
+async function isFile(file: string | Uri){
+    if(typeof file === "string"){
+        file = Uri.file(file);
+    }
+    const { type }: FileStat = await workspace.fs.stat(file);
+    const fileType: string = FileType[type];
+    return fileType.toLowerCase() === "file";
+}
+
 export const editorWorkspace = {
     isFileInFolder,
     readFile,
     reloadWorkspace,
     getWorkspaceURIPath,
-    getWorkspaceSubFolders
+    getWorkspaceSubFolders,
+    getFilesURIPath,
+    isFile
 };

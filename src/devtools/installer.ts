@@ -74,7 +74,7 @@ async function noDevToolsHandler(){
     log("warning", installerConfig.messages.noDevToolsInstalled);
 
     // Asks if user wishes to install DevTools
-    const userResponse: string | undefined = await editorInput.handleShowInformationMessage(
+    const userResponse: string | undefined = await editorInput.handleShowOptionsMessage(
         message, 
         Object.keys(InstallDevToolsResponseOptions).filter((v) => isNaN(Number(v)))
     );

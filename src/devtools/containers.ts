@@ -3,6 +3,7 @@ import { devtoolsMain } from "./main";
 import { ExtensionContext, editorContext } from "../editor/context";
 import { StatusBarItem, editorContainers } from "../editor/containers";
 import { editorCommands } from "../editor/commands";
+import { editorWorkspace } from "../editor/workspace";
 import { log } from "../editor/output";
     
 // Contains all the status bars that are displayed in the extension
@@ -121,9 +122,16 @@ function activateContextMenuCommands(){
         containersConfig.contextMenuDeployCommand
     ].forEach((command: string) => editorCommands.registerCommand({
         command,
-        callbackAction: ({ path }: { path: string }) => {
-            const [ _, key ]: string[] = command.split(".devtools");
-            return devtoolsMain.handleContextMenuActions(key, path);
+        callbackAction: (_, ...files: any[]) => {
+            if(files.length && Array.isArray(files[0])){
+                const filesPath: string[] = editorWorkspace.getFilesURIPath(files[0]);
+                const [ __, key ]: string[] = command.split(".devtools");
+                return devtoolsMain.handleContextMenuActions(key, filesPath);
+            }else{
+                log("error", 
+                    "[container_activateContextMenuCommands] Error: Context Menu Callback didn't return any selected files."
+                );
+            }
         }
     }));
 }

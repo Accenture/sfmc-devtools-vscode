@@ -43,11 +43,44 @@ function getProjectNameFromPath(projectPath: string): string {
     }
     return projectName;
 }
+
+function removeDuplicates(array: (string | number)[]): (string | number)[] {
+    return [...new Set(array)];
+}
+
+function removeNonValues(array: (string | number)[]): (string | number)[]{
+    return array
+    .filter(
+        (value: string | number) => (value !== undefined && value !== null && value !== "")
+    );
+}
+
+function removeExtensionFromFile(files: string | string[]): string[] {
+    return [files]
+        .flat()
+        .map((file: string) => {
+            const filePathSplit: string[] = file.split("/");
+            let fileName: string | undefined = filePathSplit.pop();
+            if(fileName){
+                fileName = fileName.startsWith(".")
+                ? `.${fileName.substring(1).split(".")[0]}`
+                : fileName.split(".")[0];
+                filePathSplit.push(fileName);
+            }else{
+                throw Error(`[lib_removeExtensionFromFile]: Failed to get filename for file ${file}`);
+            }
+            return filePathSplit.join("/");
+        });
+}
+
 export const lib = {
     parseArrayJsonStringToArray,
     mapObject,
     createFilePath,
     capitalizeFirstLetter,
     waitTime,
-    getProjectNameFromPath
+    getProjectNameFromPath,
+    removeDuplicates,
+    removeNonValues,
+    removeExtensionFromFile
 };
