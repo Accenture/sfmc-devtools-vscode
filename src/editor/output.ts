@@ -38,12 +38,14 @@ function log(level: keyof typeof LogLevel, output: string | number | object, log
     // creates an output channel
     if(!outputChannel){
         outputChannel = window.createOutputChannel("SFMC Devtools");
-        outputChannel.hide();
+        outputChannel.show();
     }
 
-    if(LogLevel[level] === LogLevel.info){
-        outputChannel.appendLine(`${outputStr}\n`);
-    }
+    outputChannel.appendLine(`${outputStr}\n`);
+
+    // if(LogLevel[level] === LogLevel.info){
+    //     outputChannel.appendLine(`${outputStr}\n`);
+    // }
 
     if(logProject && logProject in fileLoggerMap){
         const logger: FileLogger = fileLoggerMap[logProject];

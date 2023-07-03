@@ -8,7 +8,7 @@ import { devtoolsContainers } from "./containers";
 import { editorInput } from "../editor/input";
 import { editorContext } from "../editor/context";
 import { editorWorkspace } from "../editor/workspace";
-import { editorOutput, log } from "../editor/output";
+import { log } from "../editor/output";
 import { InstallDevToolsResponseOptions } from "../config/installer.config";
 import { lib } from "../shared/utils/lib";
 
