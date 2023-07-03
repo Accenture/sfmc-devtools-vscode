@@ -73,7 +73,6 @@ abstract class DevToolsCommands {
         // Configured optional Params
         if("optionalParams" in config && config.optionalParams.length){
             config.optionalParams.forEach((param: string) => {
-                console.log(param + ' ---> ', args[param]);
                 if(typeof args[param] === "boolean"){
                     // if args[paran] is true it puts in the command the format --param (eg --json --fromRetrieve)
                     args[param] = args[param] 

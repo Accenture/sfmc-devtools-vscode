@@ -4,8 +4,8 @@
 	"description": "Accenture Salesforce Marketing Cloud DevTools Vscode Extension",
 	"version": "0.0.1",
 	"peerDependencies": {
-        "mcdev": ">=5.1.0"
-    },
+		"mcdev": ">=5.1.0"
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Accenture/sfmc-devtools-vscode.git"
@@ -74,6 +74,7 @@
 		"webpack-cli": "^4.7.0"
 	},
 	"dependencies": {
-		"@salesforce-ux/design-system": "^2.8.1"
+		"@salesforce-ux/design-system": "^2.8.1",
+		"winston": "^3.9.0"
 	}
 }

@@ -1,6 +1,6 @@
 import { OutputChannel, window } from "vscode";
 import { lib } from "../shared/utils/lib";
-
+import { fileLogger, FileLogger } from "../shared/utils/fileLogger";
 enum LogLevel {
     debug = "DEBUG",
     info = "INFO",
@@ -8,23 +8,51 @@ enum LogLevel {
     error = "ERROR"
 }
 
+// DEBUG, WARNING AND ERROR => File logger
+// INFO => OutputChannel
+
 let outputChannel: OutputChannel;
+let fileLoggerMap: { [key: string]: FileLogger } = {};
 
-function log(level: keyof typeof LogLevel, ...output: any){
+function initFileLogger(logPath: string | string[]){
+    fileLoggerMap = [logPath]
+    .flat()
+    .reduce((prev: {}, path: string) => {
+        const projectName: string = lib.getProjectNameFromPath(path);
+        return {
+            ...prev, 
+            [projectName]: fileLogger.createFileLogger(path.replace('/c:', ''))
+        };
+    },{});
+}
 
+function showOuputChannel(){
+    if(outputChannel){
+        outputChannel.show();
+    }
+}
+
+function log(level: keyof typeof LogLevel, output: string | number | object, logProject?: string){
+
+    const outputStr: string = lib.mapObject(output);
     // creates an output channel
     if(!outputChannel){
         outputChannel = window.createOutputChannel("SFMC Devtools");
+        outputChannel.hide();
     }
 
-    const date: string = new Date()
-        .toISOString()
-        .replace("T", " ").replace(/\..+/, '');
+    if(LogLevel[level] === LogLevel.info){
+        outputChannel.appendLine(`${outputStr}\n`);
+    }
 
-    outputChannel.appendLine(`${date} ${LogLevel[level]}: `);
-    output.map((args: any) => {
-        outputChannel.appendLine('' + lib.mapObject(args) + '\n');
-    });
-    outputChannel.show();
+    if(logProject && logProject in fileLoggerMap){
+        const logger: FileLogger = fileLoggerMap[logProject];
+        logger[level](outputStr);
+    }
 }
+
 export { log };
+export const editorOutput = {
+    initFileLogger,
+    showOuputChannel
+};

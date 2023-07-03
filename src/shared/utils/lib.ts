@@ -5,10 +5,8 @@ function parseArrayJsonStringToArray(jsonStr: string):
     return JSON.parse(jsonStr);
 }
 
-function mapObject(object: any): string {
+function mapObject(object: string | number | object): string {
     switch(typeof object){
-        case "undefined":
-            return "undefined";
         case "string":
             return object;
         case "number":
