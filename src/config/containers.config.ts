@@ -1,4 +1,7 @@
 export const containersConfig: {
+    statusBarDevToolsName: string,
+    statusBarDevToolsTitle: string,
+    statusBarDevToolsCommand: string,
     statusBarDevToolsCredentialBUName: string,
     statusBarDevToolsCredentialBUTitle: string,
     statusBarDevToolsCredentialBUCommand: string,
@@ -11,6 +14,9 @@ export const containersConfig: {
     contextMenuRetrieveCommand: string,
     contextMenuDeployCommand: string
 } = {
+    statusBarDevToolsName: "devtoolsmcdev",
+    statusBarDevToolsTitle: "mcdev",
+    statusBarDevToolsCommand: "sfmc-devtools-vscext.devtoolsSBMcdev",
     statusBarDevToolsCredentialBUName: "devtoolscredentialbu",
     statusBarDevToolsCredentialBUTitle: "Credential/BU",
     statusBarDevToolsCredentialBUCommand: "sfmc-devtools-vscext.devtoolsSBCredentialBU",

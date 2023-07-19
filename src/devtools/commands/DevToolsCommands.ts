@@ -17,26 +17,26 @@ abstract class DevToolsCommands {
     abstract run(commandRunner: DevToolsCommandRunner): void;
     abstract setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void;
 
-    executeCommand(command: string, path: string, showOnTerminal: boolean): Promise<string>{
+    executeCommand(command: string, path: string, showOnTerminal: boolean): Promise<string | number>{
         log("info", `Running DevTools Command: ${command}`);
-        return new Promise<string>(async resolve => {
-                terminal.executeTerminalCommand({
+        return new Promise<string | number>(async resolve => {
+            terminal.executeTerminalCommand({
                 command: command,
                 args: [],
                 cwd: path,
                 handleResult(error: string | null, output: string | null, code: number | null) {
                     if(code !== null){
                         log("debug", `[DevToolsCommands_executeCommand] Exit Code: '${code}'`);
-                        resolve("");
+                        resolve(code);
                     }
-                    if (error) {
+                    if(error){
                         log("error",
                             `[DevToolsCommands_executeCommand] Exit Code: ${error}`
                         );
                     }
-                    if (output) {
+                    if(output){
                         if(showOnTerminal){
-                            log("debug",  output);
+                            log("info",  output);
                         }else{
                             resolve(output);
                         }

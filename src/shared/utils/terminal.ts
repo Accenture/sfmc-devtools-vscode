@@ -10,6 +10,7 @@ function executeTerminalCommand(commandRunner: TerminalCommandRunner): void {
             cwd: commandRunner.cwd.replace("/c:", "")
         }
     );
+
     if(childProcess.stdout){ 
         childProcess.stdout.on('data', (data: Buffer) => commandRunner.handleResult(null, data.toString().trim(), null)); 
     }

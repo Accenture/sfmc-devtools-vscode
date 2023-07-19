@@ -5,20 +5,50 @@ import { StatusBarItem, editorContainers } from "../editor/containers";
 import { editorCommands } from "../editor/commands";
 import { editorWorkspace } from "../editor/workspace";
 import { log } from "../editor/output";
-    
+
+enum StatusBarIcon {
+    success = "check-all",
+    retrieve = "arrow-down",
+    deploy = "arrow-up",
+    error = "warning"
+}
 // Contains all the status bars that are displayed in the extension
 let statusBarContainer: StatusBarItem | StatusBarItem[];
 
-function activateStatusBar(isDevtoolsProject: boolean, commandPrefix: string): void {
+function activateStatusBar(/*isDevtoolsProject: boolean, commandPrefix: string*/): void {
     log("info", "Activating Status Bar Options...");
     const { subscriptions }: ExtensionContext = editorContext.get();
 
     // Gets the command prefix for
     let statusBarCommand: string | string[];
 
+    statusBarContainer = editorContainers.displayStatusBarItem([
+        editorContainers.createStatusBarItem(
+            containersConfig.statusBarDevToolsCommand,
+            `$(${StatusBarIcon.success}) ${containersConfig.statusBarDevToolsTitle}`,
+            containersConfig.statusBarDevToolsName
+        )
+    ]);
+
+    statusBarCommand = [
+        containersConfig.statusBarDevToolsCommand
+    ];
+
+    subscriptions.push(...[statusBarContainer].flat());
+        
+    // Register the commands
+    [statusBarCommand].flat().forEach((command: string) => editorCommands.registerCommand({
+        command,
+        callbackAction: () => {
+            const [ _, key ]: string[] = command.split(".devtools");
+            return devtoolsMain.handleStatusBarActions(key);
+        }
+    }));
+
     // Check which status bar should be displayed
     // if .mcdevrc.json AND .mcdev-auth.json in folder then mcdev:Credential/BU && mcdev:Command
     // else mcdev: Initialize
+    /*
     if(isDevtoolsProject){
 
         // Status Bar mcdev: initialize must be removed if the user initialized devtools in a folder.
@@ -80,18 +110,35 @@ function activateStatusBar(isDevtoolsProject: boolean, commandPrefix: string): v
             return devtoolsMain.handleStatusBarActions(key);
         }
     }));
+
+    */
 }
 
-function modifyStatusBar(statusBarId: string, commandPrefix: string, statusBarText: string): void {
+function modifyStatusBar(statusBarId: string, action: keyof typeof StatusBarIcon): void {
     if(statusBarContainer && Array.isArray(statusBarContainer)){
         const [ statusBar ] = statusBarContainer.filter(
             (sb: StatusBarItem) => sb.name === `devtools${statusBarId}`
         );
+        
         if(statusBar){
-            statusBar.text = `${commandPrefix}: ${statusBarText}`;
+            statusBar.text = `$(${StatusBarIcon[action]}) ${containersConfig.statusBarDevToolsTitle}`;
+            if(action === "error"){
+                statusBar.backgroundColor = editorContainers.getBackgroundColor(action);
+            }
         }
     }
 }
+
+// function modifyStatusBar(statusBarId: string, commandPrefix: string, statusBarText: string): void {
+//     if(statusBarContainer && Array.isArray(statusBarContainer)){
+//         const [ statusBar ] = statusBarContainer.filter(
+//             (sb: StatusBarItem) => sb.name === `devtools${statusBarId}`
+//         );
+//         if(statusBar){
+//             statusBar.text = `${commandPrefix}: ${statusBarText}`;
+//         }
+//     }
+// }
 
 function isCredentialBUSelected(): boolean {
     return statusBarContainer &&
@@ -136,6 +183,7 @@ function activateContextMenuCommands(){
     }));
 }
 
+export { StatusBarIcon };
 export const devtoolsContainers = {
     activateStatusBar,
     modifyStatusBar,

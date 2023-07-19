@@ -1,7 +1,7 @@
-import { window, StatusBarItem, StatusBarAlignment } from "vscode";
+import { window, StatusBarItem, StatusBarAlignment, ThemeColor } from "vscode";
 
 function createStatusBarItem(command: string, title: string, name: string): StatusBarItem {
-    let statusBar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 110);
+    let statusBar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 110);
     statusBar.name = name;
     statusBar.command = command;
     statusBar.text = title;
@@ -15,9 +15,14 @@ function displayStatusBarItem(statusBar: StatusBarItem | StatusBarItem[]): Statu
     return statusBar;
 }
 
+function getBackgroundColor(status: string){
+    return new ThemeColor(`statusBarItem.${status}Background`);
+}
+
 const editorContainers = {
     createStatusBarItem,
-    displayStatusBarItem
+    displayStatusBarItem,
+    getBackgroundColor
 };
 
 export { StatusBarItem, editorContainers };

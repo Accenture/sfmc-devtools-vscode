@@ -75,6 +75,7 @@
 	},
 	"dependencies": {
 		"@salesforce-ux/design-system": "^2.8.1",
+		"@vscode/codicons": "^0.0.33",
 		"winston": "^3.9.0"
 	}
 }

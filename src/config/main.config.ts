@@ -10,6 +10,9 @@ export const mainConfig: {
         selectCommand: string,
         initDevTools: string,
         initiatingDevTools: string,
+        runningCommand: string,
+        successRunningCommand: string,
+        failureRunningCommand: string
     }
 } = {
     credentialsFilename: ".mcdevrc.json",
@@ -22,6 +25,9 @@ export const mainConfig: {
         selectCommandType: "Select one DevTools command type...",
         selectCommand: "Select one DevTools Command...",
         initDevTools: "Do you wish to initialize SFMC DevTools project in the current directory?",
-        initiatingDevTools: "Initiating SFMC DevTools project..."
+        initiatingDevTools: "Initiating SFMC DevTools project...",
+        runningCommand: "Running DevTools Command...",
+        successRunningCommand: "DevTools Command has run successfully.",
+        failureRunningCommand: "Oh no. Something went wrong while running DevTools Command."
     }
 };
