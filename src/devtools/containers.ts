@@ -122,9 +122,11 @@ function modifyStatusBar(statusBarId: string, action: keyof typeof StatusBarIcon
         
         if(statusBar){
             statusBar.text = `$(${StatusBarIcon[action]}) ${containersConfig.statusBarDevToolsTitle}`;
-            if(action === "error"){
-                statusBar.backgroundColor = editorContainers.getBackgroundColor(action);
-            }
+            statusBar.backgroundColor = editorContainers.getBackgroundColor(
+                action === "error"
+                ? "error" :
+                ""
+            );
         }
     }
 }

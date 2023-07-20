@@ -28,6 +28,6 @@ export const mainConfig: {
         initiatingDevTools: "Initiating SFMC DevTools project...",
         runningCommand: "Running DevTools Command...",
         successRunningCommand: "DevTools Command has run successfully.",
-        failureRunningCommand: "Oh no. Something went wrong while running DevTools Command."
+        failureRunningCommand: "Oh no. Something went wrong while running DevTools Command. Please check the error by clicking on the mcdev button in the status bar."
     }
 };
