@@ -1,8 +1,8 @@
-import { ExtensionContext } from 'vscode';
-import { init } from './init';
-
-export function activate(context: ExtensionContext) {
-	init(context);
+import { editorContext, ExtensionContext } from './editor/context';
+import { devtoolsMain } from './devtools/main';
+export async function activate(context: ExtensionContext) {
+	editorContext.set(context);
+	devtoolsMain.initDevToolsExtension();
 }
 
 // this method is called when your extension is deactivated
