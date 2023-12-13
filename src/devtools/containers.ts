@@ -16,7 +16,7 @@ enum StatusBarIcon {
 let statusBarContainer: StatusBarItem | StatusBarItem[];
 
 function activateStatusBar(/*isDevtoolsProject: boolean, commandPrefix: string*/): void {
-    log("info", "Activating Status Bar Options...");
+    log("debug", "Activating Status Bar Options...");
     const { subscriptions }: ExtensionContext = editorContext.get();
 
     // Gets the command prefix for
@@ -117,7 +117,7 @@ function activateStatusBar(/*isDevtoolsProject: boolean, commandPrefix: string*/
 function modifyStatusBar(statusBarId: string, action: keyof typeof StatusBarIcon): void {
     if(statusBarContainer && Array.isArray(statusBarContainer)){
         const [ statusBar ] = statusBarContainer.filter(
-            (sb: StatusBarItem) => sb.name === `devtools${statusBarId}`
+            (sb: StatusBarItem) => sb.name?.toLowerCase() === `${statusBarId.toLowerCase()}`
         );
         
         if(statusBar){

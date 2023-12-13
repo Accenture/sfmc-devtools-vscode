@@ -1,6 +1,7 @@
 export const mainConfig: {
     credentialsFilename: string,
     requiredFiles: string[],
+    fileExtensions: string[],
     allPlaceholder: string,
     messages: {
         selectedCredentialsBU: string,
@@ -17,6 +18,7 @@ export const mainConfig: {
 } = {
     credentialsFilename: ".mcdevrc.json",
     requiredFiles: [".mcdevrc.json", ".mcdev-auth.json"],
+    fileExtensions: ["meta.json", "meta.sql", "meta.html", "meta.ssjs", "doc.md"],
     allPlaceholder: "*All*",
     messages: {
         selectedCredentialsBU: "Please select a Credential/BU before running the command",
