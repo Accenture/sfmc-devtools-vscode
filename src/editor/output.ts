@@ -51,8 +51,9 @@ function log(level: keyof typeof LogLevel, output: string | number | object, log
     }
 }
 
-export { log };
-export const editorOutput = {
+const editorOutput = {
     initFileLogger,
     showOuputChannel
 };
+
+export { log, editorOutput };
