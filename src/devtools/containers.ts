@@ -168,7 +168,8 @@ function getCredentialsBUName(commandPrefix: string): string | undefined {
 function activateContextMenuCommands(){
     [
         containersConfig.contextMenuRetrieveCommand, 
-        containersConfig.contextMenuDeployCommand
+        containersConfig.contextMenuDeployCommand,
+        containersConfig.contextMenuCopyToBUCommand
     ].forEach((command: string) => editorCommands.registerCommand({
         command,
         callbackAction: (_, ...files: any[]) => {

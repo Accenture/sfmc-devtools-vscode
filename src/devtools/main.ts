@@ -11,6 +11,7 @@ import { editorWorkspace } from "../editor/workspace";
 import { editorOutput, log } from "../editor/output";
 import { InstallDevToolsResponseOptions } from "../config/installer.config";
 import { lib } from "../shared/utils/lib";
+import { file } from "../shared/utils/file";
 
 
 async function initDevToolsExtension(): Promise<void>{
@@ -126,6 +127,9 @@ function handleContextMenuActions(action: string, selectedFiles: string[]): void
             break;
         case "cmdeploy":
             handleDevToolsCMCommand("deploy", selectedFiles);
+            break;
+        case "cmcopytobu":
+            handleCopyToBuCMCommand(selectedFiles);
             break;
         default:
             log("error", `main_handleContextMenuActions: Invalid Context Menu Action '${action}'`);
@@ -559,6 +563,63 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
     }
 }
 
+async function handleCopyToBuCMCommand(selectedPaths: string[]){
+    console.log(selectedPaths);
+    try{
+        const credentials: {[key: string]: string[]} | undefined = await getCredentialsBU();
+        console.log(credentials);
+        if(credentials){
+            const instances: string[] = Object.keys(credentials);
+            const singleInstance: boolean = instances.length === 1;
+            let selectedInstance: string = singleInstance ? instances[0] : "";
+
+            if(!singleInstance){
+                const instanceOptions: InputOptionsSettings[] = instances.map((instance: string) => ({ id: instance, label: instance, detail: "" }));
+                const instanceResponse: InputOptionsSettings | undefined = 
+                    await editorInput.handleQuickPickSelection(instanceOptions, mainConfig.messages.selectCredential, false) as InputOptionsSettings;
+                if(instanceResponse){
+                    selectedInstance = instanceResponse.id;
+                }
+            }
+
+            if(selectedInstance){
+                const buOptionsList: InputOptionsSettings[] = 
+                    credentials[selectedInstance].map((businessUnit: string) => ({ id: businessUnit, label: businessUnit, detail: "" }));
+                const buOptions: InputOptionsSettings[] | undefined = 
+                    await editorInput.handleQuickPickSelection(buOptionsList, mainConfig.messages.selectBusinessUnit, true) as InputOptionsSettings[];
+                
+                if(buOptions){
+                    const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
+                    const filePathConfig: ({ sourceFilePath: string; targetFilePath: string; } | undefined)[] = selectedPaths.map((path: string) => {
+                        const fileInstancePath: string = path.split(/\/retrieve\/|\/deploy\//)[1];
+                        if(fileInstancePath){
+                            const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
+                            if(businessUnit){
+                                const newFilePaths: { sourceFilePath: string; targetFilePath: string; }[] = buSelected.map((buSelected: string) => ({
+                                    sourceFilePath: path,
+                                    targetFilePath: path.replace(businessUnit, buSelected)
+                                }));
+                                return newFilePaths;
+                            }
+                        }
+                        return;
+                    })
+                    .filter((filePath: { sourceFilePath: string; targetFilePath: string; }[] | undefined) => filePath !== undefined)
+                    .flat();
+                    file.copyFile(filePathConfig as { sourceFilePath: string; targetFilePath: string; }[], (error: any) => {
+                        if(error !== null){
+                            log("error", `[main_handleCopyToBuCMCommand] Error: ${error}`);
+                        }
+                    });
+                }
+            }
+        }else{
+            log("error", `[main_handleCopyToBuCMCommand] Failed to retrieve credentials.`);
+        }
+    }catch(error){
+
+    }
+}
 
 export const devtoolsMain = {
     initDevToolsExtension,

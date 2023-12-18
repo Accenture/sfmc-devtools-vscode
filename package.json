@@ -29,6 +29,10 @@
 			{
 				"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 				"title": "mcdev: Deploy"
+			},
+			{
+				"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+				"title": "mcdev: Copy to Business Unit"
 			}
 		],
 		"menus": {
@@ -41,6 +45,11 @@
 				{
 					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown))",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+					"group": "devtools"
+				},
+				{
+					"when": "resourcePath =~ /retrieve/ || resourcePath =~ /deploy/",
+					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
 					"group": "devtools"
 				}
 			]
