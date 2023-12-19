@@ -9,6 +9,24 @@ function readFileSync(path: string): string {
     }
 }
 
+function fileExists(path: string | string[]): string[] {
+    try{
+        return [path]
+        .flat()
+        .filter((path: string) => fs.existsSync(path.replace(/^\/c:/g, "")));
+    }catch(error){
+        throw error;
+    }
+}
+
+function isPathADirectory(path: string): boolean {
+    try{
+        return fs.lstatSync(path.replace(/^\/c:/g, "")).isDirectory();
+    }catch(error){
+        throw error;
+    }
+}
+
 function createFilePath(pathArray: string[]): string {
     return path.join(...pathArray);
 }
@@ -33,5 +51,7 @@ function copyFile(files: {sourceFilePath: string, targetFilePath: string}[], han
 export const file = {
     createFilePath,
     readFileSync,
-    copyFile
+    copyFile,
+    fileExists,
+    isPathADirectory
 };

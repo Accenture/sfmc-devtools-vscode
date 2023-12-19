@@ -564,10 +564,8 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
 }
 
 async function handleCopyToBuCMCommand(selectedPaths: string[]){
-    console.log(selectedPaths);
     try{
         const credentials: {[key: string]: string[]} | undefined = await getCredentialsBU();
-        console.log(credentials);
         if(credentials){
             const instances: string[] = Object.keys(credentials);
             const singleInstance: boolean = instances.length === 1;
@@ -590,23 +588,40 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                 
                 if(buOptions){
                     const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
-                    const filePathConfig: ({ sourceFilePath: string; targetFilePath: string; } | undefined)[] = selectedPaths.map((path: string) => {
+                    const filePathsConfigured: ({ sourceFilePath: string; targetFilePath: string; } | undefined)[] = selectedPaths.map((path: string) => {
                         const fileInstancePath: string = path.split(/\/retrieve\/|\/deploy\//)[1];
                         if(fileInstancePath){
                             const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
                             if(businessUnit){
-                                const newFilePaths: { sourceFilePath: string; targetFilePath: string; }[] = buSelected.map((buSelected: string) => ({
-                                    sourceFilePath: path,
-                                    targetFilePath: path.replace(businessUnit, buSelected)
-                                }));
-                                return newFilePaths;
+                                let paths: string[] = [];
+                                if(file.isPathADirectory(path)){
+                                    paths = [...paths, path];
+                                }else{
+                                    const [ currentFileExt ]: string[] = mainConfig.fileExtensions.filter((fileExt: string) => path.endsWith(fileExt));
+                                    if(currentFileExt){
+                                        paths = [
+                                            ...paths, 
+                                            ...file.fileExists(
+                                                mainConfig.fileExtensions.map((fileExtension: string) => path.replace(currentFileExt, fileExtension))
+                                            )
+                                        ];
+                                    }
+                                }
+                                
+                                return buSelected.map((buSelected: string) => 
+                                    paths.map((keyFilePath: string) => 
+                                        ({ 
+                                            sourceFilePath: keyFilePath, 
+                                            targetFilePath: keyFilePath.replace(businessUnit, buSelected)
+                                        }))
+                                    ).flat();
                             }
                         }
-                        return;
+                        return undefined;
                     })
                     .filter((filePath: { sourceFilePath: string; targetFilePath: string; }[] | undefined) => filePath !== undefined)
                     .flat();
-                    file.copyFile(filePathConfig as { sourceFilePath: string; targetFilePath: string; }[], (error: any) => {
+                    file.copyFile(filePathsConfigured as { sourceFilePath: string; targetFilePath: string; }[], (error: any) => {
                         if(error !== null){
                             log("error", `[main_handleCopyToBuCMCommand] Error: ${error}`);
                         }
@@ -617,7 +632,7 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
             log("error", `[main_handleCopyToBuCMCommand] Failed to retrieve credentials.`);
         }
     }catch(error){
-
+        log("error", `[main_handleCopyToBuCMCommand] Error: ${error}`);
     }
 }
 
