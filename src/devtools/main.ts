@@ -572,9 +572,14 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
             let selectedInstance: string = singleInstance ? instances[0] : "";
 
             if(!singleInstance){
-                const instanceOptions: InputOptionsSettings[] = instances.map((instance: string) => ({ id: instance, label: instance, detail: "" }));
+                const instanceOptions: InputOptionsSettings[] = 
+                    instances.map((instance: string) => ({ id: instance, label: instance, detail: "" }));
                 const instanceResponse: InputOptionsSettings | undefined = 
-                    await editorInput.handleQuickPickSelection(instanceOptions, mainConfig.messages.selectCredential, false) as InputOptionsSettings;
+                    await editorInput.handleQuickPickSelection(
+                        instanceOptions, 
+                        mainConfig.messages.selectCredential, 
+                        false
+                    ) as InputOptionsSettings;
                 if(instanceResponse){
                     selectedInstance = instanceResponse.id;
                 }
@@ -587,41 +592,57 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                     await editorInput.handleQuickPickSelection(buOptionsList, mainConfig.messages.selectBusinessUnit, true) as InputOptionsSettings[];
                 
                 if(buOptions){
+
+                    type FileCopyConfig = { sourceFilePath: string; targetFilePath: string; };
                     const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
-                    const filePathsConfigured: ({ sourceFilePath: string; targetFilePath: string; } | undefined)[] = selectedPaths.map((path: string) => {
-                        const fileInstancePath: string = path.split(/\/retrieve\/|\/deploy\//)[1];
-                        if(fileInstancePath){
-                            const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
-                            if(businessUnit){
-                                let paths: string[] = [];
-                                if(file.isPathADirectory(path)){
-                                    paths = [...paths, path];
-                                }else{
-                                    const [ currentFileExt ]: string[] = mainConfig.fileExtensions.filter((fileExt: string) => path.endsWith(fileExt));
-                                    if(currentFileExt){
-                                        paths = [
-                                            ...paths, 
-                                            ...file.fileExists(
-                                                mainConfig.fileExtensions.map((fileExtension: string) => path.replace(currentFileExt, fileExtension))
-                                            )
-                                        ];
+
+                    const filePathsConfigured: (FileCopyConfig | undefined)[] = 
+                        selectedPaths.map((path: string) => {
+                            const [ _, fileInstancePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
+
+                            if(fileInstancePath){
+                                const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
+
+                                if(businessUnit){
+                                    let paths: string[] = [];
+
+                                    if(file.isPathADirectory(path)){
+                                        paths = [...paths, path];
+                                    }else{
+                                        const [ currentFileExt ]: string[] = 
+                                            mainConfig.fileExtensions.filter((fileExt: string) => path.endsWith(fileExt));
+                                        if(currentFileExt){
+                                            paths = [
+                                                ...paths, 
+                                                ...file.fileExists(
+                                                    mainConfig.fileExtensions.map((fileExtension: string) => 
+                                                        path.replace(currentFileExt, fileExtension)
+                                                    )
+                                                )
+                                            ];
+                                        }
                                     }
+                                    
+                                    return buSelected
+                                        .filter((buSelected: string) => buSelected !== businessUnit)
+                                        .map((buSelected: string) => 
+                                            paths.map((keyFilePath: string) => 
+                                                ({ 
+                                                    sourceFilePath: keyFilePath, 
+                                                    targetFilePath: keyFilePath
+                                                        .replace(/\/retrieve\//, "/deploy/")
+                                                        .replace(businessUnit, buSelected)
+                                                }))
+                                            )
+                                        .flat();
                                 }
-                                
-                                return buSelected.map((buSelected: string) => 
-                                    paths.map((keyFilePath: string) => 
-                                        ({ 
-                                            sourceFilePath: keyFilePath, 
-                                            targetFilePath: keyFilePath.replace(businessUnit, buSelected)
-                                        }))
-                                    ).flat();
                             }
-                        }
-                        return undefined;
-                    })
-                    .filter((filePath: { sourceFilePath: string; targetFilePath: string; }[] | undefined) => filePath !== undefined)
-                    .flat();
-                    file.copyFile(filePathsConfigured as { sourceFilePath: string; targetFilePath: string; }[], (error: any) => {
+                            return undefined;
+                        })
+                        .filter((filePath: FileCopyConfig[] | undefined) => filePath !== undefined)
+                        .flat();
+
+                    file.copyFile(filePathsConfigured as FileCopyConfig[], (error: any) => {
                         if(error !== null){
                             log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
                         }
