@@ -623,13 +623,13 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                     .flat();
                     file.copyFile(filePathsConfigured as { sourceFilePath: string; targetFilePath: string; }[], (error: any) => {
                         if(error !== null){
-                            log("error", `[main_handleCopyToBuCMCommand] Error: ${error}`);
+                            log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
                         }
                     });
                 }
             }
         }else{
-            log("error", `[main_handleCopyToBuCMCommand] Failed to retrieve credentials.`);
+            log("error", `[main_handleCopyToBuCMCommand] Failed to retrieve DevTools credentials.`);
         }
     }catch(error){
         log("error", `[main_handleCopyToBuCMCommand] Error: ${error}`);
