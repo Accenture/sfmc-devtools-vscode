@@ -13,7 +13,7 @@ function fileExists(path: string | string[]): string[] {
     try{
         return [path]
         .flat()
-        .filter((path: string) => fs.existsSync(path.replace(/^\/c:/g, "")));
+        .filter((path: string) => fs.existsSync(path.replace(/^\/[a-zA-Z]:/g, "")));
     }catch(error){
         throw error;
     }
@@ -21,7 +21,7 @@ function fileExists(path: string | string[]): string[] {
 
 function isPathADirectory(path: string): boolean {
     try{
-        return fs.lstatSync(path.replace(/^\/c:/g, "")).isDirectory();
+        return fs.lstatSync(path.replace(/^\/[a-zA-Z]:/g, "")).isDirectory();
     }catch(error){
         throw error;
     }
@@ -34,8 +34,8 @@ function createFilePath(pathArray: string[]): string {
 function copyFile(files: {sourceFilePath: string, targetFilePath: string}[], handleCopyFileError: (error: any) => void){
     try{
         files.forEach(({sourceFilePath, targetFilePath}: {sourceFilePath: string, targetFilePath: string}) => {
-            sourceFilePath = sourceFilePath.replace(/^\/c:/g, "");
-            targetFilePath = targetFilePath.replace(/^\/c:/g, "");
+            sourceFilePath = sourceFilePath.replace(/^\/[a-zA-Z]:/g, "");
+            targetFilePath = targetFilePath.replace(/^\/[a-zA-Z]:/g, "");
             fs.cp(
                 sourceFilePath, 
                 targetFilePath, 

@@ -43,12 +43,12 @@
 					"group": "devtools"
 				},
 				{
-					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown))",
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceLangId == 'markdown'))",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				},
 				{
-					"when": "resourcePath =~ /retrieve/ || resourcePath =~ /deploy/",
+					"when": "(resourcePath =~ /retrieve/ || resourcePath =~ /deploy/) && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
 					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
 					"group": "devtools"
 				}

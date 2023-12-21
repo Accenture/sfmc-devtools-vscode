@@ -20,7 +20,16 @@ function executeCommand(command: string | string[], args: (string | boolean | st
         );
 }
 
+function setCommandContext(command: string | string[], args: (string | boolean | number)[]){
+    [command]
+        .flat()
+        .forEach(
+            (command: string) => commands.executeCommand('setContext', command, args)
+        );
+}
+
 export const editorCommands = {
     registerCommand,
-    executeCommand
+    executeCommand,
+    setCommandContext
 };
