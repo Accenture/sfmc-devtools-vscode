@@ -43,7 +43,7 @@
 					"group": "devtools"
 				},
 				{
-					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceLangId == 'markdown'))",
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				},
@@ -70,8 +70,13 @@
 					"group": "devtools"
                 },
                 {
-					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown || resourceLangId == ssjs))",
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
                     "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+					"group": "devtools"
+				},
+				{
+					"when": "(resourcePath =~ /retrieve/ || resourcePath =~ /deploy/) && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
 					"group": "devtools"
 				}
 			]
