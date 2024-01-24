@@ -53,17 +53,21 @@ function removeNonValues(array: (string | number)[]): (string | number)[]{
     );
 }
 
-function removeExtensionFromFile(files: string | string[]): string[] {
+function removeExtensionFromFile(files: string | string[], extensions: string[]): string[] {
     return [files]
         .flat()
         .map((file: string) => {
             const filePathSplit: string[] = file.split("/");
             let fileName: string | undefined = filePathSplit.pop();
             if(fileName){
-                fileName = fileName.startsWith(".")
-                ? `.${fileName.substring(1).split(".")[0]}`
-                : fileName.split(".")[0];
-                filePathSplit.push(fileName);
+                let [ extensionValue ] : string[] = extensions.filter((ext: string) =>  fileName?.endsWith(ext));
+                if(extensionValue){
+                    const regex: RegExp = new RegExp(`(\\.(\\w|-)+-${extensionValue})`);
+                    fileName = fileName.split(regex)[0];
+                    filePathSplit.push(fileName);
+                }else{
+                    throw Error(`[lib_removeExtensionFromFile]: Failed to get file extension for file ${file}`);
+                }
             }else{
                 throw Error(`[lib_removeExtensionFromFile]: Failed to get filename for file ${file}`);
             }

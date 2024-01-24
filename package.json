@@ -4,7 +4,7 @@
 	"description": "Accenture Salesforce Marketing Cloud DevTools Vscode Extension",
 	"version": "0.0.1",
 	"peerDependencies": {
-		"mcdev": "^6.0.0"
+		"mcdev": ">=5.2.0"
 	},
 	"repository": {
 		"type": "git",
@@ -29,6 +29,10 @@
 			{
 				"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 				"title": "mcdev: Deploy"
+			},
+			{
+				"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+				"title": "mcdev: Copy to Business Unit"
 			}
 		],
 		"menus": {
@@ -39,8 +43,35 @@
 					"group": "devtools"
 				},
 				{
-					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown))",
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceLangId == 'markdown'))",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+					"group": "devtools"
+				},
+				{
+					"when": "(resourcePath =~ /retrieve/ || resourcePath =~ /deploy/) && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+					"group": "devtools"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+					"when": "false"
+				},
+				{
+					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+					"when": "false"
+				}
+			],
+			"editor/title/context": [
+				{
+					"when": "resourcePath =~ /retrieve/",
+                    "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+					"group": "devtools"
+                },
+                {
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown || resourceLangId == ssjs))",
+                    "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				}
 			]
