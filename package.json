@@ -4,7 +4,7 @@
 	"description": "Accenture Salesforce Marketing Cloud DevTools Vscode Extension",
 	"version": "0.0.1",
 	"peerDependencies": {
-		"mcdev": "^6.0.0"
+		"mcdev": ">=5.2.0"
 	},
 	"repository": {
 		"type": "git",
@@ -42,6 +42,16 @@
 					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown))",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+					"when": "false"
+				},
+				{
+					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+					"when": "false"
 				}
 			]
 		}
