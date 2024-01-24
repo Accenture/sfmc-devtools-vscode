@@ -7,7 +7,7 @@ function executeTerminalCommand(commandRunner: TerminalCommandRunner): void {
         commandRunner.args,
         {
             shell: true,
-            cwd: commandRunner.cwd.replace("/c:", "")
+            cwd: commandRunner.cwd.replace(/^\/[a-zA-Z]:/g, "")
         }
     );
 
