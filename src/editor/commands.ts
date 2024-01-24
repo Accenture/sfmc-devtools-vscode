@@ -1,8 +1,8 @@
-import { commands } from "vscode";
+import { commands, Uri } from "vscode";
 
 interface CommandRegister {
     command: string,
-    callbackAction: (reg: { path: string }) => void
+    callbackAction: (file: Uri, files: Uri[]) => void
 }
 function registerCommand(register: CommandRegister | CommandRegister[]): void {
     [register]
@@ -28,8 +28,10 @@ function setCommandContext(command: string | string[], args: (string | boolean |
         );
 }
 
-export const editorCommands = {
+const editorCommands = {
     registerCommand,
     executeCommand,
     setCommandContext
 };
+export { Uri, editorCommands };
+

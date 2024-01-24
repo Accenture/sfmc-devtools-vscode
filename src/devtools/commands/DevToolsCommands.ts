@@ -30,16 +30,10 @@ abstract class DevToolsCommands {
                         resolve(code);
                     }
                     if(error){
-                        log("error",
-                            `[DevToolsCommands_executeCommand] Exit Code: ${error}`
-                        );
+                        log("error", `[DevToolsCommands_executeCommand] Exit Code: ${error}`);
                     }
                     if(output){
-                        if(showOnTerminal){
-                            log("info",  output);
-                        }else{
-                            resolve(output);
-                        }
+                        showOnTerminal ? log("info",  output) : resolve(output);
                     }
                 },
             });
@@ -48,7 +42,7 @@ abstract class DevToolsCommands {
 
     async configureCommandWithParameters(
         config: DevToolsCommandSetting, 
-        args: {[key: string]: string },
+        args: {[key: string]: string | string[] | boolean },
         mdTypes: SupportedMetadataTypes[]): Promise<string> {
 
         log("debug", `ConfigureCommandWithParameters: ${JSON.stringify(config)}`);
@@ -57,7 +51,7 @@ abstract class DevToolsCommands {
         if("requiredParams" in config && config.requiredParams.length){
             for(const param of config.requiredParams){
                 if(param in args && args[param]){
-                    command = command.replace(`{{${param}}}`, args[param]);
+                    command = command.replace(`{{${param}}}`, args[param] as string);
                 }else{
                     // Requests user
                     if(param.toLowerCase() === "mdtypes" && mdTypes.length){
@@ -79,7 +73,7 @@ abstract class DevToolsCommands {
                         ? `--${param}`
                         : "";
                 }
-                command = command.replace(`{{${param}}}`, param in args ? args[param] : "");
+                command = command.replace(`{{${param}}}`, param in args ? args[param] as string : "");
             });
         }
         return command;
@@ -145,28 +139,35 @@ abstract class DevToolsCommands {
             "etypes", 
             path, 
             { json: true }, 
-            ((result: any) => {
-            // Parses the list of supported mtdata types
-            const parsedResult: SupportedMetadataTypes[] = JSON.parse(result);
-            if(parsedResult && parsedResult.length){
-                // Sends the supported mtdata types to each DevTools Command
-                Object.keys(this.commandMap).forEach((key: string) => {
-                    const devToolCommand: DevToolsCommands = 
-                        this.commandMap[key];
-                    devToolCommand.setMetadataTypes(parsedResult);
-                });
-            }else{
-                log("error", "DevToolsCommands_init: Failed to parse supported metadata type result.");
+            {
+                handleCommandResult: ({ success, data }: { success: boolean, data: string}) => {
+                    if(success){
+                        // Parses the list of supported mtdata types
+                        const parsedResult: SupportedMetadataTypes[] = JSON.parse(data);
+                        if(parsedResult && parsedResult.length){
+                            // Sends the supported mtdata types to each DevTools Command
+                            Object.keys(this.commandMap).forEach((key: string) => {
+                                const devToolCommand: DevToolsCommands = 
+                                    this.commandMap[key];
+                                devToolCommand.setMetadataTypes(parsedResult);
+                            });
+                        }else{
+                            log("error", "DevToolsCommands_init: Failed to parse supported metadata type result.");
+                        }
+                    }else{
+                            log("error", "DevToolsCommands_init: Admin Command etypes failed.");
+                    }
+                }
             }
-        }));
+        );
     }
 
     static async runCommand(
-        typeId: string, 
+        typeId: string | null, 
         commandId: string, 
         commandPath: string, 
-        args: any, 
-        handleResult: (result: any) => void) {
+        args: {[key: string]: string | string[] | boolean}, 
+        commandHandlers: {[key: string]: (args?: any) => void}){
         // When the DevTools command type is unknown to the application
         if(!typeId && commandId){
             const [{ id }]: { id: string }[] = 
@@ -186,7 +187,7 @@ abstract class DevToolsCommands {
         }
 
         if(this.commandMap){
-            if(typeId in this.commandMap){
+            if(typeId && typeId in this.commandMap){
                 const [ commandConfig ]: DevToolsCommandSetting[] = 
                     this.getCommandsListByType(typeId)
                     .filter((commandSetting: DevToolsCommandSetting) => commandSetting.id === commandId);
@@ -198,7 +199,7 @@ abstract class DevToolsCommands {
                         commandConfig,
                         commandArgs: args,
                         commandPath,
-                        commandResultHandler: handleResult
+                        commandHandlers: commandHandlers
                     });
                     return;
                 }
