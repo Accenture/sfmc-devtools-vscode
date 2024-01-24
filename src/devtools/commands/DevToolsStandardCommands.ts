@@ -9,10 +9,10 @@ class DevToolsStandardCommands extends DevToolsCommands {
     private commandMethods: {
         [key: string]: (
             config: DevToolsCommandSetting, 
-            args: {[key: string]: any },
+            args: {[key: string]: string | string[] | boolean },
             path: string,
-            handleResult: (result: any) => void) 
-                => void
+            commandHandlers: { [key: string]: (args?: any) => void }
+        ) => void
     } = {};
     private metadataTypes: SupportedMetadataTypes[] = [];
     constructor(){
@@ -30,12 +30,12 @@ class DevToolsStandardCommands extends DevToolsCommands {
             commandConfig,
             commandArgs,
             commandPath,
-            commandResultHandler 
+            commandHandlers 
         }: DevToolsCommandRunner = commandRunner;
 
         log("debug", `Running DevTools Standard Command for id '${commandId}'.`);
         if(commandId in this.commandMethods){
-            this.commandMethods[commandId](commandConfig, commandArgs, commandPath, commandResultHandler);
+            this.commandMethods[commandId](commandConfig, commandArgs, commandPath, commandHandlers);
         }else{
             log("error", `DevTools Standard Command method for id '${commandId}' is not implemented.`);
         }
@@ -45,7 +45,12 @@ class DevToolsStandardCommands extends DevToolsCommands {
         this.metadataTypes = mdTypes;
     }
 
-    async retrieve(config: DevToolsCommandSetting, args: {[key: string]: string }, path: string, handleResult: (result: any) => void){
+    async retrieve(
+        config: DevToolsCommandSetting, 
+        args: {[key: string]: string | string[] | boolean }, 
+        path: string, 
+        { handleCommandResult, loadingNotification }: { [key: string]: (args?: any) => void }){
+
         log("info", `Running DevTools Standard Command: Retrieve...`);
         if("command" in config && config.command){
             // Gets that metadata types that are supported for retrieve
@@ -63,18 +68,27 @@ class DevToolsStandardCommands extends DevToolsCommands {
             // Checks if the command is still missing so required parameter
             if(this.hasPlaceholders(commandConfigured)){
                 log("debug", `Required Parameters missing from Retrieve command: ${commandConfigured}`);
+                handleCommandResult({ success: false,  cancelled: true });
                 return;
             }
 
             log("debug", `Retrieve Command configured: ${commandConfigured}`);
-            const commandResult: Promise<unknown> = this.executeCommand(commandConfigured, path, true);
-            handleResult(commandResult);
+            loadingNotification();
+            const commandResult: string | number = await this.executeCommand(commandConfigured, path, true);
+            if(typeof(commandResult) === "number"){
+                handleCommandResult({ success: commandResult === 0, cancelled: false });
+            }
         }else{
             log("error", "DevToolsStandardCommand_retrieve: Command is empty or missing the configuration.");
         }
     }
 
-    async deploy(config: DevToolsCommandSetting, args: {[key: string]: any }, path: string, handleResult: (result: any) => void){
+    async deploy(
+        config: DevToolsCommandSetting, 
+        args: {[key: string]: string | string[] | boolean }, 
+        path: string, 
+       { handleCommandResult, loadingNotification }: { [key: string]: (args?: any) => void }){
+
         log("info", `Running DevTools Standard Command: Deploy...`);
         if("command" in config && config.command){
             // Gets that metadata types that are supported for deploy
@@ -92,12 +106,16 @@ class DevToolsStandardCommands extends DevToolsCommands {
             // Checks if the command is still missing so required parameter
             if(this.hasPlaceholders(commandConfigured)){
                 log("debug", `Required Parameters missing from Deploy command: ${commandConfigured}`);
+                handleCommandResult({ success: false,  cancelled: true });
                 return;
             }
 
             log("debug", `Deploy Command configured: ${commandConfigured}`);
-            const commandResult: Promise<unknown> = this.executeCommand(commandConfigured, path, true);
-            handleResult(commandResult);
+            loadingNotification();
+            const commandResult: string | number = await this.executeCommand(commandConfigured, path, true);
+            if(typeof(commandResult) === "number"){
+                handleCommandResult({ success: commandResult === 0, cancelled: false });
+            }
         }else{
             log("error", "DevToolsStandardCommand_deploy: Command is empty or missing the configuration.");
         }

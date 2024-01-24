@@ -3,9 +3,9 @@ import DevToolsCommandSetting from "./devToolsCommandSetting";
 interface DevToolsCommandRunner{
     commandId: string,
     commandConfig: DevToolsCommandSetting,
-    commandArgs: { [key: string]: any },
+    commandArgs: { [key: string]: string | string[] | boolean },
     commandPath: string,
-    commandResultHandler: (result: any) => void
+    commandHandlers: { [key: string]: (args?: any) => void }
 }
 
 export default DevToolsCommandRunner;
