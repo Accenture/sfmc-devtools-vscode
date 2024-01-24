@@ -23,7 +23,7 @@
             {
                 "id":"etypes", 
                 "title": "Explain Types", 
-                "command": "mcdev explainTypes {{json}}", 
+                "command": "mcdev explainTypes {{json}} --skipInteraction", 
                 "requiredParams": [], 
                 "optionalParams": ["json"], 
                 "description": "Explains metadata types that can be retrieved.", 
@@ -40,7 +40,7 @@
             {
                 "id":"retrieve", 
                 "title": "Retrieve", 
-                "command": "mcdev retrieve {{bu}} {{mdtypes}} {{key}}", 
+                "command": "mcdev retrieve {{bu}} {{mdtypes}} {{key}} --skipInteraction", 
                 "requiredParams": ["bu", "mdtypes"],
                 "optionalParams": ["key"],
                 "description": "Retrieves metadata of a business unit.", 
@@ -49,7 +49,7 @@
             {
                 "id":"deploy", 
                 "title": "Deploy", 
-                "command": "mcdev deploy {{bu}} {{mdtypes}} {{key}} {{fromRetrieve}}", 
+                "command": "mcdev deploy {{bu}} {{mdtypes}} {{key}} {{fromRetrieve}} --skipInteraction", 
                 "requiredParams": ["bu", "mdtypes"],
                 "optionalParams": ["key", "fromRetrieve"],
                 "description": "Deploys local metadata to a business unit.", 
@@ -73,10 +73,10 @@
         "isAvailable": false,
         "requireCredentials": false,
         "commands": [
-            {"id":"rtemp", "title": "Retrieve As Template", "command": "mcdev delete", "requiredParams": [], "optionalParams": [], "description": "Retrieves a specific metadata file by name from the server for templating.", "isAvailable": false},
-            {"id":"btemp", "title": "Build Template", "command": "mcdev delete", "requiredParams": [], "optionalParams": [], "description": "Builds a template out of a specific metadata file already in your retrieve folder.", "isAvailable": false},
-            {"id":"bdef", "title": "Build Definition", "command": "mcdev delete", "requiredParams": [], "optionalParams": [], "description": "Builds metadata definition based on template.", "isAvailable": false},
-            {"id":"bdefbulk", "title": "Build Definition Bulk", "command": "mcdev delete", "requiredParams": [], "optionalParams": [], "description": "Builds metadata definition based on template en bulk.", "isAvailable": false}
+            {"id":"rtemp", "title": "Retrieve As Template", "command": "", "requiredParams": [], "optionalParams": [], "description": "Retrieves a specific metadata file by name from the server for templating.", "isAvailable": false},
+            {"id":"btemp", "title": "Build Template", "command": "", "requiredParams": [], "optionalParams": [], "description": "Builds a template out of a specific metadata file already in your retrieve folder.", "isAvailable": false},
+            {"id":"bdef", "title": "Build Definition", "command": "", "requiredParams": [], "optionalParams": [], "description": "Builds metadata definition based on template.", "isAvailable": false},
+            {"id":"bdefbulk", "title": "Build Definition Bulk", "command": "", "requiredParams": [], "optionalParams": [], "description": "Builds metadata definition based on template en bulk.", "isAvailable": false}
         ]
     }
 }

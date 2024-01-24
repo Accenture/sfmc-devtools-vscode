@@ -12,9 +12,10 @@ export const containersConfig: {
     statusBarDevToolsInitializeTitle: string,
     statusBarDevToolsInitializeCommand: string,
     contextMenuRetrieveCommand: string,
-    contextMenuDeployCommand: string
+    contextMenuDeployCommand: string,
+    contextMenuCopyToBUCommand: string
 } = {
-    statusBarDevToolsName: "devtoolsmcdev",
+    statusBarDevToolsName: "mcdev",
     statusBarDevToolsTitle: "mcdev",
     statusBarDevToolsCommand: "sfmc-devtools-vscext.devtoolsSBMcdev",
     statusBarDevToolsCredentialBUName: "devtoolscredentialbu",
@@ -27,5 +28,6 @@ export const containersConfig: {
     statusBarDevToolsInitializeTitle: "Initialize",
     statusBarDevToolsInitializeCommand: "sfmc-devtools-vscext.devtoolsSBInitialize",
     contextMenuRetrieveCommand: "sfmc-devtools-vscext.devtoolsCMRetrieve",
-    contextMenuDeployCommand: "sfmc-devtools-vscext.devtoolsCMDeploy"
+    contextMenuDeployCommand: "sfmc-devtools-vscext.devtoolsCMDeploy",
+    contextMenuCopyToBUCommand: "sfmc-devtools-vscext.devtoolsCMCopyToBU"
 };
