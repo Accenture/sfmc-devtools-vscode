@@ -2,7 +2,7 @@ import { containersConfig } from "../config/containers.config";
 import { devtoolsMain } from "./main";
 import { ExtensionContext, editorContext } from "../editor/context";
 import { StatusBarItem, editorContainers } from "../editor/containers";
-import { editorCommands } from "../editor/commands";
+import { Uri, editorCommands } from "../editor/commands";
 import { editorWorkspace } from "../editor/workspace";
 import { log } from "../editor/output";
 
@@ -16,7 +16,7 @@ enum StatusBarIcon {
 let statusBarContainer: StatusBarItem | StatusBarItem[];
 
 function activateStatusBar(/*isDevtoolsProject: boolean, commandPrefix: string*/): void {
-    log("info", "Activating Status Bar Options...");
+    log("debug", "Activating Status Bar Options...");
     const { subscriptions }: ExtensionContext = editorContext.get();
 
     // Gets the command prefix for
@@ -117,7 +117,7 @@ function activateStatusBar(/*isDevtoolsProject: boolean, commandPrefix: string*/
 function modifyStatusBar(statusBarId: string, action: keyof typeof StatusBarIcon): void {
     if(statusBarContainer && Array.isArray(statusBarContainer)){
         const [ statusBar ] = statusBarContainer.filter(
-            (sb: StatusBarItem) => sb.name === `devtools${statusBarId}`
+            (sb: StatusBarItem) => sb.name?.toLowerCase() === `${statusBarId.toLowerCase()}`
         );
         
         if(statusBar){
@@ -171,9 +171,10 @@ function activateContextMenuCommands(){
         containersConfig.contextMenuDeployCommand
     ].forEach((command: string) => editorCommands.registerCommand({
         command,
-        callbackAction: (_, ...files: any[]) => {
-            if(files.length && Array.isArray(files[0])){
-                const filesPath: string[] = editorWorkspace.getFilesURIPath(files[0]);
+        callbackAction: (file: Uri, multipleFiles: Uri[]) => {
+            const files: Uri[] = !Array.isArray(multipleFiles) ? [file] : multipleFiles;
+            if(files.length){
+                const filesPath: string[] = editorWorkspace.getFilesURIPath(files);
                 const [ __, key ]: string[] = command.split(".devtools");
                 return devtoolsMain.handleContextMenuActions(key, filesPath);
             }else{
@@ -185,11 +186,12 @@ function activateContextMenuCommands(){
     }));
 }
 
-export { StatusBarIcon };
-export const devtoolsContainers = {
+const devtoolsContainers = {
     activateStatusBar,
     modifyStatusBar,
     isCredentialBUSelected,
     getCredentialsBUName,
     activateContextMenuCommands
 };
+
+export { StatusBarIcon, devtoolsContainers };
