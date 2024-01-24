@@ -64,7 +64,7 @@
 					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown || resourceLangId == ssjs))",
                     "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
-                }
+				}
 			]
 		}
 	},

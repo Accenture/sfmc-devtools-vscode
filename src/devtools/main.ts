@@ -40,14 +40,14 @@ async function initDevToolsExtension(): Promise<void>{
 }
 
 async function isADevToolsProject(projectName?: string): Promise<boolean> {
-    log("info", "Checking if folder is a SFMC DevTools project...");
+    log("debug", "Checking if folder is a SFMC DevTools project...");
     log("debug", `DevTools files: [${mainConfig.requiredFiles}]`);
 
     const findMcdevFiles: boolean[] = await Promise.all(mainConfig.requiredFiles
         .map(async(filename: string) => editorWorkspace.isFileInFolder(
             `${projectName || '' }${filename}`
         )));
-    log("info", 
+    log("debug", 
         `Folder ${findMcdevFiles.every((result: boolean) => result === true) ? 'is' : 'is not'} a SFMC DevTools project.`
     );
     return findMcdevFiles.every((result: boolean) => result === true);
@@ -294,7 +294,7 @@ async function handleDevToolsSBCommand(): Promise<void>{
                             selectedCommandOption.id,
                             editorWorkspace.getWorkspaceURIPath(),
                             { bu: selectedCredentialBU.replace(mainConfig.allPlaceholder, "'*'") },
-                            (result: any) => log("info", result)
+                            { handleCommandResult: (result: any) => log("info", result) }
                         );
                     }else{
                         log("error",
@@ -319,7 +319,7 @@ async function handleDevToolsSBCommand(): Promise<void>{
                             selectedCommandOption.id,
                             editorWorkspace.getWorkspaceURIPath(),
                             {},
-                            (result: any) => log("info", result)
+                            { handleCommandResult: (result: any) => log("info", result) }
                         );
                     }
                 }
@@ -339,10 +339,18 @@ async function initialize(): Promise<void>{
     if(userResponse && 
         InstallDevToolsResponseOptions[userResponse as keyof typeof InstallDevToolsResponseOptions]){
             log("info", "Initializing SFMC DevTools project...");
-            DevToolsCommands.runCommand("", "init", editorWorkspace.getWorkspaceURIPath(), [], () => {
-                log("info", "Reloading VSCode workspace window...");
-                lib.waitTime(5000, () => editorWorkspace.reloadWorkspace());
-            });
+            DevToolsCommands.runCommand(
+                null, 
+                "init", 
+                editorWorkspace.getWorkspaceURIPath(), 
+                {},
+                { 
+                    handleCommandResult: () => {
+                        log("info", "Reloading VSCode workspace window...");
+                        lib.waitTime(5000, () => editorWorkspace.reloadWorkspace());
+                    }
+                }
+            ); 
     }
 }
 
@@ -368,7 +376,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
         // Removes duplicate files (eg. some files have the same name with md and json)
         if(filesType.length){
             filesType = lib.removeDuplicates(
-                lib.removeExtensionFromFile(filesType)
+                lib.removeExtensionFromFile(filesType, mainConfig.fileExtensions)
             ) as string[];
         }
 
@@ -408,14 +416,14 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                 log("debug", `Project path: ${projectPath}`);
                 log("debug", `Context Menu path: ${cmPath}`);
 
-                log("info", `Project ${workspaceFolderPath === projectPath ? 'is': 'is not'} the workspace folder.`);
+                log("debug", `Project ${workspaceFolderPath === projectPath ? 'is': 'is not'} the workspace folder.`);
 
                 // Check if context menu being triggered is from outside of the workspace folder
                 if(workspaceFolderPath !== projectPath){
                     // Check if folder is a DevTools project
                     const isSubFolderDevToolsProject: boolean = 
                         await isADevToolsProject( projectName + "/" );
-                    log("info", 
+                    log("debug", 
                         `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
                     );
                     if(!isSubFolderDevToolsProject){
@@ -461,6 +469,9 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                         // if user selects a file inside a subfolder of asset
                         // the key will be the name of the file 
                         keys = assetKey ? [ assetKey ] : [];
+                    }else if(type === "folder" && keys.length){
+                        // Nested folders are not supported as keys for the metadata type folder
+                        keys = [];
                     }
 
                     key = keys.length ? keys[0] : "";
@@ -502,7 +513,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
 
         for(const optionType of [filesType, folderType]){
             if(optionType.length){
-                const projectMap: {[key: string]: ProjectConfig}  = 
+                const projectMap: {[key: string]: ProjectConfig} = 
                     await configureArgsProject(action, optionType);
                 await Promise.all(Object.keys(projectMap).map(async (projName: string) => {
                     log("debug", `Running DevTools Command for project ${projName}`);
@@ -524,29 +535,25 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                         await editorInput.handleInProgressMessage(
                             "Notification",
                             (progress) => {
-                                progress.report({message: mainConfig.messages.runningCommand});
                                 return new Promise<void>(resolve => DevToolsCommands.runCommand(
-                                    "",
+                                    null,
                                     action,
                                     path,
                                     dtArgs,
-                                    async(dataResult: Promise<number>) => 
-                                        dataResult
-                                        .then((res: number) => {
-                                            devtoolsContainers.modifyStatusBar(
-                                                "mcdev", 
-                                                !res ? 'success' : 'error'
-                                            );
-                                            editorInput.handleShowNotificationMessage(
-                                                !res 
-                                                ? 'info' 
-                                                : 'error',
-                                                !res 
-                                                ? mainConfig.messages.successRunningCommand
-                                                : mainConfig.messages.failureRunningCommand,
-                                            );
-                                            resolve();
-                                        })
+                                    { 
+                                        loadingNotification: () => progress.report({message: mainConfig.messages.runningCommand}),
+                                        handleCommandResult: ({ success, cancelled }: { success: boolean,  cancelled: boolean }) => {
+                                            if(!cancelled){
+                                                editorInput.handleShowNotificationMessage(
+                                                    success ? "info" : "error",
+                                                    success ? mainConfig.messages.successRunningCommand :
+                                                        mainConfig.messages.failureRunningCommand
+                                                );
+                                                devtoolsContainers.modifyStatusBar( "mcdev", success ? "success" : "error");
+                                                resolve();
+                                            }
+                                        }
+                                    }
                                 ));
                             }
                         );

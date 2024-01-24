@@ -14,7 +14,7 @@ export const containersConfig: {
     contextMenuRetrieveCommand: string,
     contextMenuDeployCommand: string
 } = {
-    statusBarDevToolsName: "devtoolsmcdev",
+    statusBarDevToolsName: "mcdev",
     statusBarDevToolsTitle: "mcdev",
     statusBarDevToolsCommand: "sfmc-devtools-vscext.devtoolsSBMcdev",
     statusBarDevToolsCredentialBUName: "devtoolscredentialbu",
