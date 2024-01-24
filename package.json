@@ -39,7 +39,7 @@
 					"group": "devtools"
 				},
 				{
-					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown))",
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown || resourceLangId == ssjs))",
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				}
@@ -52,6 +52,18 @@
 				{
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"when": "false"
+				}
+			],
+			"editor/title/context": [
+				{
+					"when": "resourcePath =~ /retrieve/",
+                    "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+					"group": "devtools"
+                },
+                {
+					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceLangId == json || resourceLangId == html || resourceLangId == sql || resourceLangId == markdown || resourceLangId == ssjs))",
+                    "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+					"group": "devtools"
 				}
 			]
 		}
