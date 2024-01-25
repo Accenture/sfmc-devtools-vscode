@@ -1,8 +1,9 @@
 {
 	"name": "sfmc-devtools-vscode",
-	"displayName": "sfmc-devtools-vscode",
-	"description": "Accenture Salesforce Marketing Cloud DevTools Vscode Extension",
-	"version": "0.0.1",
+	"displayName": "SFMC DevTools",
+	"description": "Supports command execution for Accenture SFMC DevTools tool directly within Visual Studio Code, eliminating the necessity for a separate terminal or CLI.",
+	"version": "1.0.0",
+	"license": "MIT",
 	"peerDependencies": {
 		"mcdev": ">=5.2.0"
 	},
@@ -13,9 +14,19 @@
 	"engines": {
 		"vscode": "^1.60.0"
 	},
-	"categories": [
-		"Other"
+	"keywords": [
+		"sfmc",
+		"salesforce",
+		"marketing cloud",
+		"devops",
+        "developer",
+        "exacttarget",
+		"package manager",
+		"vscode",
+		"extension",
+		"deployment"
 	],
+	"categories": ["Other"],
 	"main": "./dist/extension.bundle.js",
 	"activationEvents": [
 		"onStartupFinished"
