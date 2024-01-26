@@ -1,6 +1,6 @@
 {
 	"name": "sfmc-devtools-vscode",
-	"displayName": "SFMC DevTools",
+	"displayName": "Accenture SFMC DevTools",
 	"description": "Supports command execution for Accenture SFMC DevTools tool directly within Visual Studio Code, eliminating the necessity for a separate terminal or CLI.",
 	"version": "1.0.0",
 	"license": "MIT",
