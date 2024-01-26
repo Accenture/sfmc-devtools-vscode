@@ -6,10 +6,13 @@ Accenture SFMC DevTools VS Code Extension was built to simplify the command exec
 
     - [Node.js](https://nodejs.org/en)
     - [Git](https://git-scm.com/downloads)
-    - Accenture SFMC DevTools
-        ```bash
-            npm install -g mcdev
-        ```
+    - [Accenture SFMC DevTools](https://github.com/Accenture/sfmc-devtools)
+
+### Install Accenture SFMC DevTools
+
+```bash
+npm install -g mcdev
+```
 
 ### Currently Supported Accenture SFMC DevTools commands
 
