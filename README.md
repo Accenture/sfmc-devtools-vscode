@@ -4,9 +4,9 @@ Accenture SFMC DevTools VS Code Extension was built to simplify the command exec
 
 ### Pre Requisites
 
-    - [Node.js](https://nodejs.org/en)
-    - [Git](https://git-scm.com/downloads)
-    - [Accenture SFMC DevTools](https://github.com/Accenture/sfmc-devtools)
+- [Node.js](https://nodejs.org/en)
+- [Git](https://git-scm.com/downloads)
+- [Accenture SFMC DevTools](https://github.com/Accenture/sfmc-devtools)
 
 ### Install Accenture SFMC DevTools
 
@@ -16,10 +16,17 @@ npm install -g mcdev
 
 ### Currently Supported Accenture SFMC DevTools commands
 
-    - [Retrieve](https://github.com/Accenture/sfmc-devtools/wiki/06.b-~-Standard-Commands#retrieve)
-    - [Deploy](https://github.com/Accenture/sfmc-devtools/wiki/06.b-~-Standard-Commands#deploy)
+- [Retrieve](https://github.com/Accenture/sfmc-devtools/wiki/06.b-~-Standard-Commands#retrieve)
+- [Deploy](https://github.com/Accenture/sfmc-devtools/wiki/06.b-~-Standard-Commands#deploy)
 
 ### Features
+
+- Retrieve and Deploy Marketing Cloud assets by right clicking on the file in the File Explorer and selecting the command option
+- Retrieve and Deploy **multiple** Marketing Cloud assets from multiple metadata types at the same time from the same and different business unit
+- Retrieve and Deploy Marketing Cloud assets by right clicking on the file tab and selecting the command option
+- Deploy Marketing Cloud assets directly from the retrieve folder
+- Copy multiple Marketing Cloud assets from one business unit to another
+- Deploy multiple Marketing Cloud assets from one bussiness unit to another
 
 ### Copyright
 
