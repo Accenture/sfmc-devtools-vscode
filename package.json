@@ -4,6 +4,7 @@
 	"description": "Supports command execution for Accenture SFMC DevTools tool directly within Visual Studio Code, eliminating the necessity for a separate terminal or CLI.",
 	"version": "0.0.1",
 	"license": "MIT",
+	"publisher": "Accenture-oss",
 	"peerDependencies": {
 		"mcdev": ">=5.2.0"
 	},
