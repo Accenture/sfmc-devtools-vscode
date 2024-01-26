@@ -11,7 +11,7 @@
 		"type": "git",
 		"url": "https://github.com/Accenture/sfmc-devtools-vscode.git"
 	},
-	"icon": "resources/sfmc-devtools-logo.jpg",
+	"icon": "resources/images/sfmc-devtools-logo.jpg",
 	"engines": {
 		"vscode": "^1.60.0"
 	},
