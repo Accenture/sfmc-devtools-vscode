@@ -1,10 +1,10 @@
 {
 	"name": "sfmc-devtools-vscode",
-	"displayName": "SFMC DevTools",
-	"description": "Accenture Salesforce Marketing Cloud DevTools Vscode Extension",
+	"displayName": "Accenture SFMC DevTools",
+	"description": "Supports command execution for Accenture SFMC DevTools tool directly within Visual Studio Code, eliminating the necessity for a separate terminal or CLI.",
 	"version": "0.0.1",
-	"publisher": "Accenture",
 	"license": "MIT",
+	"publisher": "Accenture-oss",
 	"peerDependencies": {
 		"mcdev": ">=5.2.0"
 	},
@@ -12,21 +12,23 @@
 		"type": "git",
 		"url": "https://github.com/Accenture/sfmc-devtools-vscode.git"
 	},
+	"icon": "resources/images/sfmc-devtools-logo.jpg",
 	"engines": {
 		"vscode": "^1.60.0"
 	},
 	"keywords": [
-        "sfmc",
-        "devops",
+		"sfmc",
+		"salesforce",
+		"marketing cloud",
+		"devops",
         "developer",
         "exacttarget",
-        "salesforce",
-        "marketing cloud",
-        "package manager",
-		"sfmc extension",
+		"package manager",
+		"vscode",
+		"extension",
 		"deployment"
-    ],
-	"categories": [ "Other" ],
+	],
+	"categories": ["Other"],
 	"main": "./dist/extension.bundle.js",
 	"activationEvents": [
 		"onStartupFinished"
@@ -43,7 +45,7 @@
 			},
 			{
 				"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-				"title": "mcdev: Copy to Business Unit"
+				"title": "mcdev: Copy to Business Unit..."
 			}
 		],
 		"menus": {
@@ -91,6 +93,15 @@
 					"group": "devtools"
 				}
 			]
+		},
+		"configuration":{
+			"title": "sfmc-devtools-vscode",
+			"properties": {
+				"sfmc-devtools-vscode.recommendExtensions": {
+					"type": "boolean",
+					"default": true
+				}
+			}
 		}
 	},
 	"scripts": {

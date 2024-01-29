@@ -9,6 +9,7 @@ import { editorInput } from "../editor/input";
 import { editorContext } from "../editor/context";
 import { editorWorkspace } from "../editor/workspace";
 import { editorOutput, log } from "../editor/output";
+import { editorDependencies } from "../editor/dependencies";
 import { InstallDevToolsResponseOptions } from "../config/installer.config";
 import { lib } from "../shared/utils/lib";
 import { file } from "../shared/utils/file";
@@ -19,8 +20,11 @@ async function initDevToolsExtension(): Promise<void>{
     try{
         log("info", "Running SFMC DevTools extension...");
 
+        editorDependencies.activateExtensionDependencies(mainConfig.extensionsDependencies);
+
         // activate the status bar
         devtoolsContainers.activateStatusBar();
+
         // activate the context menus options
         devtoolsContainers.activateContextMenuCommands();
 

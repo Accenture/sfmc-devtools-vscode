@@ -1,4 +1,4 @@
-import { workspace, Uri, TextDocument, WorkspaceFolder, FileType, FileStat } from "vscode";
+import { workspace, Uri, TextDocument, WorkspaceFolder, FileType, FileStat, WorkspaceConfiguration, ConfigurationTarget } from "vscode";
 import { editorCommands } from "./commands";
 
 function getWorkspaceURI(): Uri {
@@ -53,12 +53,24 @@ async function isFile(file: string | Uri){
     return fileType.toLowerCase() === "file";
 }
 
+function handleWorkspaceConfiguration(key: string, value: string | boolean){
+    const workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration("sfmc-devtools-vscode");
+    if(workspaceConfiguration){
+        return {
+            get: () => workspaceConfiguration.get(key, value),
+            set: () => workspaceConfiguration.update(key, value, ConfigurationTarget.Workspace)
+        };
+    }
+    throw new Error("Failed to handle Workspace Configuration.");
+}
+
 export const editorWorkspace = {
     isFileInFolder,
     readFile,
     reloadWorkspace,
     getWorkspaceURIPath,
     getWorkspaceSubFolders,
+    handleWorkspaceConfiguration,
     getFilesURIPath,
     isFile
 };

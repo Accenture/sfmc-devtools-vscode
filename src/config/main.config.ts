@@ -3,6 +3,7 @@ export const mainConfig: {
     requiredFiles: string[],
     fileExtensions: string[],
     allPlaceholder: string,
+    extensionsDependencies: string[],
     messages: {
         selectedCredentialsBU: string,
         selectCredential: string, 
@@ -21,6 +22,7 @@ export const mainConfig: {
     requiredFiles: [".mcdevrc.json", ".mcdev-auth.json"],
     fileExtensions: ["meta.json", "meta.sql", "meta.html", "meta.ssjs", "doc.md"],
     allPlaceholder: "*All*",
+    extensionsDependencies: ["IBM.output-colorizer"],
     messages: {
         selectedCredentialsBU: "Select a Credential/BU before running the command",
         selectCredential: "Select one of the credentials below...",
