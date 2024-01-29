@@ -16,7 +16,7 @@ function executeCommand(command: string | string[], args: (string | boolean | st
     [command]
         .flat()
         .forEach(
-            (command: string) => commands.executeCommand(command, ...args)
+            async (command: string) => await commands.executeCommand(command, ...args)
         );
 }
 
