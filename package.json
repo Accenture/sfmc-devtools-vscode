@@ -43,7 +43,7 @@
 			},
 			{
 				"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-				"title": "mcdev: Copy to Business Unit"
+				"title": "mcdev: Copy to Business Unit..."
 			}
 		],
 		"menus": {
@@ -91,6 +91,15 @@
 					"group": "devtools"
 				}
 			]
+		},
+		"configuration":{
+			"title": "sfmc-devtools-vscode",
+			"properties": {
+				"sfmc-devtools-vscode.recommendedExtensions": {
+					"type": "boolean",
+					"default": true
+				}
+			}
 		}
 	},
 	"scripts": {
