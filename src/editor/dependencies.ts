@@ -20,7 +20,7 @@ async function activateExtensionDependencies(dependencies: string | string[]){
     if(missingExtDependencies.length){
 
         const suggestRecommendedExtensions: string | boolean = 
-            editorWorkspace.handleWorkspaceConfiguration("recommendedExtensions", true).get();
+            editorWorkspace.handleWorkspaceConfiguration("recommendExtensions", true).get();
 
         if(suggestRecommendedExtensions){
             const message: string = "There are some recommended extensions that can enhance your usage of SFMC DevTools. Would you like to install them?";
@@ -35,7 +35,7 @@ async function activateExtensionDependencies(dependencies: string | string[]){
                         );
                     });
                 }else if(selectedOption === RecommendedExtensionsInputOptions.DONT_ASK_AGAIN){
-                    editorWorkspace.handleWorkspaceConfiguration("recommendedExtensions", false).set();
+                    editorWorkspace.handleWorkspaceConfiguration("recommendExtensions", false).set();
                 }
             }
         }

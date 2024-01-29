@@ -95,7 +95,7 @@
 		"configuration":{
 			"title": "sfmc-devtools-vscode",
 			"properties": {
-				"sfmc-devtools-vscode.recommendedExtensions": {
+				"sfmc-devtools-vscode.recommendExtensions": {
 					"type": "boolean",
 					"default": true
 				}
