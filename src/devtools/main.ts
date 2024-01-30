@@ -369,7 +369,6 @@ function handleMcdevSBCommand(){
 async function handleDevToolsCMCommand(action: string, selectedPaths: string[]): Promise<void>{
     log("info", "Selecting CM SFMC DevTools command...");
     try{
-
         type ArgsConfig = { bu: string, mdtypes: string | string[], key: string | string[], fromRetrieve: boolean};
         type ProjectConfig = { path: string, args: ArgsConfig[] };
         let filesType: string[] = [], folderType: string[] = [];
@@ -616,7 +615,7 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                         type FileCopyConfig = { sourceFilePath: string; targetFilePath: string; };
                         const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
 
-                        const filePathsConfigured: (FileCopyConfig | undefined)[] = 
+                        const filePathsConfigured: FileCopyConfig[] = 
                             selectedPaths.map((path: string) => {
                                 const [ _, fileInstancePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
 
@@ -657,24 +656,19 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                                             .flat();
                                     }
                                 }
-                                return undefined;
+                                return;
                             })
                             .filter((filePath: FileCopyConfig[] | undefined) => filePath !== undefined)
-                            .flat();
+                            .flat() as FileCopyConfig[];
 
-                        file.copyFile(filePathsConfigured as FileCopyConfig[], (error: any) => {
-                            if(error !== null){
-                                log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
-                            }
-                            console.log(filePathsConfigured);
+                        const targetFilePaths: string[] = await file.copyFile(filePathsConfigured as FileCopyConfig[], (error: any) => {
+                                if(error !== null){
+                                    log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
+                                }
                         });
- 
+
                         if(selectedOption === CopyToBUInputOptions.COPY_AND_DEPLOY){
-                            console.log("Copy and Deploy!");
-                            // const targetFilePaths: string[] = 
-                            //     filePathsConfigured.map((filePathConfig: FileCopyConfig | undefined) => filePathConfig?.targetFilePath);
-                            // console.log(targetFilePaths);
-                            // handleDevToolsCMCommand("deploy", targetFilePaths);
+                            handleDevToolsCMCommand("deploy", targetFilePaths);
                         }
                     }
                 }

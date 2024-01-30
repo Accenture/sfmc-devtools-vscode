@@ -31,18 +31,19 @@ function createFilePath(pathArray: string[]): string {
     return path.join(...pathArray);
 }
 
-function copyFile(files: {sourceFilePath: string, targetFilePath: string}[], handleCopyFileError: (error: any) => void){
+async function copyFile(files: {sourceFilePath: string, targetFilePath: string}[], handleCopyFileError: (error: any) => void): Promise<string[]>{
     try{
-        files.forEach(({sourceFilePath, targetFilePath}: {sourceFilePath: string, targetFilePath: string}) => {
-            sourceFilePath = sourceFilePath.replace(/^\/[a-zA-Z]:/g, "");
-            targetFilePath = targetFilePath.replace(/^\/[a-zA-Z]:/g, "");
-            fs.cp(
-                sourceFilePath, 
-                targetFilePath, 
+        const copiedFiles: Promise<string>[] = files.map(async ({sourceFilePath, targetFilePath}: {sourceFilePath: string, targetFilePath: string}) => {
+            const noDriveLetterSourceFilePath: string = sourceFilePath.replace(/^\/[a-zA-Z]:/g, "");
+            const noDriveLetterTargetFilePath: string = targetFilePath.replace(/^\/[a-zA-Z]:/g, "");
+            return new Promise<string>(resolve => fs.cp(
+                noDriveLetterSourceFilePath, 
+                noDriveLetterTargetFilePath, 
                 {recursive: true}, 
-                (err) => handleCopyFileError(err)
-            );
+                (err) => err ? handleCopyFileError(err) : resolve(targetFilePath)
+            ));
         });
+        return await Promise.all(copiedFiles);
     }catch(error){
         throw error;
     }
