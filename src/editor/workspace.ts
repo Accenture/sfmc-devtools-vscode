@@ -58,7 +58,7 @@ function handleWorkspaceConfiguration(key: string, value: string | boolean){
     if(workspaceConfiguration){
         return {
             get: () => workspaceConfiguration.get(key, value),
-            set: () => workspaceConfiguration.update(key, value, ConfigurationTarget.Workspace)
+            set: () => workspaceConfiguration.update(key, value, ConfigurationTarget.Global)
         };
     }
     throw new Error("Failed to handle Workspace Configuration.");
