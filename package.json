@@ -2,7 +2,7 @@
 	"name": "sfmc-devtools-vscode",
 	"displayName": "Accenture SFMC DevTools",
 	"description": "Supports command execution for Accenture SFMC DevTools tool directly within Visual Studio Code, eliminating the necessity for a separate terminal or CLI.",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"license": "MIT",
 	"publisher": "Accenture-oss",
 	"peerDependencies": {
@@ -21,14 +21,16 @@
 		"salesforce",
 		"marketing cloud",
 		"devops",
-        "developer",
-        "exacttarget",
+		"developer",
+		"exacttarget",
 		"package manager",
 		"vscode",
 		"extension",
 		"deployment"
 	],
-	"categories": ["Other"],
+	"categories": [
+		"Other"
+	],
 	"main": "./dist/extension.bundle.js",
 	"activationEvents": [
 		"onStartupFinished"
@@ -79,12 +81,12 @@
 			"editor/title/context": [
 				{
 					"when": "resourcePath =~ /retrieve/",
-                    "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
 					"group": "devtools"
-                },
-                {
+				},
+				{
 					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
-                    "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"group": "devtools"
 				},
 				{
@@ -94,7 +96,7 @@
 				}
 			]
 		},
-		"configuration":{
+		"configuration": {
 			"title": "sfmc-devtools-vscode",
 			"properties": {
 				"sfmc-devtools-vscode.recommendExtensions": {
