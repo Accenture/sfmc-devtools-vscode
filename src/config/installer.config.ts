@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 export enum InstallDevToolsResponseOptions {
     "Yes" = 1,
     "No" = 0

@@ -369,7 +369,6 @@ function handleMcdevSBCommand(){
 async function handleDevToolsCMCommand(action: string, selectedPaths: string[]): Promise<void>{
     log("info", "Selecting CM SFMC DevTools command...");
     try{
-
         type ArgsConfig = { bu: string, mdtypes: string | string[], key: string | string[], fromRetrieve: boolean};
         type ProjectConfig = { path: string, args: ArgsConfig[] };
         let filesType: string[] = [], folderType: string[] = [];
@@ -576,93 +575,124 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
 
 async function handleCopyToBuCMCommand(selectedPaths: string[]){
     try{
-        const credentials: {[key: string]: string[]} | undefined = await getCredentialsBU();
-        if(credentials){
-            const instances: string[] = Object.keys(credentials);
-            const singleInstance: boolean = instances.length === 1;
-            let selectedInstance: string = singleInstance ? instances[0] : "";
-
-            if(!singleInstance){
-                const instanceOptions: InputOptionsSettings[] = 
-                    instances.map((instance: string) => ({ id: instance, label: instance, detail: "" }));
-                const instanceResponse: InputOptionsSettings | undefined = 
-                    await editorInput.handleQuickPickSelection(
-                        instanceOptions, 
-                        mainConfig.messages.selectCredential, 
-                        false
-                    ) as InputOptionsSettings;
-                if(instanceResponse){
-                    selectedInstance = instanceResponse.id;
-                }
-            }
-
-            if(selectedInstance){
-                const buOptionsList: InputOptionsSettings[] = 
-                    credentials[selectedInstance].map((businessUnit: string) => ({ id: businessUnit, label: businessUnit, detail: "" }));
-                const buOptions: InputOptionsSettings[] | undefined = 
-                    await editorInput.handleQuickPickSelection(buOptionsList, mainConfig.messages.selectBusinessUnit, true) as InputOptionsSettings[];
-                
-                if(buOptions){
-
-                    type FileCopyConfig = { sourceFilePath: string; targetFilePath: string; };
-                    const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
-
-                    const filePathsConfigured: (FileCopyConfig | undefined)[] = 
-                        selectedPaths.map((path: string) => {
-                            const [ _, fileInstancePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
-
-                            if(fileInstancePath){
-                                const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
-
-                                if(businessUnit){
-                                    let paths: string[] = [];
-
-                                    if(file.isPathADirectory(path)){
-                                        paths = [...paths, path];
-                                    }else{
-                                        const [ currentFileExt ]: string[] = 
-                                            mainConfig.fileExtensions.filter((fileExt: string) => path.endsWith(fileExt));
-                                        if(currentFileExt){
-                                            paths = [
-                                                ...paths, 
-                                                ...file.fileExists(
-                                                    mainConfig.fileExtensions.map((fileExtension: string) => 
-                                                        path.replace(currentFileExt, fileExtension)
-                                                    )
-                                                )
-                                            ];
-                                        }
-                                    }
-                                    
-                                    return buSelected
-                                        .filter((buSelected: string) => buSelected !== businessUnit)
-                                        .map((buSelected: string) => 
-                                            paths.map((keyFilePath: string) => 
-                                                ({ 
-                                                    sourceFilePath: keyFilePath, 
-                                                    targetFilePath: keyFilePath
-                                                        .replace(/\/retrieve\//, "/deploy/")
-                                                        .replace(businessUnit, buSelected)
-                                                }))
-                                            )
-                                        .flat();
-                                }
-                            }
-                            return undefined;
-                        })
-                        .filter((filePath: FileCopyConfig[] | undefined) => filePath !== undefined)
-                        .flat();
-
-                    file.copyFile(filePathsConfigured as FileCopyConfig[], (error: any) => {
-                        if(error !== null){
-                            log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
-                        }
-                    });
-                }
-            }
-        }else{
-            log("error", `[main_handleCopyToBuCMCommand] Failed to retrieve DevTools credentials.`);
+        enum CopyToBUInputOptions { 
+            COPY = `$(${StatusBarIcon.copy_to_folder})  Copy`, 
+            COPY_AND_DEPLOY = `$(${StatusBarIcon.deploy})  Copy & Deploy`
         }
+
+        const getFileInstancePath: (fileInstancePath: string) => string | undefined = 
+            (fileInstancePath: string) => fileInstancePath.split(/\/retrieve\/|\/deploy\//)[1];
+
+        const actionOptionList: InputOptionsSettings[] = 
+            Object.values(CopyToBUInputOptions).map((action: string) => ({ id: action, label: action, detail: "" }));
+
+        const selectedAction: InputOptionsSettings | undefined = await editorInput.handleQuickPickSelection(
+            actionOptionList,
+            mainConfig.messages.copyToBUInput,
+            false
+        ) as InputOptionsSettings;
+
+        if(selectedAction){
+            const credentials: {[key: string]: string[]} | undefined = await getCredentialsBU();
+            if(credentials){
+                const instances: string[] = Object.keys(credentials);
+                const singleInstance: boolean = instances.length === 1;
+                let selectedInstance: string = singleInstance ? instances[0] : "";
+
+                if(!singleInstance){
+                    const instanceOptions: InputOptionsSettings[] = 
+                        instances.map((instance: string) => ({ id: instance, label: instance, detail: "" }));
+                    const instanceResponse: InputOptionsSettings | undefined = 
+                        await editorInput.handleQuickPickSelection(
+                            instanceOptions, 
+                            mainConfig.messages.selectCredential, 
+                            false
+                        ) as InputOptionsSettings;
+                    if(instanceResponse){
+                        selectedInstance = instanceResponse.id;
+                    }
+                }
+
+                if(selectedInstance){
+                    const buOptionsList: InputOptionsSettings[] = 
+                        credentials[selectedInstance].map((businessUnit: string) => ({ id: businessUnit, label: businessUnit, detail: "" }));
+                    const buOptions: InputOptionsSettings[] | undefined = 
+                        await editorInput.handleQuickPickSelection(buOptionsList, mainConfig.messages.selectBusinessUnit, true) as InputOptionsSettings[];
+                    
+                    if(buOptions){
+
+                        type FileCopyConfig = { sourceFilePath: string; targetFilePath: string; };
+                        const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
+
+                        const filePathsConfigured: FileCopyConfig[] = 
+                            selectedPaths.map((path: string) => {
+                                const fileInstancePath: string | undefined = getFileInstancePath(path);
+
+                                if(fileInstancePath){
+                                    const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
+
+                                    if(businessUnit){
+                                        let paths: string[] = [];
+
+                                        if(file.isPathADirectory(path)){
+                                            paths = [...paths, path];
+                                        }else{
+                                            const [ currentFileExt ]: string[] = 
+                                                mainConfig.fileExtensions.filter((fileExt: string) => path.endsWith(fileExt));
+                                            if(currentFileExt){
+                                                paths = [
+                                                    ...paths, 
+                                                    ...file.fileExists(
+                                                        mainConfig.fileExtensions.map((fileExtension: string) => 
+                                                            path.replace(currentFileExt, fileExtension)
+                                                        )
+                                                    )
+                                                ];
+                                            }
+                                        }
+                                        
+                                        return buSelected
+                                            .filter((buSelected: string) => buSelected !== businessUnit)
+                                            .map((buSelected: string) => 
+                                                paths.map((keyFilePath: string) => 
+                                                    ({ 
+                                                        sourceFilePath: keyFilePath, 
+                                                        targetFilePath: keyFilePath
+                                                            .replace(/\/retrieve\//, "/deploy/")
+                                                            .replace(businessUnit, buSelected)
+                                                    }))
+                                                )
+                                            .flat();
+                                    }
+                                }
+                                return;
+                            })
+                            .filter((filePath: FileCopyConfig[] | undefined) => filePath !== undefined)
+                            .flat() as FileCopyConfig[];
+
+                        const targetFilePaths: string[] = await file.copyFile(filePathsConfigured as FileCopyConfig[], (error: any) => {
+                                if(error !== null){
+                                    log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
+                                }
+                        });
+
+                        if(selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY){
+                            handleDevToolsCMCommand("deploy", targetFilePaths);
+                        }
+                        log("info", 
+                            `Copying to the deploy folder${selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY ? " and Deploying " : " "}the following selected files:\n` +
+                            `${
+                                targetFilePaths.map((targetFilePath: string) => getFileInstancePath(targetFilePath))
+                                .filter((filePath: string | undefined) => filePath !== undefined)
+                                .join("\n")
+                        }`);
+                    }
+                }
+            }else{
+                log("error", `[main_handleCopyToBuCMCommand] Failed to retrieve DevTools credentials.`);
+            }
+        }
+        
     }catch(error){
         log("error", `[main_handleCopyToBuCMCommand] Error: ${error}`);
     }
