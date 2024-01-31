@@ -8,10 +8,12 @@ import { log } from "../editor/output";
 
 enum StatusBarIcon {
     success = "check-all",
-    retrieve = "arrow-down",
-    deploy = "arrow-up",
-    error = "warning"
+    retrieve = "cloud-download",
+    deploy = "cloud-upload",
+    error = "warning",
+    copy_to_folder = "file-symlink-directory" 
 }
+
 // Contains all the status bars that are displayed in the extension
 let statusBarContainer: StatusBarItem | StatusBarItem[];
 

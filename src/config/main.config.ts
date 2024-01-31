@@ -31,7 +31,7 @@ export const mainConfig: {
         selectCommand: "Select one DevTools Command...",
         initDevTools: "Do you wish to initialize SFMC DevTools project in the current directory?",
         initiatingDevTools: "Initiating SFMC DevTools project...",
-        copyToBUInput: "Select one of the actions below:",
+        copyToBUInput: "Select one of the actions below...",
         runningCommand: "Running DevTools Command...",
         successRunningCommand: "DevTools Command has run successfully.",
         failureRunningCommand: "Oh no. Something went wrong while running DevTools Command. Please check the error by clicking on the mcdev button in the status bar."

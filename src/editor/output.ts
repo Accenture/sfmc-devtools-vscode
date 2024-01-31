@@ -1,6 +1,7 @@
 import { OutputChannel, window } from "vscode";
 import { lib } from "../shared/utils/lib";
 import { fileLogger, FileLogger } from "../shared/utils/fileLogger";
+
 enum LogLevel {
     debug = "DEBUG",
     info = "INFO",

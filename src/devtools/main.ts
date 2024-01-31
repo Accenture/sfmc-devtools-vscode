@@ -575,15 +575,24 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
 
 async function handleCopyToBuCMCommand(selectedPaths: string[]){
     try{
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        enum CopyToBUInputOptions { COPY = "Copy", COPY_AND_DEPLOY = "Copy & Deploy" }
+        enum CopyToBUInputOptions { 
+            COPY = `$(${StatusBarIcon.copy_to_folder})  Copy`, 
+            COPY_AND_DEPLOY = `$(${StatusBarIcon.deploy})  Copy & Deploy`
+        }
 
-        const selectedOption: string | undefined = await editorInput.handleShowOptionsMessage(
+        const getFileInstancePath: (fileInstancePath: string) => string | undefined = 
+            (fileInstancePath: string) => fileInstancePath.split(/\/retrieve\/|\/deploy\//)[1];
+
+        const actionOptionList: InputOptionsSettings[] = 
+            Object.values(CopyToBUInputOptions).map((action: string) => ({ id: action, label: action, detail: "" }));
+
+        const selectedAction: InputOptionsSettings | undefined = await editorInput.handleQuickPickSelection(
+            actionOptionList,
             mainConfig.messages.copyToBUInput,
-            Object.values(CopyToBUInputOptions)
-        );
+            false
+        ) as InputOptionsSettings;
 
-        if(selectedOption){
+        if(selectedAction){
             const credentials: {[key: string]: string[]} | undefined = await getCredentialsBU();
             if(credentials){
                 const instances: string[] = Object.keys(credentials);
@@ -617,7 +626,7 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
 
                         const filePathsConfigured: FileCopyConfig[] = 
                             selectedPaths.map((path: string) => {
-                                const [ _, fileInstancePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
+                                const fileInstancePath: string | undefined = getFileInstancePath(path);
 
                                 if(fileInstancePath){
                                     const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
@@ -667,9 +676,16 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                                 }
                         });
 
-                        if(selectedOption === CopyToBUInputOptions.COPY_AND_DEPLOY){
+                        if(selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY){
                             handleDevToolsCMCommand("deploy", targetFilePaths);
                         }
+                        log("info", 
+                            `Copying to the deploy folder${selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY ? " and Deploying " : " "}the following selected files:\n` +
+                            `${
+                                targetFilePaths.map((targetFilePath: string) => getFileInstancePath(targetFilePath))
+                                .filter((filePath: string | undefined) => filePath !== undefined)
+                                .join("\n")
+                        }`);
                     }
                 }
             }else{

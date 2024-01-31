@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { extensions } from "vscode";
 import { editorWorkspace } from "./workspace";
 import { editorInput } from "./input";
