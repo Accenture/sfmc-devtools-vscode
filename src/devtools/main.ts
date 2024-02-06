@@ -643,9 +643,9 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                                                 paths = [
                                                     ...paths, 
                                                     ...file.fileExists(
-                                                        mainConfig.fileExtensions.map((fileExtension: string) => 
-                                                            path.replace(currentFileExt, fileExtension)
-                                                        )
+                                                        mainConfig.fileExtensions
+                                                            .filter((fileExtension: string) => !mainConfig.noCopyFileExtensions.includes(fileExtension))
+                                                            .map((fileExtension: string) => path.replace(currentFileExt, fileExtension))
                                                     )
                                                 ];
                                             }
