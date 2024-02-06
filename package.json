@@ -74,6 +74,10 @@
 				{
 					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
 					"when": "false"
+				},
+				{
+					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+					"when": "false"
 				}
 			],
 			"editor/title/context": [
