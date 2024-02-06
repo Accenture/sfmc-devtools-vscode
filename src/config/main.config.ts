@@ -2,6 +2,7 @@ export const mainConfig: {
     credentialsFilename: string,
     requiredFiles: string[],
     fileExtensions: string[],
+    noCopyFileExtensions: string[],
     allPlaceholder: string,
     extensionsDependencies: string[],
     messages: {
@@ -21,6 +22,7 @@ export const mainConfig: {
     credentialsFilename: ".mcdevrc.json",
     requiredFiles: [".mcdevrc.json", ".mcdev-auth.json"],
     fileExtensions: ["meta.json", "meta.sql", "meta.html", "meta.ssjs", "doc.md"],
+    noCopyFileExtensions: ["doc.md"],
     allPlaceholder: "*All*",
     extensionsDependencies: ["IBM.output-colorizer"],
     messages: {
