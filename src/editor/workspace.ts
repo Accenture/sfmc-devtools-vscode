@@ -64,6 +64,12 @@ function handleWorkspaceConfiguration(key: string, value: string | boolean){
     throw new Error("Failed to handle Workspace Configuration.");
 }
 
+function getFileSystemPaths(paths: string | string[]){
+    return [paths]
+        .flat()
+        .map((path: string) => Uri.file(path).fsPath);
+}
+
 export const editorWorkspace = {
     isFileInFolder,
     readFile,
@@ -72,5 +78,6 @@ export const editorWorkspace = {
     getWorkspaceSubFolders,
     handleWorkspaceConfiguration,
     getFilesURIPath,
-    isFile
+    isFile,
+    getFileSystemPaths
 };

@@ -580,9 +580,6 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
             COPY_AND_DEPLOY = `$(${StatusBarIcon.deploy})  Copy & Deploy`
         }
 
-        const getFileInstancePath: (fileInstancePath: string) => string | undefined = 
-            (fileInstancePath: string) => fileInstancePath.split(/\/retrieve\/|\/deploy\//)[1];
-
         const actionOptionList: InputOptionsSettings[] = 
             Object.values(CopyToBUInputOptions).map((action: string) => ({ id: action, label: action, detail: "" }));
 
@@ -626,7 +623,7 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
 
                         const filePathsConfigured: FileCopyConfig[] = 
                             selectedPaths.map((path: string) => {
-                                const fileInstancePath: string | undefined = getFileInstancePath(path);
+                                const [ _, fileInstancePath ]: string[] = path.split(/\/retrieve\/|\/deploy\//);
 
                                 if(fileInstancePath){
                                     const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
@@ -679,13 +676,13 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                         if(selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY){
                             handleDevToolsCMCommand("deploy", targetFilePaths);
                         }
+
                         log("info", 
-                            `Copying to the deploy folder${selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY ? " and Deploying " : " "}the following selected files:\n` +
-                            `${
-                                targetFilePaths.map((targetFilePath: string) => getFileInstancePath(targetFilePath))
-                                .filter((filePath: string | undefined) => filePath !== undefined)
-                                .join("\n")
-                        }`);
+                            `Copying to the deploy folder`+
+                            `${selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY ? " and Deploying " : " "}`+
+                            `the following selected files:\n` +
+                            editorWorkspace.getFileSystemPaths(targetFilePaths).join("\n")
+                        );
                     }
                 }
             }else{
