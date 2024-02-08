@@ -1,8 +1,7 @@
 import { mainConfig } from "../config/main.config";
-import { PrerequisitesInstalledReturn, devtoolsPrerequisites } from "./prerequisites";
+import { InstallDevToolsResponseOptions } from "../config/installer.config";
 import DevToolsCommands from "./commands/DevToolsCommands";
-import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
-import DevToolsCommandSetting from "../shared/interfaces/devToolsCommandSetting";
+import { PrerequisitesInstalledReturn, devtoolsPrerequisites } from "./prerequisites";
 import { devtoolsInstaller } from "./installer";
 import { devtoolsContainers, StatusBarIcon } from "./containers";
 import { editorInput } from "../editor/input";
@@ -10,7 +9,9 @@ import { editorContext } from "../editor/context";
 import { editorWorkspace } from "../editor/workspace";
 import { editorOutput, log } from "../editor/output";
 import { editorDependencies } from "../editor/dependencies";
-import { InstallDevToolsResponseOptions } from "../config/installer.config";
+import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
+import DevToolsCommandSetting from "../shared/interfaces/devToolsCommandSetting";
+import DevToolsPathComponents from "../shared/interfaces/devToolsPathComponents";
 import { lib } from "../shared/utils/lib";
 import { file } from "../shared/utils/file";
 
@@ -115,7 +116,7 @@ function handleStatusBarActions(action: string): void {
             initialize();
             break;
         case "sbmcdev":
-            handleMcdevSBCommand();
+            handleMCDevSBCommand();
             break;
         default:
             log("error", `main_handleStatusBarActions: Invalid Status Bar Action '${action}'`);
@@ -123,6 +124,9 @@ function handleStatusBarActions(action: string): void {
 }
 
 function handleContextMenuActions(action: string, selectedFiles: string[]): void {
+
+    devtoolsContainers.modifyStatusBar( "mcdev", "success");
+
     log("debug", "Setting Context Menu Actions...");
     log("debug", `Action: ${action} Number of Selected Files: ${selectedFiles.length}`);
     switch(action.toLowerCase()){
@@ -249,7 +253,7 @@ async function changeCredentialsBU(): Promise<void>{
 }
 
 async function handleDevToolsSBCommand(): Promise<void>{
-    log("info", "Selecting SB SFMC DevTools command...");
+    log("debug", "Selecting SB SFMC DevTools command...");
     const devToolsCommandTypes: {id: string, title: string}[] = DevToolsCommands.getAllCommandTypes();
     
     if(devToolsCommandTypes){
@@ -317,7 +321,8 @@ async function handleDevToolsSBCommand(): Promise<void>{
                         editorInput.handleShowNotificationMessage("warning", 
                             `${mainConfig.messages.selectedCredentialsBU} '${
                                 lib.capitalizeFirstLetter(selectedCommandOption.id)
-                            }'...`
+                            }'...`,
+                            ["Close"]
                         );
                         lib.waitTime(1000, () => changeCredentialsBU());
                     }else{
@@ -362,12 +367,22 @@ async function initialize(): Promise<void>{
     }
 }
 
-function handleMcdevSBCommand(){
+function handleMCDevSBCommand(){
     editorOutput.showOuputChannel();
 }
 
+function getMCDevRelativePathComponents(relativePath: string): DevToolsPathComponents {
+    const [
+        credentialName,
+        businessUnit,
+        metadataType,
+        ...keys
+    ]: string[] = relativePath.split("/");
+    return { credentialName, businessUnit, metadataType, keys };
+}
+
 async function handleDevToolsCMCommand(action: string, selectedPaths: string[]): Promise<void>{
-    log("info", "Selecting CM SFMC DevTools command...");
+    log("debug", "Selecting CM SFMC DevTools command...");
     try{
         type ArgsConfig = { bu: string, mdtypes: string | string[], key: string | string[], fromRetrieve: boolean};
         type ProjectConfig = { path: string, args: ArgsConfig[] };
@@ -434,7 +449,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                         `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
                     );
                     if(!isSubFolderDevToolsProject){
-                        editorInput.handleShowNotificationMessage("error",`Folder '${projectName}' is not a SFMC DevTools Project.`);
+                        editorInput.handleShowNotificationMessage("error",`Folder '${projectName}' is not a SFMC DevTools Project.`, ["Close"]);
                         return {};
                     } 
                 }
@@ -461,22 +476,32 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                 
                 // When user clicks inside a retrieve or deploy folder
                 if(cmPath){
-                    let [ credName, bUnit, type, ...keys ]: string[] = cmPath.substring(1).split("/");
+                    let { credentialName, businessUnit, metadataType, keys } = getMCDevRelativePathComponents(cmPath.substring(1));
                     let key: string = "";
 
+                    if(!DevToolsCommands.isSupportedMetadataType(action, metadataType)){
+                        log(
+                            "info", 
+                            `SFMC DevTools currently does not support ${action} for the metadata type: '${metadataType}'`
+                        );
+                        devtoolsContainers.modifyStatusBar("mcdev", "info");
+                        editorInput.handleShowNotificationMessage("info", mainConfig.messages.unsupportedMetadataType, ["Close"]);
+                        continue;
+                    }
+
                     // If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder 
-                    if(type === "asset" && keys.length){
+                    if(metadataType === "asset" && keys.length){
                         // Gets the asset subfolder and asset key
                         const [ assetFolder, assetKey ] = keys;
                         if(!assetKey){
                             // if user only selected an asset subfolder
                             // type will be changed to "asset-[name of the asset subfolder]"
-                            type = `${type}-${assetFolder}`;
+                            metadataType = `${metadataType}-${assetFolder}`;
                         }
                         // if user selects a file inside a subfolder of asset
                         // the key will be the name of the file 
                         keys = assetKey ? [ assetKey ] : [];
-                    }else if(type === "folder" && keys.length){
+                    }else if(metadataType === "folder" && keys.length){
                         // Nested folders are not supported as keys for the metadata type folder
                         keys = [];
                     }
@@ -484,13 +509,13 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                     key = keys.length ? keys[0] : "";
 
                     let filteredByBU: ArgsConfig[] = 
-                        args.filter(({ bu }: ArgsConfig) => bu !== undefined && bu === `${credName}/${bUnit ? bUnit : '*'}`);
+                        args.filter(({ bu }: ArgsConfig) => bu !== undefined && bu === `${credentialName}/${businessUnit ? businessUnit : '*'}`);
 
                     if(filteredByBU.length){
                         let newArgs: ArgsConfig = {
                             bu: filteredByBU[0].bu,
                             mdtypes: lib.removeNonValues(
-                                (lib.removeDuplicates([...filteredByBU[0]['mdtypes'], type]) as string[]) 
+                                (lib.removeDuplicates([...filteredByBU[0]['mdtypes'], metadataType]) as string[]) 
                             ) as string[],
                             key: lib.removeNonValues(
                                 (lib.removeDuplicates([...filteredByBU[0]['key'], key]) as string[])
@@ -498,15 +523,15 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                             fromRetrieve: filteredByBU[0].fromRetrieve
                         };
                         args = [
-                            ...args.filter(({ bu }: ArgsConfig) => bu !== `${credName}/${bUnit ? bUnit : '*'}`),
+                            ...args.filter(({ bu }: ArgsConfig) => bu !== `${credentialName}/${businessUnit ? businessUnit : '*'}`),
                             newArgs
                         ];
                     }else{
                         args = [
                             ...args, 
                             { 
-                                bu: `${credName}/${bUnit ? bUnit : '*'}`, 
-                                mdtypes: lib.removeNonValues([type]) as string[], 
+                                bu: `${credentialName}/${businessUnit ? businessUnit : '*'}`, 
+                                mdtypes: lib.removeNonValues([metadataType]) as string[], 
                                 key: lib.removeNonValues([key]) as string[], 
                                 fromRetrieve
                             }
@@ -554,7 +579,8 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                                                 editorInput.handleShowNotificationMessage(
                                                     success ? "info" : "error",
                                                     success ? mainConfig.messages.successRunningCommand :
-                                                        mainConfig.messages.failureRunningCommand
+                                                        mainConfig.messages.failureRunningCommand,
+                                                    ["Close"]
                                                 );
                                                 devtoolsContainers.modifyStatusBar( "mcdev", success ? "success" : "error");
                                                 resolve();
@@ -580,8 +606,47 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
             COPY_AND_DEPLOY = `$(${StatusBarIcon.deploy})  Copy & Deploy`
         }
 
+        type DevToolsPathConfiguration = DevToolsPathComponents & { absolutePath: string };
+        type SupportedMetadataTypeConfiguration = { supportedMetadataTypes: DevToolsPathConfiguration[], unSupportedMetadataTypes: DevToolsPathConfiguration[] };
+
         const actionOptionList: InputOptionsSettings[] = 
             Object.values(CopyToBUInputOptions).map((action: string) => ({ id: action, label: action, detail: "" }));
+
+        const configuredSelectedPaths: DevToolsPathConfiguration[] = selectedPaths.map((path: string) => {
+            const [ _ , relativeDevToolsPath ]: string[] = path.split(/\/retrieve\/|\/deploy\//);
+            return { ...getMCDevRelativePathComponents(relativeDevToolsPath), absolutePath: path };
+        });
+
+        const { supportedMetadataTypes, unSupportedMetadataTypes }: SupportedMetadataTypeConfiguration = 
+            configuredSelectedPaths.reduce((accObj: SupportedMetadataTypeConfiguration, configPath: DevToolsPathConfiguration) => {
+
+            if(DevToolsCommands.isSupportedMetadataType("deploy", configPath.metadataType)){
+                accObj.supportedMetadataTypes.push(configPath);
+            }else{
+                accObj.unSupportedMetadataTypes.push(configPath);
+            }
+            return accObj;
+
+        }, { supportedMetadataTypes: [], unSupportedMetadataTypes: [] });
+
+        console.log('deployableMetadata = ', supportedMetadataTypes);
+        console.log('nonDeployableMetadata = ', unSupportedMetadataTypes);
+
+        if(unSupportedMetadataTypes.length){
+            
+            const uniqueMetadataTypes: string[] = 
+                lib.removeDuplicates(unSupportedMetadataTypes.map((configPath: DevToolsPathConfiguration) => configPath.metadataType)) as string[];
+
+            uniqueMetadataTypes.forEach((metadataType: string) => {
+                log(
+                    "info", 
+                    `SFMC DevTools currently does not support deploy for the metadata type: '${metadataType}'`
+                );
+            });
+            devtoolsContainers.modifyStatusBar("mcdev", "info");
+            editorInput.handleShowNotificationMessage("info", mainConfig.messages.unsupportedMetadataType, ["Close"]);
+            if(!supportedMetadataTypes.length) { return; }
+        }
 
         const selectedAction: InputOptionsSettings | undefined = await editorInput.handleQuickPickSelection(
             actionOptionList,
@@ -622,45 +687,42 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                         const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
 
                         const filePathsConfigured: FileCopyConfig[] = 
-                            selectedPaths.map((path: string) => {
-                                const [ _, fileInstancePath ]: string[] = path.split(/\/retrieve\/|\/deploy\//);
+                            supportedMetadataTypes.map((configPath: DevToolsPathConfiguration) => {
 
-                                if(fileInstancePath){
-                                    const [ _, businessUnit ]: string[] = fileInstancePath.split("/");
+                                const { absolutePath, businessUnit } = configPath;
 
-                                    if(businessUnit){
-                                        let paths: string[] = [];
+                                if(businessUnit){
+                                    let paths: string[] = [];
 
-                                        if(file.isPathADirectory(path)){
-                                            paths = [...paths, path];
-                                        }else{
-                                            const [ currentFileExt ]: string[] = 
-                                                mainConfig.fileExtensions.filter((fileExt: string) => path.endsWith(fileExt));
-                                            if(currentFileExt){
-                                                paths = [
-                                                    ...paths, 
-                                                    ...file.fileExists(
-                                                        mainConfig.fileExtensions
-                                                            .filter((fileExtension: string) => !mainConfig.noCopyFileExtensions.includes(fileExtension))
-                                                            .map((fileExtension: string) => path.replace(currentFileExt, fileExtension))
-                                                    )
-                                                ];
-                                            }
-                                        }
-                                        
-                                        return buSelected
-                                            .filter((buSelected: string) => buSelected !== businessUnit)
-                                            .map((buSelected: string) => 
-                                                paths.map((keyFilePath: string) => 
-                                                    ({ 
-                                                        sourceFilePath: keyFilePath, 
-                                                        targetFilePath: keyFilePath
-                                                            .replace(/\/retrieve\//, "/deploy/")
-                                                            .replace(businessUnit, buSelected)
-                                                    }))
+                                    if(file.isPathADirectory(absolutePath)){
+                                        paths = [...paths, absolutePath];
+                                    }else{
+                                        const [ currentFileExt ]: string[] = 
+                                            mainConfig.fileExtensions.filter((fileExt: string) => absolutePath.endsWith(fileExt));
+                                        if(currentFileExt){
+                                            paths = [
+                                                ...paths, 
+                                                ...file.fileExists(
+                                                    mainConfig.fileExtensions
+                                                        .filter((fileExtension: string) => !mainConfig.noCopyFileExtensions.includes(fileExtension))
+                                                        .map((fileExtension: string) => absolutePath.replace(currentFileExt, fileExtension))
                                                 )
-                                            .flat();
+                                            ];
+                                        }
                                     }
+                                    
+                                    return buSelected
+                                        .filter((buSelected: string) => buSelected !== businessUnit)
+                                        .map((buSelected: string) => 
+                                            paths.map((keyFilePath: string) => 
+                                                ({ 
+                                                    sourceFilePath: keyFilePath, 
+                                                    targetFilePath: keyFilePath
+                                                        .replace(/\/retrieve\//, "/deploy/")
+                                                        .replace(businessUnit, buSelected)
+                                                }))
+                                            )
+                                        .flat();
                                 }
                                 return;
                             })
@@ -668,9 +730,9 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                             .flat() as FileCopyConfig[];
 
                         const targetFilePaths: string[] = await file.copyFile(filePathsConfigured as FileCopyConfig[], (error: any) => {
-                                if(error !== null){
-                                    log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
-                                }
+                            if(error !== null){
+                                log("error", `[main_handleCopyToBuCMCommand] Failed to copy file: ${error}`);
+                            }
                         });
 
                         if(selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY){
@@ -689,7 +751,6 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
                 log("error", `[main_handleCopyToBuCMCommand] Failed to retrieve DevTools credentials.`);
             }
         }
-        
     }catch(error){
         log("error", `[main_handleCopyToBuCMCommand] Error: ${error}`);
     }

@@ -34,19 +34,19 @@ async function handleInProgressMessage(local: string, callbackFn: (progress: Pro
     );
 }
 
-function handleShowNotificationMessage(level: keyof typeof NotificationMessage, message: string){
+function handleShowNotificationMessage(level: keyof typeof NotificationMessage, message: string, actions: string[]){
     switch(level){
         case "info":
-            window.showInformationMessage(message);
+            window.showInformationMessage(message, ...actions);
             break;
         case "warning":
-            window.showWarningMessage(message);
+            window.showWarningMessage(message, ...actions);
             break;
         case "error":
-            window.showErrorMessage(message);
+            window.showErrorMessage(message, ...actions);
             break;
         default:
-            window.showInformationMessage(message);
+            window.showInformationMessage(message, ...actions);
     }
 }
 

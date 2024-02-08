@@ -44,6 +44,27 @@ class DevToolsStandardCommands extends DevToolsCommands {
     setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void {
         this.metadataTypes = mdTypes;
     }
+    
+    getMetadataTypes(): SupportedMetadataTypes[]{
+        return this.metadataTypes;
+    }
+
+    getSupportedMetadataTypeByAction(action: string){
+        const supportedActions: {[key: string]: () => SupportedMetadataTypes[]} = {
+            "retrieve": () => this.getMetadataTypes()
+                .filter((mdType: SupportedMetadataTypes) => mdType.supports.retrieve),
+            "deploy": () => this.getMetadataTypes()
+                .filter((mdType: SupportedMetadataTypes) => mdType.supports.create || mdType.supports.update)
+        };
+        if(action in supportedActions){
+            return supportedActions[action]();
+        }
+        log(
+            "error", 
+            `DevToolsStandardCommand_getSupportedMetadataTypeByAction: Failed to retrieve supported Metadata Types for action ${action}.`
+        );
+        return [];
+    }
 
     async retrieve(
         config: DevToolsCommandSetting, 
@@ -54,8 +75,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
         log("info", `Running DevTools Standard Command: Retrieve...`);
         if("command" in config && config.command){
             // Gets that metadata types that are supported for retrieve
-            const supportedMdTypes: SupportedMetadataTypes[] = this.metadataTypes
-                .filter((mdType: SupportedMetadataTypes) => mdType.supports.retrieve);
+            const supportedMdTypes: SupportedMetadataTypes[] = this.getSupportedMetadataTypeByAction("retrieve");
             
             // Configures the command to replace all the parameters with the values
             const commandConfigured: string | undefined = 
@@ -92,8 +112,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
         log("info", `Running DevTools Standard Command: Deploy...`);
         if("command" in config && config.command){
             // Gets that metadata types that are supported for deploy
-            const supportedMdTypes: SupportedMetadataTypes[] = this.metadataTypes
-                .filter((mdType: SupportedMetadataTypes) => mdType.supports.retrieve);
+            const supportedMdTypes: SupportedMetadataTypes[] = this.getSupportedMetadataTypeByAction("deploy");
 
             // Configures the command to replace all the parameters with the values
             const commandConfigured: string | undefined = 
@@ -119,6 +138,11 @@ class DevToolsStandardCommands extends DevToolsCommands {
         }else{
             log("error", "DevToolsStandardCommand_deploy: Command is empty or missing the configuration.");
         }
+    }
+
+    isSupportedMetadataType(action: string, metadataType: string){
+        const filteredMdtTypeByAction = this.getSupportedMetadataTypeByAction(action);
+        return filteredMdtTypeByAction.some((mdtType: SupportedMetadataTypes) => mdtType.apiName === metadataType);
     }
 }
 

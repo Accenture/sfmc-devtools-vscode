@@ -17,6 +17,7 @@ export const mainConfig: {
         runningCommand: string,
         successRunningCommand: string,
         failureRunningCommand: string,
+        unsupportedMetadataType: string
     }
 } = {
     credentialsFilename: ".mcdevrc.json",
@@ -36,6 +37,7 @@ export const mainConfig: {
         copyToBUInput: "Select one of the actions below...",
         runningCommand: "Running DevTools Command...",
         successRunningCommand: "DevTools Command has run successfully.",
-        failureRunningCommand: "Oh no. Something went wrong while running DevTools Command. Please check the error by clicking on the mcdev button in the status bar."
+        failureRunningCommand: "Oh no. Something went wrong while running DevTools Command. Please check the error by clicking on the mcdev button in the status bar.",
+        unsupportedMetadataType: "SFMC DevTools currently does not support one or more of the selected metadata types. Find out which ones are impacted by clicking on the mcdev button in the status bar."
     }
 };

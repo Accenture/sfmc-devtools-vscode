@@ -16,6 +16,8 @@ abstract class DevToolsCommands {
 
     abstract run(commandRunner: DevToolsCommandRunner): void;
     abstract setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void;
+    abstract getMetadataTypes(): SupportedMetadataTypes[] | void;
+    abstract isSupportedMetadataType(action: string, metadataType: string): boolean | void;
 
     executeCommand(command: string, path: string, showOnTerminal: boolean): Promise<string | number>{
         log("info", `Running DevTools Command: ${command}`);
@@ -238,6 +240,17 @@ abstract class DevToolsCommands {
             return commandsConfig[id as keyof typeof commandsConfig].requireCredentials;
         }
         log("error", `[DevToolsCommands_runCommand] Error: Failed to retrieve ${id} from commands configuration.`);
+        return false;
+    }
+
+    static isSupportedMetadataType(action: string, metadataType: string){
+        if("standard" in this.commandMap){
+            const devToolsCommand: DevToolsCommands = this.commandMap["standard"];
+            return devToolsCommand.isSupportedMetadataType(action, metadataType);
+        }
+        log("error", 
+            `[DevToolsCommands_isSupportedMetadataType] Error: Failed to retrieve DevTools Standard Commands from commands configuration.`
+        );
         return false;
     }
 }
