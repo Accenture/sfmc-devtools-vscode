@@ -629,9 +629,6 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
 
         }, { supportedMetadataTypes: [], unSupportedMetadataTypes: [] });
 
-        console.log('deployableMetadata = ', supportedMetadataTypes);
-        console.log('nonDeployableMetadata = ', unSupportedMetadataTypes);
-
         if(unSupportedMetadataTypes.length){
             
             const uniqueMetadataTypes: string[] = 
