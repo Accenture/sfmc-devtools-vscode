@@ -322,7 +322,7 @@ async function handleDevToolsSBCommand(): Promise<void>{
                             `${mainConfig.messages.selectedCredentialsBU} '${
                                 lib.capitalizeFirstLetter(selectedCommandOption.id)
                             }'...`,
-                            ["Close"]
+                            []
                         );
                         lib.waitTime(1000, () => changeCredentialsBU());
                     }else{
@@ -380,6 +380,19 @@ function getMCDevRelativePathComponents(relativePath: string): DevToolsPathCompo
     ]: string[] = relativePath.split("/");
     return { credentialName, businessUnit, metadataType, keys };
 }
+
+function logUnsupportedMtdtTypeNotification(action: string, unsupportedMtdtTypes: string | string[]){
+    [unsupportedMtdtTypes]
+    .flat()
+    .forEach((metadataType: string) => {
+        log(
+            "info", 
+            `SFMC DevTools currently does not support ${action} for the metadata type: '${metadataType}'`
+        );
+    });
+    devtoolsContainers.modifyStatusBar("mcdev", "info");
+    editorInput.handleShowNotificationMessage("info", mainConfig.messages.unsupportedMetadataType, []);
+};
 
 async function handleDevToolsCMCommand(action: string, selectedPaths: string[]): Promise<void>{
     log("debug", "Selecting CM SFMC DevTools command...");
@@ -449,7 +462,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                         `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
                     );
                     if(!isSubFolderDevToolsProject){
-                        editorInput.handleShowNotificationMessage("error",`Folder '${projectName}' is not a SFMC DevTools Project.`, ["Close"]);
+                        editorInput.handleShowNotificationMessage("error",`Folder '${projectName}' is not a SFMC DevTools Project.`, []);
                         return {};
                     } 
                 }
@@ -480,12 +493,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                     let key: string = "";
 
                     if(!DevToolsCommands.isSupportedMetadataType(action, metadataType)){
-                        log(
-                            "info", 
-                            `SFMC DevTools currently does not support ${action} for the metadata type: '${metadataType}'`
-                        );
-                        devtoolsContainers.modifyStatusBar("mcdev", "info");
-                        editorInput.handleShowNotificationMessage("info", mainConfig.messages.unsupportedMetadataType, ["Close"]);
+                        logUnsupportedMtdtTypeNotification(action, metadataType);
                         continue;
                     }
 
@@ -580,7 +588,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                                                     success ? "info" : "error",
                                                     success ? mainConfig.messages.successRunningCommand :
                                                         mainConfig.messages.failureRunningCommand,
-                                                    ["Close"]
+                                                        []
                                                 );
                                                 devtoolsContainers.modifyStatusBar( "mcdev", success ? "success" : "error");
                                                 resolve();
@@ -607,7 +615,7 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
         }
 
         type DevToolsPathConfiguration = DevToolsPathComponents & { absolutePath: string };
-        type SupportedMetadataTypeConfiguration = { supportedMetadataTypes: DevToolsPathConfiguration[], unSupportedMetadataTypes: DevToolsPathConfiguration[] };
+        type SupportedMetadataTypeConfiguration = { supportedMetadataTypes: DevToolsPathConfiguration[], unsupportedMetadataTypes: string[] };
 
         const actionOptionList: InputOptionsSettings[] = 
             Object.values(CopyToBUInputOptions).map((action: string) => ({ id: action, label: action, detail: "" }));
@@ -617,32 +625,22 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
             return { ...getMCDevRelativePathComponents(relativeDevToolsPath), absolutePath: path };
         });
 
-        const { supportedMetadataTypes, unSupportedMetadataTypes }: SupportedMetadataTypeConfiguration = 
+        const { supportedMetadataTypes, unsupportedMetadataTypes }: SupportedMetadataTypeConfiguration = 
             configuredSelectedPaths.reduce((accObj: SupportedMetadataTypeConfiguration, configPath: DevToolsPathConfiguration) => {
 
             if(DevToolsCommands.isSupportedMetadataType("deploy", configPath.metadataType)){
                 accObj.supportedMetadataTypes.push(configPath);
             }else{
-                accObj.unSupportedMetadataTypes.push(configPath);
+                accObj.unsupportedMetadataTypes = lib.removeDuplicates([...accObj.unsupportedMetadataTypes, configPath.metadataType]) as string[];
             }
             return accObj;
 
-        }, { supportedMetadataTypes: [], unSupportedMetadataTypes: [] });
+        }, { supportedMetadataTypes: [], unsupportedMetadataTypes: [] });
 
-        if(unSupportedMetadataTypes.length){
-            
-            const uniqueMetadataTypes: string[] = 
-                lib.removeDuplicates(unSupportedMetadataTypes.map((configPath: DevToolsPathConfiguration) => configPath.metadataType)) as string[];
 
-            uniqueMetadataTypes.forEach((metadataType: string) => {
-                log(
-                    "info", 
-                    `SFMC DevTools currently does not support deploy for the metadata type: '${metadataType}'`
-                );
-            });
-            devtoolsContainers.modifyStatusBar("mcdev", "info");
-            editorInput.handleShowNotificationMessage("info", mainConfig.messages.unsupportedMetadataType, ["Close"]);
-            if(!supportedMetadataTypes.length) { return; }
+        if(unsupportedMetadataTypes.length && !supportedMetadataTypes.length){
+            logUnsupportedMtdtTypeNotification("deploy", unsupportedMetadataTypes);
+            return;
         }
 
         const selectedAction: InputOptionsSettings | undefined = await editorInput.handleQuickPickSelection(
@@ -734,6 +732,10 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]){
 
                         if(selectedAction.label === CopyToBUInputOptions.COPY_AND_DEPLOY){
                             handleDevToolsCMCommand("deploy", targetFilePaths);
+                        }
+
+                        if(unsupportedMetadataTypes.length){
+                            logUnsupportedMtdtTypeNotification("deploy", unsupportedMetadataTypes);
                         }
 
                         log("info", 

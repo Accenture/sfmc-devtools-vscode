@@ -37,16 +37,16 @@ async function handleInProgressMessage(local: string, callbackFn: (progress: Pro
 function handleShowNotificationMessage(level: keyof typeof NotificationMessage, message: string, actions: string[]){
     switch(level){
         case "info":
-            window.showInformationMessage(message, ...actions);
+            window.showInformationMessage(message, ...actions, "Close");
             break;
         case "warning":
-            window.showWarningMessage(message, ...actions);
+            window.showWarningMessage(message, ...actions, "Close");
             break;
         case "error":
-            window.showErrorMessage(message, ...actions);
+            window.showErrorMessage(message, ...actions, "Close");
             break;
         default:
-            window.showInformationMessage(message, ...actions);
+            window.showInformationMessage(message, ...actions, "Close");
     }
 }
 
