@@ -1,4 +1,5 @@
 import { Progress, ProgressLocation, window } from "vscode";
+import { editorOutput } from "./output";
 import InputOptionsSettings from "../shared/interfaces/inputOptionsSettings";
 
 enum NotificationMessage {
@@ -35,19 +36,26 @@ async function handleInProgressMessage(local: string, callbackFn: (progress: Pro
 }
 
 function handleShowNotificationMessage(level: keyof typeof NotificationMessage, message: string, actions: string[]){
-    switch(level){
-        case "info":
-            window.showInformationMessage(message, ...actions, "Close");
-            break;
-        case "warning":
-            window.showWarningMessage(message, ...actions, "Close");
-            break;
-        case "error":
-            window.showErrorMessage(message, ...actions, "Close");
-            break;
-        default:
-            window.showInformationMessage(message, ...actions, "Close");
-    }
+    type NotificationLevelFunctions = {
+        [key in keyof typeof NotificationMessage]: (message: string, actions: string[]) => Thenable<string | undefined>;
+    };
+
+    const defaultActions: string[] = ["More Details", "Close"];
+
+    const notificationLevelFunctions: NotificationLevelFunctions = {
+        info: (message: string, actions: string[]) => window.showInformationMessage(message, ...actions, ...defaultActions),
+        warning: (message: string, actions: string[]) => window.showWarningMessage(message, ...actions, ...defaultActions),
+        error: (message: string, actions: string[]) => window.showErrorMessage(message, ...actions, ...defaultActions),
+    };
+    
+    const callNotificationFunction = notificationLevelFunctions[level];
+    
+    callNotificationFunction(message, actions)
+    .then((response: string | undefined) => {
+        if(response === "More Details"){
+            editorOutput.showOuputChannel();
+        }
+    });
 }
 
 export const editorInput = {

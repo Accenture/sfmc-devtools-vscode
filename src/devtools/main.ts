@@ -386,12 +386,12 @@ function logUnsupportedMtdtTypeNotification(action: string, unsupportedMtdtTypes
     .flat()
     .forEach((metadataType: string) => {
         log(
-            "info", 
-            `SFMC DevTools currently does not support ${action} for the metadata type: '${metadataType}'`
+            "error", 
+            `Error: SFMC DevTools currently does not support ${action} for the metadata type: '${metadataType}'`
         );
     });
-    devtoolsContainers.modifyStatusBar("mcdev", "info");
-    editorInput.handleShowNotificationMessage("info", mainConfig.messages.unsupportedMetadataType, []);
+    devtoolsContainers.modifyStatusBar("mcdev", "error");
+    editorInput.handleShowNotificationMessage("error", mainConfig.messages.unsupportedMetadataType, []);
 };
 
 async function handleDevToolsCMCommand(action: string, selectedPaths: string[]): Promise<void>{
