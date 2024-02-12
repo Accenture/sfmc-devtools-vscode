@@ -2,6 +2,7 @@ export const mainConfig: {
     credentialsFilename: string,
     requiredFiles: string[],
     fileExtensions: string[],
+    noCopyFileExtensions: string[],
     allPlaceholder: string,
     extensionsDependencies: string[],
     messages: {
@@ -16,11 +17,13 @@ export const mainConfig: {
         runningCommand: string,
         successRunningCommand: string,
         failureRunningCommand: string,
+        unsupportedMetadataType: string
     }
 } = {
     credentialsFilename: ".mcdevrc.json",
     requiredFiles: [".mcdevrc.json", ".mcdev-auth.json"],
     fileExtensions: ["meta.json", "meta.sql", "meta.html", "meta.ssjs", "doc.md"],
+    noCopyFileExtensions: ["doc.md"],
     allPlaceholder: "*All*",
     extensionsDependencies: ["IBM.output-colorizer"],
     messages: {
@@ -34,6 +37,7 @@ export const mainConfig: {
         copyToBUInput: "Select one of the actions below...",
         runningCommand: "Running DevTools Command...",
         successRunningCommand: "DevTools Command has run successfully.",
-        failureRunningCommand: "Oh no. Something went wrong while running DevTools Command. Please check the error by clicking on the mcdev button in the status bar."
+        failureRunningCommand: "Oh no. Something went wrong while running DevTools Command.",
+        unsupportedMetadataType: "SFMC DevTools currently does not support one or more of the selected metadata types."
     }
 };
