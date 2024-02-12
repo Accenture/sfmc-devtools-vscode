@@ -1,145 +1,145 @@
 {
-	"name": "sfmc-devtools-vscode",
-	"displayName": "Accenture SFMC DevTools",
-	"description": "Supports command execution for Accenture SFMC DevTools tool directly within Visual Studio Code, eliminating the necessity for a separate terminal or CLI.",
-	"version": "1.0.0",
-	"license": "MIT",
-	"publisher": "Accenture-oss",
-	"peerDependencies": {
-		"mcdev": ">=5.2.0"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Accenture/sfmc-devtools-vscode.git"
-	},
-	"icon": "resources/images/sfmc-devtools-logo.jpg",
-	"engines": {
-		"vscode": "^1.85.0"
-	},
-	"keywords": [
-		"sfmc",
-		"salesforce",
-		"marketing cloud",
-		"devops",
-		"developer",
-		"exacttarget",
-		"package manager",
-		"vscode",
-		"extension",
-		"deployment"
-	],
-	"categories": [
-		"Other"
-	],
-	"main": "./dist/extension.bundle.js",
-	"activationEvents": [
-		"onStartupFinished"
-	],
-	"contributes": {
-		"commands": [
-			{
-				"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-				"title": "mcdev: Retrieve"
-			},
-			{
-				"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-				"title": "mcdev: Deploy"
-			},
-			{
-				"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-				"title": "mcdev: Copy to Business Unit..."
-			}
-		],
-		"menus": {
-			"explorer/context": [
-				{
-					"when": "resourcePath =~ /retrieve/",
-					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-					"group": "devtools"
-				},
-				{
-					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
-					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-					"group": "devtools"
-				},
-				{
-					"when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
-					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-					"group": "devtools"
-				}
-			],
-			"commandPalette": [
-				{
-					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-					"when": "false"
-				},
-				{
-					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-					"when": "false"
-				},
-				{
-					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-					"when": "false"
-				}
-			],
-			"editor/title/context": [
-				{
-					"when": "resourcePath =~ /retrieve/",
-					"command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-					"group": "devtools"
-				},
-				{
-					"when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
-					"command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-					"group": "devtools"
-				},
-				{
-					"when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
-					"command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-					"group": "devtools"
-				}
-			]
-		},
-		"configuration": {
-			"title": "sfmc-devtools-vscode",
-			"properties": {
-				"sfmc-devtools-vscode.recommendExtensions": {
-					"type": "boolean",
-					"default": true
-				}
-			}
-		}
-	},
-	"scripts": {
-		"webpack": "webpack --mode development",
-		"webpack-dev": "webpack --mode development --watch",
-		"vscode:prepublish": "npm run package",
-		"compile": "webpack",
-		"watch": "webpack --watch",
-		"package": "webpack --mode production --devtool hidden-source-map",
-		"lint": "eslint src --ext ts",
-		"test": "jest --coverage"
-	},
-	"devDependencies": {
-		"@types/chai": "^4.3.11",
-		"@types/jest": "^29.5.11",
-		"@types/node": "^20.11.17",
-		"@types/vscode": "^1.85.0",
-		"@typescript-eslint/eslint-plugin": "^6.21.0",
-		"@typescript-eslint/parser": "^6.19.1",
-		"@vscode/test-electron": "^2.3.9",
-		"chai": "^5.0.3",
-		"eslint": "^8.56.0",
-		"jest": "^29.7.0",
-		"ts-jest": "^29.1.2",
-		"ts-loader": "^9.5.1",
-		"typescript": "^5.3.3",
-		"webpack": "^5.90.0",
-		"webpack-cli": "^5.1.4"
-	},
-	"dependencies": {
-		"@salesforce-ux/design-system": "^2.23.2",
-		"@vscode/codicons": "^0.0.35",
-		"winston": "^3.11.0"
-	}
+   "name": "sfmc-devtools-vscode",
+   "displayName": "Accenture SFMC DevTools",
+   "description": "Unofficial IDE for Salesorce Marketing Cloud",
+   "version": "1.0.0",
+   "license": "MIT",
+   "publisher": "Accenture-oss",
+   "peerDependencies": {
+      "mcdev": ">=5.2.0"
+   },
+   "repository": {
+      "type": "git",
+      "url": "https://github.com/Accenture/sfmc-devtools-vscode.git"
+   },
+   "icon": "resources/images/sfmc-devtools-logo.jpg",
+   "engines": {
+      "vscode": "^1.85.0"
+   },
+   "keywords": [
+      "sfmc",
+      "salesforce",
+      "marketing cloud",
+      "devops",
+      "developer",
+      "exacttarget",
+      "package manager",
+      "vscode",
+      "extension",
+      "deployment"
+   ],
+   "categories": [
+      "Other"
+   ],
+   "main": "./dist/extension.bundle.js",
+   "activationEvents": [
+      "onStartupFinished"
+   ],
+   "contributes": {
+      "commands": [
+         {
+            "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+            "title": "mcdev: Retrieve"
+         },
+         {
+            "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+            "title": "mcdev: Deploy"
+         },
+         {
+            "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+            "title": "mcdev: Copy to Business Unit..."
+         }
+      ],
+      "menus": {
+         "explorer/context": [
+            {
+               "when": "resourcePath =~ /retrieve/",
+               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+               "group": "devtools"
+            },
+            {
+               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "group": "devtools"
+            },
+            {
+               "when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+               "group": "devtools"
+            }
+         ],
+         "commandPalette": [
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+               "when": "false"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "when": "false"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+               "when": "false"
+            }
+         ],
+         "editor/title/context": [
+            {
+               "when": "resourcePath =~ /retrieve/",
+               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+               "group": "devtools"
+            },
+            {
+               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "group": "devtools"
+            },
+            {
+               "when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+               "group": "devtools"
+            }
+         ]
+      },
+      "configuration": {
+         "title": "sfmc-devtools-vscode",
+         "properties": {
+            "sfmc-devtools-vscode.recommendExtensions": {
+               "type": "boolean",
+               "default": true
+            }
+         }
+      }
+   },
+   "scripts": {
+      "webpack": "webpack --mode development",
+      "webpack-dev": "webpack --mode development --watch",
+      "vscode:prepublish": "npm run package",
+      "compile": "webpack",
+      "watch": "webpack --watch",
+      "package": "webpack --mode production --devtool hidden-source-map",
+      "lint": "eslint src --ext ts",
+      "test": "jest --coverage"
+   },
+   "devDependencies": {
+      "@types/chai": "^4.3.11",
+      "@types/jest": "^29.5.11",
+      "@types/node": "^20.11.17",
+      "@types/vscode": "^1.85.0",
+      "@typescript-eslint/eslint-plugin": "^6.21.0",
+      "@typescript-eslint/parser": "^6.19.1",
+      "@vscode/test-electron": "^2.3.9",
+      "chai": "^5.0.3",
+      "eslint": "^8.56.0",
+      "jest": "^29.7.0",
+      "ts-jest": "^29.1.2",
+      "ts-loader": "^9.5.1",
+      "typescript": "^5.3.3",
+      "webpack": "^5.90.0",
+      "webpack-cli": "^5.1.4"
+   },
+   "dependencies": {
+      "@salesforce-ux/design-system": "^2.23.2",
+      "@vscode/codicons": "^0.0.35",
+      "winston": "^3.11.0"
+   }
 }
