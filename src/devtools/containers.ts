@@ -11,7 +11,8 @@ enum StatusBarIcon {
     retrieve = "cloud-download",
     deploy = "cloud-upload",
     error = "warning",
-    copy_to_folder = "file-symlink-directory" 
+    copy_to_folder = "file-symlink-directory",
+    info = "extensions-info-message"
 }
 
 // Contains all the status bars that are displayed in the extension
