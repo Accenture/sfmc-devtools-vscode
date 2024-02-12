@@ -138,7 +138,7 @@
 		"webpack-cli": "^5.1.4"
 	},
 	"dependencies": {
-		"@salesforce-ux/design-system": "^2.22.2",
+		"@salesforce-ux/design-system": "^2.23.2",
 		"@vscode/codicons": "^0.0.35",
 		"winston": "^3.11.0"
 	}
