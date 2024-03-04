@@ -1,7 +1,7 @@
 {
    "name": "sfmc-devtools-vscode",
-   "displayName": "Accenture SFMC DevTools",
-   "description": "Unofficial IDE for Salesorce Marketing Cloud",
+   "displayName": "SFMC DevTools",
+   "description": "Unofficial IDE for Salesforce Marketing Cloud",
    "version": "1.0.0",
    "license": "MIT",
    "publisher": "Accenture-oss",
@@ -14,7 +14,7 @@
    },
    "icon": "resources/images/sfmc-devtools-logo.jpg",
    "engines": {
-      "vscode": "^1.85.0"
+      "vscode": "^1.87.0"
    },
    "keywords": [
       "sfmc",
