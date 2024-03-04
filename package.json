@@ -17,16 +17,24 @@
       "vscode": "^1.87.0"
    },
    "keywords": [
-      "sfmc",
-      "salesforce",
-      "marketing cloud",
-      "devops",
+      "amp",
+      "ampscript",
+      "business units",
+      "content builder",
+      "deployment",
       "developer",
+      "devops",
       "exacttarget",
-      "package manager",
-      "vscode",
       "extension",
-      "deployment"
+      "ide",
+      "marketing cloud",
+      "mc",
+      "package manager",
+      "salesforce",
+      "server-side javascript",
+      "sfmc",
+      "ssjs",
+      "vscode"
    ],
    "categories": [
       "Other"
