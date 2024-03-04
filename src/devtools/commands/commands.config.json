@@ -1,0 +1,82 @@
+{
+    "admin": {
+        "id": "admin",
+        "title": "Admin Command",
+        "isAvailable": true,
+        "requireCredentials": false,
+        "commands": [
+            {
+                "id":"init", 
+                "title": "Init", 
+                "command": "mcdev init --y.credentialName {{credentialName}} --y.client_id {{client_id}} --y.client_secret {{client_secret}} --y.auth_url {{auth_url}} --y.gitRemoteUrl {{gitRemoteUrl}} --y.account_id {{account_id}}", 
+                "requiredParams": ["credentialName", "client_id", "client_secret", "auth_url", "gitRemoteUrl", "account_id"], 
+                "optionalParams": [], 
+                "description": "Initates SFMC DevTools or adds additional credentials to your project.", 
+                "isAvailable": true
+            }, 
+            {"id":"join", "title": "Join", "command": "", "requiredParams": [], "optionalParams": [], "description": "Clones an existing project from git.", "isAvailable": false}, 
+            {"id":"upgrade", "title": "Upgrade", "command": "", "requiredParams": [], "optionalParams": [], "description": "Add NPM dependencies and IDE configuration files to your project.", "isAvailable": false}, 
+            {"id":"rbus", "title": "Reload BUs", "command": "", "requiredParams": [], "optionalParams": [], "description": "Loads the list of available BUs from the server and saves it in your project.", "isAvailable": false}, 
+            {"id":"badkeys", "title": "Bad Keys", "command": "", "requiredParams": [], "optionalParams": [], "description": "Lists metadata with random API names in specified Business Unit directory.", "isAvailable": false}, 
+            {"id":"doc", "title": "Document", "command": "", "requiredParams": [], "optionalParams": [], "description": "Creates Markdown or HTML documentation for the selected type.", "isAvailable": false}, 
+            {"id":"stypes", "title": "Select Types", "command": "", "requiredParams": [], "optionalParams": [], "description": "Allows you choose what metadata types to retrieve.", "isAvailable": false}, 
+            {
+                "id":"etypes", 
+                "title": "Explain Types", 
+                "command": "mcdev explainTypes {{json}} --skipInteraction", 
+                "requiredParams": [], 
+                "optionalParams": ["json"], 
+                "description": "Explains metadata types that can be retrieved.", 
+                "isAvailable": true
+            }
+        ]
+    },
+    "standard": {
+        "id": "standard",
+        "title": "Standard Command",
+        "isAvailable": true,
+        "requireCredentials": true,
+        "commands": [
+            {
+                "id":"retrieve", 
+                "title": "Retrieve", 
+                "command": "mcdev retrieve {{bu}} {{mdtypes}} {{key}} --skipInteraction", 
+                "requiredParams": ["bu", "mdtypes"],
+                "optionalParams": ["key"],
+                "description": "Retrieves metadata of a business unit.", 
+                "isAvailable": true
+            },
+            {
+                "id":"deploy", 
+                "title": "Deploy", 
+                "command": "mcdev deploy {{bu}} {{mdtypes}} {{key}} {{fromRetrieve}} --skipInteraction", 
+                "requiredParams": ["bu", "mdtypes"],
+                "optionalParams": ["key", "fromRetrieve"],
+                "description": "Deploys local metadata to a business unit.", 
+                "isAvailable": true
+            },
+            {"id":"delete", "title": "Delete", "command": "mcdev delete", "requiredParams": [], "optionalParams": [], "description": "Deletes metadata of selected type and external key.", "isAvailable": false},
+            {
+                "id":"refresh", 
+                "title": "Refresh", 
+                "command": "mcdev refresh", 
+                "requiredParams": [], 
+                "optionalParams": [], 
+                "description": "Ensures that updates are properly published.", 
+                "isAvailable": false
+            }
+        ]
+    },
+    "templating": {
+        "id": "templating",
+        "title": "Templating",
+        "isAvailable": false,
+        "requireCredentials": false,
+        "commands": [
+            {"id":"rtemp", "title": "Retrieve As Template", "command": "", "requiredParams": [], "optionalParams": [], "description": "Retrieves a specific metadata file by name from the server for templating.", "isAvailable": false},
+            {"id":"btemp", "title": "Build Template", "command": "", "requiredParams": [], "optionalParams": [], "description": "Builds a template out of a specific metadata file already in your retrieve folder.", "isAvailable": false},
+            {"id":"bdef", "title": "Build Definition", "command": "", "requiredParams": [], "optionalParams": [], "description": "Builds metadata definition based on template.", "isAvailable": false},
+            {"id":"bdefbulk", "title": "Build Definition Bulk", "command": "", "requiredParams": [], "optionalParams": [], "description": "Builds metadata definition based on template en bulk.", "isAvailable": false}
+        ]
+    }
+}
