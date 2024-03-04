@@ -14,7 +14,7 @@
    },
    "icon": "resources/images/sfmc-devtools-logo.jpg",
    "engines": {
-      "vscode": "^1.87.0"
+      "vscode": "^1.81.1"
    },
    "keywords": [
       "amp",
@@ -132,7 +132,7 @@
       "@types/chai": "^4.3.11",
       "@types/jest": "^29.5.11",
       "@types/node": "^20.11.17",
-      "@types/vscode": "^1.87.0",
+      "@types/vscode": "^1.81.1",
       "@typescript-eslint/eslint-plugin": "^7.1.0",
       "@typescript-eslint/parser": "^7.1.0",
       "@vscode/test-electron": "^2.3.9",
