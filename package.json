@@ -148,6 +148,6 @@
    "dependencies": {
       "@salesforce-ux/design-system": "^2.23.2",
       "@vscode/codicons": "^0.0.35",
-      "winston": "^3.11.0"
+      "winston": "^3.12.0"
    }
 }
