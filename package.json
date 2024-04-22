@@ -66,7 +66,7 @@
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
+               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript'))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
@@ -97,7 +97,7 @@
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
+               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript'))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
@@ -129,12 +129,12 @@
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@types/chai": "^4.3.11",
+      "@types/chai": "^4.3.14",
       "@types/jest": "^29.5.11",
       "@types/node": "^20.11.17",
       "@types/vscode": "^1.81.1",
-      "@typescript-eslint/eslint-plugin": "^7.1.0",
-      "@typescript-eslint/parser": "^7.1.0",
+      "@typescript-eslint/eslint-plugin": "^7.4.0",
+      "@typescript-eslint/parser": "^7.7.0",
       "@vscode/test-electron": "^2.3.9",
       "chai": "^5.1.0",
       "eslint": "^8.56.0",
@@ -148,6 +148,6 @@
    "dependencies": {
       "@salesforce-ux/design-system": "^2.23.2",
       "@vscode/codicons": "^0.0.35",
-      "winston": "^3.11.0"
+      "winston": "^3.13.0"
    }
 }
