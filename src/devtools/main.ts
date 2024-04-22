@@ -492,7 +492,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                     let { credentialName, businessUnit, metadataType, keys } = getMCDevRelativePathComponents(cmPath.substring(1));
                     let key: string = "";
 
-                    if(!DevToolsCommands.isSupportedMetadataType(action, metadataType)){
+                    if(metadataType && !DevToolsCommands.isSupportedMetadataType(action, metadataType)){
                         logUnsupportedMtdtTypeNotification(action, metadataType);
                         continue;
                     }

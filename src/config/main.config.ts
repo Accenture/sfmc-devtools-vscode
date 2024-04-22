@@ -22,7 +22,7 @@ export const mainConfig: {
 } = {
     credentialsFilename: ".mcdevrc.json",
     requiredFiles: [".mcdevrc.json", ".mcdev-auth.json"],
-    fileExtensions: ["meta.json", "meta.sql", "meta.html", "meta.ssjs", "doc.md"],
+    fileExtensions: ["meta.json", "meta.sql", "meta.html", "meta.ssjs", "meta.amp", "doc.md"],
     noCopyFileExtensions: ["doc.md"],
     allPlaceholder: "*All*",
     extensionsDependencies: ["IBM.output-colorizer"],
