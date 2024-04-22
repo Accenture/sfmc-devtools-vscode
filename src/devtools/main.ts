@@ -14,6 +14,7 @@ import DevToolsCommandSetting from "../shared/interfaces/devToolsCommandSetting"
 import DevToolsPathComponents from "../shared/interfaces/devToolsPathComponents";
 import { lib } from "../shared/utils/lib";
 import { file } from "../shared/utils/file";
+import { editorCommands } from "../editor/commands";
 
 
 async function initDevToolsExtension(): Promise<void>{
@@ -21,24 +22,12 @@ async function initDevToolsExtension(): Promise<void>{
     try{
         log("info", "Running SFMC DevTools extension...");
 
-        editorDependencies.activateExtensionDependencies(mainConfig.extensionsDependencies);
+        const anyDevToolsProject: boolean = await isADevToolsProject() || await anySubFolderIsDevToolsProject();
 
-        // activate the status bar
-        devtoolsContainers.activateStatusBar();
-
-        // activate the context menus options
-        devtoolsContainers.activateContextMenuCommands();
-
-        // If it's already a mcdev project it will check if prerequisites and devtools are installed
-        if(await isADevToolsProject()){
+        if(anyDevToolsProject){
             await handleDevToolsRequirements();
-        }else{
-            // activate status bar immediately when isDevToolsProject is false 
-            // devtoolsContainers.activateStatusBar(false, DevToolsCommands.commandPrefix);
-            if(await anySubFolderIsDevToolsProject()){
-                // init DevTools Commands
-                DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
-            }
+            activateDependencies();
+            activateContainers();
         }
     }catch(error){
         log("error", `[main_initDevToolsExtension] Error: ${error}`);
@@ -73,12 +62,6 @@ async function handleDevToolsRequirements(/*isDevToolsProject: boolean*/): Promi
         }
         log("info", "SFMC DevTools is installed.");
 
-        // Needs to check if it's a DevTools Project or not
-        // if(isDevToolsProject){
-        //     // activate status bar immediately when isDevToolsProject is true 
-        //     devtoolsContainers.activateStatusBar(true, DevToolsCommands.commandPrefix);
-        // }
-
         // init DevTools Commands
         DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
         return;
@@ -100,6 +83,19 @@ async function anySubFolderIsDevToolsProject(): Promise<boolean> {
         log("debug", "Workspace doesn't contain any sub folders.");
     }
     return false;
+}
+
+function activateDependencies(){
+    editorDependencies.activateExtensionDependencies(mainConfig.extensionsDependencies);
+    editorCommands.setCommandContext("sfmc-devtools-vscode.isDevToolsProject", true);
+}
+
+function activateContainers(){
+    // activate the status bar
+    devtoolsContainers.activateStatusBar();
+
+    // activate the context menus options
+    devtoolsContainers.activateContextMenuCommands();
 }
 
 function handleStatusBarActions(action: string): void {
