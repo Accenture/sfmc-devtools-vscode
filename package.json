@@ -129,7 +129,7 @@
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@types/chai": "^4.3.11",
+      "@types/chai": "^4.3.14",
       "@types/jest": "^29.5.11",
       "@types/node": "^20.11.17",
       "@types/vscode": "^1.81.1",
