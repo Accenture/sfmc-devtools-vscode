@@ -23,6 +23,9 @@ async function initDevToolsExtension(): Promise<void>{
 
         editorDependencies.activateExtensionDependencies(mainConfig.extensionsDependencies);
 
+        // Deactivates Compact folders for command right execution
+        editorDependencies.deactivateCompactFolders();
+        
         // activate the status bar
         devtoolsContainers.activateStatusBar();
 
