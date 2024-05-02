@@ -1,8 +1,8 @@
 interface SupportedMetadataTypes {
     name: string,
     apiName: string,
-    retrieveByDefault: boolean,
-    supports: {[key: string]: boolean },
+    retrieveByDefault: boolean | string[],
+    supports: {[key: string]: boolean | null },
     description: string
 }
 

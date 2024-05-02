@@ -135,7 +135,6 @@ abstract class DevToolsCommands {
         }
 
         log("debug", `DevToolsCommands: [${Object.keys(this.commandMap)}]`);
-        log("info", "Get DevTools Supported Metadata Types.");
         this.runCommand(
             "admin", 
             "etypes", 
