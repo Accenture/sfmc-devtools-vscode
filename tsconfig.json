@@ -4,7 +4,7 @@
 		"target": "ES2022",
 		"lib": ["ES2022", "DOM"],
 		"sourceMap": true,
-		"rootDir": "src",
+		"rootDir": "src_ref",
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
@@ -13,8 +13,10 @@
 		"noImplicitAny": true,
 		"strictNullChecks": true,
 		"forceConsistentCasingInFileNames": true,
-		"typeRoots": ["src/types"]
+		"paths": {
+			"@types": ["./src_ref/types/index"]
+		}
 	},
-	"include": ["src/**/*.ts"],
+	"include": ["src_ref/**/*.ts"],
   	"exclude": ["node_modules"]
 }

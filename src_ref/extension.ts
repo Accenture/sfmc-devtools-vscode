@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
-import DevTools from "./devtools";
+import DevTools from "./devtools/index";
+
 export async function activate(context: vscode.ExtensionContext) {
 	try {
 		// initialize DevTools Extension

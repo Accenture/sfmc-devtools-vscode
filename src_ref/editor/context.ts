@@ -1,4 +1,4 @@
-import { IEditor } from "../types";
+import { IEditor } from "@types";
 
 let extensionContext: IEditor.IExtensionContext | null = null;
 export default function (context: IEditor.IExtensionContext) {

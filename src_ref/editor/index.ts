@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { IEditor } from "../types";
+import { IEditor } from "@types";
 import ExtensionContext from "./context";
 import ExtensionWorkspace from "./workspace";
 
