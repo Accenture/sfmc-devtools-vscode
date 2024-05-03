@@ -16,16 +16,23 @@ function executeCommand(command: string, args: string[]) {
 	return terminalOutput;
 }
 
-function executeTerminalCommand(command: string, args: string[], sync: boolean) {
-	const terminalProcess: TerminalOutput = sync ? executeCommandSync(command, args) : executeCommand(command, args);
-	console.log(terminalProcess);
-	return terminalProcess;
+function executeTerminalCommand(command: string, args: string[], sync: boolean): TerminalOutput {
+	return sync ? executeCommandSync(command, args) : executeCommand(command, args);
 }
 
-async function getGlobalInstalledPackages(): Promise<string[]> {
-	const terminal: TerminalOutput = executeTerminalCommand("npm", ["list", "-g", "--json"], true);
+function getGlobalInstalledPackages(): string[] {
+	try {
+		const terminal: TerminalOutput = executeTerminalCommand("npm", ["list", "-g", "--json"], true);
 
-	return [];
+		if (terminal.error) throw new Error(`Error retrieving global packages: ${terminal.error}`);
+		if (!terminal.output.includes('"dependencies"'))
+			throw new Error(`Error retrieving global packages: no "dependencies" found.`);
+
+		const terminalOutput: { name: string; dependencies: Record<string, {}> } = JSON.parse(terminal.output);
+		return Object.keys(terminalOutput.dependencies || {});
+	} catch (error) {
+		throw new Error(`Error retrieving global packages: failed to parse JSON output`);
+	}
 }
 
 function isPackageInstalled(packageName: string): boolean {
