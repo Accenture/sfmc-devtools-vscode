@@ -1,26 +1,25 @@
 import * as vscode from "vscode";
-import { IEditor } from "@types";
 
-export default function (): IEditor.IWorkspace {
-	function getURI(): vscode.Uri | undefined {
-		console.log("=== Workspace: Get URI ===");
+class VSCodeWorkspace {
+	getURI(): vscode.Uri | undefined {
+		console.log("=== VSCodeWorkspace: Get URI ===");
 		const workspace: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
 		if (workspace && workspace.length) return workspace[0].uri;
 		// throw Error
 		return;
 	}
 
-	async function getWokspaceFiles(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-		console.log("=== Workspace: Get Workspace Files ===");
+	async getWokspaceFiles(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
+		console.log("=== VSCodeWorkspace: Get Workspace Files ===");
 		const folderFiles: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(uri);
 		return folderFiles;
 	}
 
-	async function getSubFolders(): Promise<string[]> {
-		console.log("=== Workspace: Get SubFolders ===");
-		const uri: vscode.Uri | undefined = getURI();
+	async getSubFolders(): Promise<string[]> {
+		console.log("=== VSCodeWorkspace: Get SubFolders ===");
+		const uri: vscode.Uri | undefined = this.getURI();
 		if (uri) {
-			const folderFiles: [string, vscode.FileType][] = await getWokspaceFiles(uri);
+			const folderFiles: [string, vscode.FileType][] = await this.getWokspaceFiles(uri);
 			return folderFiles
 				.filter(([name, type]: [string, vscode.FileType]) => type === vscode.FileType.Directory)
 				.map(([name]: [string, vscode.FileType]) => name);
@@ -29,11 +28,11 @@ export default function (): IEditor.IWorkspace {
 		return [];
 	}
 
-	async function isFileInFolder(file: string): Promise<boolean> {
-		console.log("=== Workspace: IsFileInFolder ===");
+	async isFileInFolder(file: string): Promise<boolean> {
+		console.log("=== VSCodeWorkspace: IsFileInFolder ===");
 		const workspaceFile: vscode.Uri[] = await vscode.workspace.findFiles(file);
 		return workspaceFile.length > 0;
 	}
-
-	return { isFileInFolder, getSubFolders };
 }
+
+export default VSCodeWorkspace;

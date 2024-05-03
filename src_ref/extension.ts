@@ -4,7 +4,7 @@ import DevTools from "./devtools/index";
 export async function activate(context: vscode.ExtensionContext) {
 	try {
 		// initialize DevTools Extension
-		DevTools().init(context);
+		new DevTools(context).init();
 	} catch (error) {
 		// log error
 	}

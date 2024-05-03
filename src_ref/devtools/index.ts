@@ -1,36 +1,38 @@
-import Editor from "../editor/index";
-import DevToolsUtils from "./utils";
-import mcdev from "mcdev";
 import { devToolsConfig } from "../config/devtools.config";
-import { IDevTools, IEditor } from "@types";
+import { IEditor } from "@types";
+import VSCodeEditor from "../editor/index";
+import Mcdev from "./mcdev";
 
-export default function () {
-	let editor: IEditor.IInstance | null = null;
-	let utils: IDevTools.IDevToolsUtils | null = null;
-
-	async function loadConfiguration() {
-		console.log("=== Index: Load Configuration ===");
-		mcdev.retrieve("1234", ["dataextension"], ["1234"]);
+class DevTools {
+	vscodeEditor: VSCodeEditor;
+	mcdev: Mcdev;
+	constructor(context: IEditor.IExtensionContext) {
+		this.vscodeEditor = new VSCodeEditor(context);
+		this.mcdev = new Mcdev();
 	}
 
-	async function checkConfiguration() {
-		console.log("=== Index: Checking Configuration ===");
-		if (utils) {
-			const isDevToolsProject: boolean = await utils.isDevToolsProject(devToolsConfig.requiredFiles);
-			// const isSubFolderADevToolsProject: boolean = utils.subFoldersAreDevToolsProject();
-			if (isDevToolsProject) loadConfiguration();
-		} else {
-			// Throw Error
-		}
+	async init() {
+		const isDevToolsProject: boolean = await this.isProject();
+		if (isDevToolsProject) this.loadConfiguration();
 	}
 
-	function init(context: IEditor.IExtensionContext) {
-		console.log("=== Index: Init ===");
-		editor = Editor(context);
-		utils = DevToolsUtils(editor);
-
-		checkConfiguration();
+	async isProject(): Promise<boolean> {
+		const requiredProjectFiles: string[] = devToolsConfig.requiredFiles || [];
+		const filesInFolderResult: boolean[] = await Promise.all(
+			requiredProjectFiles.map(
+				async (file: string) => await this.vscodeEditor.getWorkspace().isFileInFolder(file)
+			)
+		);
+		return filesInFolderResult.every((fileResult: boolean) => fileResult);
 	}
 
-	return { init };
+	async loadConfiguration() {
+		// Check if Mcdev is installed
+		const isMcdevInstalled: boolean = this.mcdev.isInstalled();
+		console.log("isMcdevInstalled ", isMcdevInstalled);
+		// if no -> ask to install it
+		// activate dependencies
+		// activate editor containers
+	}
 }
+export default DevTools;

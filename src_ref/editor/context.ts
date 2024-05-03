@@ -1,9 +1,14 @@
 import { IEditor } from "@types";
 
-let extensionContext: IEditor.IExtensionContext | null = null;
-export default function (context: IEditor.IExtensionContext) {
-	extensionContext = context;
-	return {
-		get: () => extensionContext
-	};
+class VSCodeContext {
+	context: IEditor.IExtensionContext;
+	constructor(context: IEditor.IExtensionContext) {
+		this.context = context;
+	}
+
+	getContext() {
+		return this.context;
+	}
 }
+
+export default VSCodeContext;
