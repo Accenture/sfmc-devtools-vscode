@@ -1,7 +1,9 @@
-import { devToolsConfig } from "../config/devtools.config";
-import { IEditor } from "@types";
 import VSCodeEditor from "../editor/index";
 import Mcdev from "./mcdev";
+import { devToolsConfig } from "../config/devtools.config";
+import { devToolsMessages } from "../messages/devtools.messages";
+import { IEditor } from "@types";
+import { Confirmation } from "../constants/constants";
 
 class DevTools {
 	vscodeEditor: VSCodeEditor;
@@ -28,11 +30,22 @@ class DevTools {
 
 	async loadConfiguration() {
 		// Check if Mcdev is installed
-		const isMcdevInstalled: boolean = this.mcdev.isInstalled();
-		console.log("isMcdevInstalled ", isMcdevInstalled);
-		// if no -> ask to install it
+		const mcdevInstalled: boolean = this.mcdev.isInstalled();
+		if (mcdevInstalled) {
+			// request user to install mcdev
+			this.installMcdev();
+		}
+
 		// activate dependencies
 		// activate editor containers
+	}
+
+	async installMcdev() {
+		const userAnswer: string | undefined = await this.vscodeEditor.getWindow().showInformationMessageWithOptions(
+			devToolsMessages.noMcdevInstalled,
+			Object.keys(Confirmation).filter(v => isNaN(Number(v)))
+		);
+		if (userAnswer && userAnswer.toLowerCase() === Confirmation.Yes) this.mcdev.install();
 	}
 }
 export default DevTools;

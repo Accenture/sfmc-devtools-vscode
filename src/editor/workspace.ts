@@ -62,27 +62,16 @@ async function isFile(file: string | Uri) {
 	return fileType.toLowerCase() === "file";
 }
 
-<<<<<<< HEAD
-function handleWorkspaceConfiguration(key: string, value: string | boolean) {
-	const workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration("sfmc-devtools-vscode");
+function handleWorkspaceConfiguration(section: string, target: WorkspaceConfigurationTarget) {
+	const workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration(section);
 	if (workspaceConfiguration) {
 		return {
-			get: () => workspaceConfiguration.get(key, value),
-			set: () => workspaceConfiguration.update(key, value, ConfigurationTarget.Global)
+			get: (key: string, value: string | boolean) => workspaceConfiguration.get(key, value),
+			set: (key: string, value: string | boolean) =>
+				workspaceConfiguration.update(key, value, ConfigurationTarget[target])
 		};
 	}
 	throw new Error("Failed to handle Workspace Configuration.");
-=======
-function handleWorkspaceConfiguration(section: string, target: WorkspaceConfigurationTarget){
-    const workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration(section);
-    if(workspaceConfiguration){
-        return {
-            get: (key: string, value: string | boolean) => workspaceConfiguration.get(key, value),
-            set: (key: string, value: string | boolean) => workspaceConfiguration.update(key, value, ConfigurationTarget[target])
-        };
-    }
-    throw new Error("Failed to handle Workspace Configuration.");
->>>>>>> develop
 }
 
 function getFileSystemPaths(paths: string | string[]) {

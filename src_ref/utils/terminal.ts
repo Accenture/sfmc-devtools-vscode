@@ -1,4 +1,4 @@
-import { spawn, ChildProcess, spawnSync, SpawnSyncReturns } from "child_process";
+import { spawn, spawnSync, SpawnSyncReturns } from "child_process";
 
 type TerminalOutput = { output: string; error: string; code?: number };
 
@@ -31,7 +31,7 @@ function getGlobalInstalledPackages(): string[] {
 		const terminalOutput: { name: string; dependencies: Record<string, {}> } = JSON.parse(terminal.output);
 		return Object.keys(terminalOutput.dependencies || {});
 	} catch (error) {
-		throw new Error(`Error retrieving global packages: failed to parse JSON output`);
+		throw new Error(`Error retrieving global packages: failed to parse JSON output.`);
 	}
 }
 
@@ -40,9 +40,14 @@ function isPackageInstalled(packageName: string): boolean {
 		const installedPackages: string[] = getGlobalInstalledPackages();
 		return installedPackages.includes(packageName);
 	} catch (error) {
-		console.log(`${error}`);
-		return false;
+		throw new Error(`[terminal_isPackageInstalled]: ${error}`);
 	}
 }
 
-export const terminal = { isPackageInstalled };
+function installPackage(packageName: string): void {
+	const terminal: TerminalOutput = executeTerminalCommand("npm", ["install", "-g", packageName], true);
+	if (terminal.error) throw new Error(`Error installing '${packageName}' package: ${terminal.error}`);
+	console.log(terminal.output);
+}
+
+export const terminal = { isPackageInstalled, installPackage };
