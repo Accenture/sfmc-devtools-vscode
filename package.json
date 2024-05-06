@@ -1,8 +1,8 @@
 {
    "name": "sfmc-devtools-vscode",
-   "displayName": "Accenture SFMC DevTools",
-   "description": "Unofficial IDE for Salesorce Marketing Cloud",
-   "version": "1.0.0",
+   "displayName": "SFMC DevTools",
+   "description": "Unofficial IDE for Salesforce Marketing Cloud",
+   "version": "1.0.1",
    "license": "MIT",
    "publisher": "Accenture-oss",
    "peerDependencies": {
@@ -14,19 +14,27 @@
    },
    "icon": "resources/images/sfmc-devtools-logo.jpg",
    "engines": {
-      "vscode": "^1.85.0"
+      "vscode": "^1.81.1"
    },
    "keywords": [
-      "sfmc",
-      "salesforce",
-      "marketing cloud",
-      "devops",
+      "amp",
+      "ampscript",
+      "business units",
+      "content builder",
+      "deployment",
       "developer",
+      "devops",
       "exacttarget",
-      "package manager",
-      "vscode",
       "extension",
-      "deployment"
+      "ide",
+      "marketing cloud",
+      "mc",
+      "package manager",
+      "salesforce",
+      "server-side javascript",
+      "sfmc",
+      "ssjs",
+      "vscode"
    ],
    "categories": [
       "Other"
@@ -58,7 +66,12 @@
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
+               "when": "resourcePath =~ /deploy/",
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "group": "devtools"
+            },
+            {
+               "when": "resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
@@ -89,7 +102,12 @@
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown'))",
+               "when": "resourcePath =~ /deploy/",
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "group": "devtools"
+            },
+            {
+               "when": "resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript')",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
@@ -121,12 +139,12 @@
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@types/chai": "^4.3.11",
+      "@types/chai": "^4.3.14",
       "@types/jest": "^29.5.11",
       "@types/node": "^20.11.17",
-      "@types/vscode": "^1.87.0",
-      "@typescript-eslint/eslint-plugin": "^7.1.0",
-      "@typescript-eslint/parser": "^7.1.0",
+      "@types/vscode": "^1.88.0",
+      "@typescript-eslint/eslint-plugin": "^7.4.0",
+      "@typescript-eslint/parser": "^7.7.0",
       "@vscode/test-electron": "^2.3.9",
       "chai": "^5.1.0",
       "eslint": "^8.56.0",
@@ -144,6 +162,6 @@
    "dependencies": {
       "@salesforce-ux/design-system": "^2.23.2",
       "@vscode/codicons": "^0.0.35",
-      "winston": "^3.11.0"
+      "winston": "^3.13.0"
    }
 }

@@ -10,6 +10,8 @@ import {
 } from "vscode";
 import { editorCommands } from "./commands";
 
+type WorkspaceConfigurationTarget = "Global" | "Workspace" | "WorkspaceFolder";
+
 function getWorkspaceURI(): Uri {
 	const wsFolder: readonly WorkspaceFolder[] | undefined = workspace.workspaceFolders;
 	if (wsFolder) {
@@ -60,6 +62,7 @@ async function isFile(file: string | Uri) {
 	return fileType.toLowerCase() === "file";
 }
 
+<<<<<<< HEAD
 function handleWorkspaceConfiguration(key: string, value: string | boolean) {
 	const workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration("sfmc-devtools-vscode");
 	if (workspaceConfiguration) {
@@ -69,6 +72,17 @@ function handleWorkspaceConfiguration(key: string, value: string | boolean) {
 		};
 	}
 	throw new Error("Failed to handle Workspace Configuration.");
+=======
+function handleWorkspaceConfiguration(section: string, target: WorkspaceConfigurationTarget){
+    const workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration(section);
+    if(workspaceConfiguration){
+        return {
+            get: (key: string, value: string | boolean) => workspaceConfiguration.get(key, value),
+            set: (key: string, value: string | boolean) => workspaceConfiguration.update(key, value, ConfigurationTarget[target])
+        };
+    }
+    throw new Error("Failed to handle Workspace Configuration.");
+>>>>>>> develop
 }
 
 function getFileSystemPaths(paths: string | string[]) {

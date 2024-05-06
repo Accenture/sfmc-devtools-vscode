@@ -21,8 +21,11 @@ async function initDevToolsExtension(): Promise<void> {
 
 		editorDependencies.activateExtensionDependencies(mainConfig.extensionsDependencies);
 
-		// activate the status bar
-		devtoolsContainers.activateStatusBar();
+        // Deactivates Compact folders for command right execution
+        editorDependencies.deactivateCompactFolders();
+        
+        // activate the status bar
+        devtoolsContainers.activateStatusBar();
 
 		// activate the context menus options
 		devtoolsContainers.activateContextMenuCommands();
@@ -489,10 +492,10 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
 					);
 					let key: string = "";
 
-					if (metadataType && !DevToolsCommands.isSupportedMetadataType(action, metadataType)) {
-						logUnsupportedMtdtTypeNotification(action, metadataType);
-						continue;
-					}
+                    if(metadataType && !DevToolsCommands.isSupportedMetadataType(action, metadataType)){
+                        logUnsupportedMtdtTypeNotification(action, metadataType);
+                        continue;
+                    }
 
 					// If user selected to retrieve/deploy a subfolder/file inside metadata type asset folder
 					if (metadataType === "asset" && keys.length) {

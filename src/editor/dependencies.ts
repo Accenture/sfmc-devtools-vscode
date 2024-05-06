@@ -18,8 +18,9 @@ async function activateExtensionDependencies(dependencies: string | string[]){
 
     if(missingExtDependencies.length){
 
-        const suggestRecommendedExtensions: string | boolean = 
-            editorWorkspace.handleWorkspaceConfiguration("recommendExtensions", true).get();
+        const workspaceConfiguration = editorWorkspace.handleWorkspaceConfiguration("sfmc-devtools-vscode", "Global"); 
+        const suggestRecommendedExtensions: boolean = 
+            Boolean(workspaceConfiguration.get("recommendExtensions", true));
 
         if(suggestRecommendedExtensions){
             const message: string = "There are some recommended extensions that can enhance your usage of SFMC DevTools. Would you like to install them?";
@@ -34,15 +35,25 @@ async function activateExtensionDependencies(dependencies: string | string[]){
                         );
                     });
                 }else if(selectedOption === RecommendedExtensionsInputOptions.DONT_ASK_AGAIN){
-                    editorWorkspace.handleWorkspaceConfiguration("recommendExtensions", false).set();
+                    workspaceConfiguration.set("recommendExtensions", false);
                 }
             }
         }
     }
 }
 
+function deactivateCompactFolders(){
+    const workspaceConfiguration = editorWorkspace.handleWorkspaceConfiguration("explorer", "Workspace");
+    const isCompactFoldersEnabled: boolean = Boolean(workspaceConfiguration.get("compactFolders", true));
+    if(isCompactFoldersEnabled){
+        // Disable Compact Folders
+        workspaceConfiguration.set("compactFolders", false);
+    } 
+}
+
 const editorDependencies = {
-    activateExtensionDependencies
+    activateExtensionDependencies,
+    deactivateCompactFolders
 };
 
 export { editorDependencies };
