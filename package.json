@@ -143,7 +143,7 @@
       "@types/jest": "^29.5.11",
       "@types/node": "^20.12.8",
       "@types/vscode": "^1.88.0",
-      "@typescript-eslint/eslint-plugin": "^7.4.0",
+      "@typescript-eslint/eslint-plugin": "^7.8.0",
       "@typescript-eslint/parser": "^7.7.0",
       "@vscode/test-electron": "^2.3.9",
       "chai": "^5.1.0",
