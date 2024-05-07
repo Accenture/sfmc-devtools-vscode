@@ -151,7 +151,9 @@ abstract class DevToolsCommands {
                             Object.keys(this.commandMap).forEach((key: string) => {
                                 const devToolCommand: DevToolsCommands = 
                                     this.commandMap[key];
-                                devToolCommand.setMetadataTypes(parsedResult);
+                                const sortedSuppMdtByName: SupportedMetadataTypes[] = 
+                                    parsedResult.sort((a, b) => a.name.localeCompare(b.name));
+                                devToolCommand.setMetadataTypes(sortedSuppMdtByName);
                             });
                         }else{
                             log("error", "DevToolsCommands_init: Failed to parse supported metadata type result.");
