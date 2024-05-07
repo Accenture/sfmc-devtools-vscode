@@ -66,7 +66,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown')))",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
@@ -97,7 +97,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown')))",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript')))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
@@ -131,10 +131,10 @@
    "devDependencies": {
       "@types/chai": "^4.3.11",
       "@types/jest": "^29.5.11",
-      "@types/node": "^20.11.17",
-      "@types/vscode": "^1.81.1",
-      "@typescript-eslint/eslint-plugin": "^7.1.0",
-      "@typescript-eslint/parser": "^7.1.0",
+      "@types/node": "^20.12.8",
+      "@types/vscode": "^1.88.0",
+      "@typescript-eslint/eslint-plugin": "^7.8.0",
+      "@typescript-eslint/parser": "^7.7.0",
       "@vscode/test-electron": "^2.3.9",
       "chai": "^5.1.0",
       "eslint": "^8.56.0",
@@ -142,7 +142,7 @@
       "ts-jest": "^29.1.2",
       "ts-loader": "^9.5.1",
       "typescript": "^5.3.3",
-      "webpack": "^5.90.3",
+      "webpack": "^5.91.0",
       "webpack-cli": "^5.1.4"
    },
    "dependencies": {

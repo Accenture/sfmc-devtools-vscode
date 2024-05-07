@@ -62,6 +62,8 @@ async function handleDevToolsRequirements(/*isDevToolsProject: boolean*/): Promi
         }
         log("info", "SFMC DevTools is installed.");
 
+        // Deactivates Compact folders for command right execution
+        editorDependencies.deactivateCompactFolders();
         // init DevTools Commands
         DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
         return;
