@@ -15,9 +15,14 @@ class Mcdev {
 	install() {
 		console.log("== Mcdev: Install ==");
 		try {
-			terminal.installPackage(this.packageName);
+			const terminalOutcome = terminal.installPackage(this.packageName);
+			if (terminalOutcome.error) {
+				// log error
+			}
+			return { success: terminalOutcome.error.length == 0 };
 		} catch (error) {
 			// log error
+			return { success: false };
 		}
 	}
 }

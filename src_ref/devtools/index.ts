@@ -4,6 +4,7 @@ import { devToolsConfig } from "../config/devtools.config";
 import { devToolsMessages } from "../messages/devtools.messages";
 import { IEditor } from "@types";
 import { Confirmation } from "../constants/constants";
+import VSCodeWindow from "../editor/window";
 
 class DevTools {
 	vscodeEditor: VSCodeEditor;
@@ -41,11 +42,25 @@ class DevTools {
 	}
 
 	async installMcdev() {
-		const userAnswer: string | undefined = await this.vscodeEditor.getWindow().showInformationMessageWithOptions(
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		// Asks user if he wishes to install mcdev
+		const userAnswer: string | undefined = await vscodeWindow.showInformationMessageWithOptions(
 			devToolsMessages.noMcdevInstalled,
 			Object.keys(Confirmation).filter(v => isNaN(Number(v)))
 		);
-		if (userAnswer && userAnswer.toLowerCase() === Confirmation.Yes) this.mcdev.install();
+		if (userAnswer && userAnswer.toLowerCase() === Confirmation.Yes)
+			await vscodeWindow.showInProgressMessage("Notification", progress => {
+				progress.report({ message: devToolsMessages.mcdevInstallLoading });
+				return new Promise<void>(resolve => {
+					const installResult: { success: boolean } = this.mcdev.install();
+					console.log(installResult);
+					if (installResult.success)
+						const response = vscodeWindow.showInformationMessageWithOptions(devToolsMessages.mcdevInstallSuccess, [
+							"Reload Windows"
+						]);
+					resolve();
+				});
+			});
 	}
 }
 export default DevTools;

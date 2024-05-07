@@ -44,10 +44,16 @@ function isPackageInstalled(packageName: string): boolean {
 	}
 }
 
-function installPackage(packageName: string): void {
+function installPackage(packageName: string): TerminalOutput {
+	try {
+		const terminal: TerminalOutput = executeTerminalCommand("npm", ["install", "-g", packageName], true);
+		return terminal;
+	} catch (error) {
+		throw new Error(`[terminal_isPackageInstalled]: ${error}`);
+	}
 	const terminal: TerminalOutput = executeTerminalCommand("npm", ["install", "-g", packageName], true);
-	if (terminal.error) throw new Error(`Error installing '${packageName}' package: ${terminal.error}`);
-	console.log(terminal.output);
+	if (terminal.error) return { ...terminal, error: `Error installing '${packageName}' package: ${terminal.error}` };
+	return terminal;
 }
 
 export const terminal = { isPackageInstalled, installPackage };
