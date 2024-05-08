@@ -1,4 +1,4 @@
-import { Progress, ProgressLocation, window } from "vscode";
+import { ProgressLocation, window } from "vscode";
 
 type ProgressWindowLocal = "SourceControl" | "Window" | "Notification";
 
@@ -8,13 +8,13 @@ class VSCodeWindow {
 		return response;
 	}
 
-	async showInProgressMessage(
-		local: ProgressWindowLocal,
-		callbackFn: (progress: Progress<{ message: string; increment?: number }>) => Promise<void>
-	) {
+	async showInProgressMessage(local: ProgressWindowLocal, progressMessage: string, progressFn: () => {}) {
 		await window.withProgress(
 			{ location: ProgressLocation[local as keyof typeof ProgressLocation] },
-			async progress => callbackFn(progress)
+			async progress => {
+				progress.report({ message: progressMessage });
+				progressFn();
+			}
 		);
 	}
 }

@@ -14,7 +14,8 @@
 		"strictNullChecks": true,
 		"forceConsistentCasingInFileNames": true,
 		"paths": {
-			"@types": ["./src_ref/types/index"]
+			"@types": ["./src_ref/types/index"],
+			"@constants": ["./src_ref/constants/index"]
 		}
 	},
 	"include": ["src_ref/**/*.ts"],
