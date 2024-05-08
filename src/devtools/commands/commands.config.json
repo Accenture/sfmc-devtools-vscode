@@ -23,9 +23,9 @@
             {
                 "id":"etypes", 
                 "title": "Explain Types", 
-                "command": "mcdev explainTypes {{json}} --skipInteraction", 
+                "command": "mcdev explainTypes {{json}} --skipInteraction {{file}}", 
                 "requiredParams": [], 
-                "optionalParams": ["json"], 
+                "optionalParams": ["json", "file"], 
                 "description": "Explains metadata types that can be retrieved.", 
                 "isAvailable": true
             }
