@@ -129,7 +129,7 @@
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@types/chai": "^4.3.11",
+      "@types/chai": "^4.3.16",
       "@types/jest": "^29.5.11",
       "@types/node": "^20.12.8",
       "@types/vscode": "^1.88.0",
@@ -148,6 +148,6 @@
    "dependencies": {
       "@salesforce-ux/design-system": "^2.23.2",
       "@vscode/codicons": "^0.0.35",
-      "winston": "^3.11.0"
+      "winston": "^3.13.0"
    }
 }

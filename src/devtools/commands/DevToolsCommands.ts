@@ -139,7 +139,9 @@ abstract class DevToolsCommands {
         Object.keys(this.commandMap).forEach((key: string) => {
             const devToolCommand: DevToolsCommands = 
                 this.commandMap[key];
-            devToolCommand.setMetadataTypes(metadatatypes);
+            const sortedSuppMdtByName: SupportedMetadataTypes[] = 
+                                    metadatatypes.sort((a, b) => a.name.localeCompare(b.name));
+            devToolCommand.setMetadataTypes(sortedSuppMdtByName);
         });
     }
 
