@@ -7,8 +7,8 @@ import InputOptionsSettings from "../../shared/interfaces/inputOptionsSettings";
 import { editorInput } from "../../editor/input";
 import { log } from "../../editor/output";
 import { lib } from "../../shared/utils/lib";
-import { file } from "../../shared/utils/file";
 import { terminal } from "../../shared/utils/terminal";
+import { metadatatypes } from "../../config/metadatatypes.config";
 
 abstract class DevToolsCommands {
 
@@ -115,7 +115,7 @@ abstract class DevToolsCommands {
         return response;
     }
 
-    static init(path: string){
+    static init(){
         log("info", "Initializing DevTools Commands...");
         if(!this.commandMap){
             const commandTypes: {id: string}[] = this.getAllCommandTypes();
@@ -135,41 +135,12 @@ abstract class DevToolsCommands {
             }, {});
         }
 
-        const mdtFileExists: boolean = file.fileExists("metadatatypes.json").length > 0;
-        const setMetadataTypes = (mdtTypes: SupportedMetadataTypes[]) => {
-            // Sends the supported mtdata types to each DevTools Command
-            Object.keys(this.commandMap).forEach((key: string) => {
-                const devToolCommand: DevToolsCommands = 
-                    this.commandMap[key];
-                devToolCommand.setMetadataTypes(mdtTypes);
-            });
-        };
-
-        if(mdtFileExists){
-
-        }else{
-            this.runCommand(
-                "admin", 
-                "etypes", 
-                path, 
-                { json: true, file: " > metadatatypes.json" }, 
-                {
-                    handleCommandResult: ({ success, data }: { success: boolean, data: string}) => {
-                        if(success){
-                            // Parses the list of supported mtdata types
-                            const parsedResult: SupportedMetadataTypes[] = JSON.parse(data);
-                            if(parsedResult && parsedResult.length){
-                                setMetadataTypes(parsedResult);
-                            }else{
-                                log("error", "DevToolsCommands_init: Failed to parse supported metadata type result.");
-                            }
-                        }else{
-                                log("error", "DevToolsCommands_init: Admin Command etypes failed.");
-                        }
-                    }
-                }
-            );
-        }        
+        // Sends the supported mtdata types to each DevTools Command
+        Object.keys(this.commandMap).forEach((key: string) => {
+            const devToolCommand: DevToolsCommands = 
+                this.commandMap[key];
+            devToolCommand.setMetadataTypes(metadatatypes);
+        });
     }
 
     static async runCommand(

@@ -65,7 +65,7 @@ async function handleDevToolsRequirements(/*isDevToolsProject: boolean*/): Promi
         // Deactivates Compact folders for command right execution
         editorDependencies.deactivateCompactFolders();
         // init DevTools Commands
-        DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
+        DevToolsCommands.init();
         return;
     }
     log("debug", `Missing Pre-requisites: [${prerequisites.missingPrerequisites}]`);
