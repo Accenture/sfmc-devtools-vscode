@@ -195,7 +195,7 @@ abstract class DevToolsCommands {
             return;
         }
         log("error", 
-            `[DevToolsCommands_runCommand] Error: Command Map is not configured configured.`
+            `[DevToolsCommands_runCommand] Error: Command Map is not configured.`
         );
     }
 
