@@ -22,7 +22,7 @@ async function initDevToolsExtension(): Promise<void>{
     try{
         log("info", "Running SFMC DevTools extension...");
 
-        const anyDevToolsProject: boolean = await isADevToolsProject() || await anySubFolderIsDevToolsProject();
+        const anyDevToolsProject: boolean = await isDevToolsProject() || await anySubFolderIsDevToolsProject();
 
         if(anyDevToolsProject){
             await handleDevToolsRequirements();
@@ -34,7 +34,7 @@ async function initDevToolsExtension(): Promise<void>{
     }
 }
 
-async function isADevToolsProject(projectName?: string): Promise<boolean> {
+async function isDevToolsProject(projectName?: string): Promise<boolean> {
     log("debug", "Checking if folder is a SFMC DevTools project...");
     log("debug", `DevTools files: [${mainConfig.requiredFiles}]`);
 
@@ -79,7 +79,7 @@ async function anySubFolderIsDevToolsProject(): Promise<boolean> {
     const subFolders: string[] = await editorWorkspace.getWorkspaceSubFolders();
     if(subFolders.length){
         const subFolderProjects: boolean[] = 
-            await Promise.all(subFolders.map(async (sf: string) => await isADevToolsProject(sf + "/")));
+            await Promise.all(subFolders.map(async (sf: string) => await isDevToolsProject(sf + "/")));
         return subFolderProjects.some((sfResult: boolean) => sfResult);
     }else{
         log("debug", "Workspace doesn't contain any sub folders.");
@@ -455,7 +455,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                 if(workspaceFolderPath !== projectPath){
                     // Check if folder is a DevTools project
                     const isSubFolderDevToolsProject: boolean = 
-                        await isADevToolsProject( projectName + "/" );
+                        await isDevToolsProject( projectName + "/" );
                     log("debug", 
                         `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
                     );

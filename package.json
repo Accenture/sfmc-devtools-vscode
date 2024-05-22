@@ -66,7 +66,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
@@ -97,7 +97,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript')))",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript')))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
