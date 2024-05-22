@@ -46,15 +46,15 @@
    "contributes": {
       "commands": [
          {
-            "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+            "command": "sfmc-devtools-vscode.mcdevRetrieve",
             "title": "mcdev: Retrieve"
          },
          {
-            "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+            "command": "sfmc-devtools-vscode.mcdevDeploy",
             "title": "mcdev: Deploy"
          },
          {
-            "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+            "command": "sfmc-devtools-vscode.mcdevCopyToBU",
             "title": "mcdev: Copy to Business Unit..."
          }
       ],
@@ -62,61 +62,17 @@
          "explorer/context": [
             {
                "when": "resourcePath =~ /retrieve/",
-               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+               "command": "sfmc-devtools-vscode.mcdevRetrieve",
                "group": "devtools"
             },
             {
                "when": "resourcePath =~ /deploy/",
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "group": "devtools"
-            },
-            {
-               "when": "resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)",
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "group": "devtools"
-            },
-            {
-               "when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
-               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+               "command": "sfmc-devtools-vscode.mcdevDeploy",
                "group": "devtools"
             }
          ],
-         "commandPalette": [
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-               "when": "false"
-            },
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "when": "false"
-            },
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "when": "false"
-            }
-         ],
-         "editor/title/context": [
-            {
-               "when": "resourcePath =~ /retrieve/",
-               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-               "group": "devtools"
-            },
-            {
-               "when": "resourcePath =~ /deploy/",
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "group": "devtools"
-            },
-            {
-               "when": "resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript')",
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "group": "devtools"
-            },
-            {
-               "when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
-               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "group": "devtools"
-            }
-         ]
+         "commandPalette": [],
+         "editor/title/context": []
       },
       "configuration": {
          "title": "sfmc-devtools-vscode",

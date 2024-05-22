@@ -1,4 +1,4 @@
-import { ProgressLocation, window } from "vscode";
+import { ProgressLocation, StatusBarAlignment, StatusBarItem, window } from "vscode";
 
 type ProgressWindowLocal = "SourceControl" | "Window" | "Notification";
 
@@ -16,6 +16,14 @@ class VSCodeWindow {
 				progressFn();
 			}
 		);
+	}
+
+	createStatusBarItem(command: string, title: string, name: string): StatusBarItem {
+		let statusBar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 110);
+		statusBar.name = name;
+		statusBar.command = command;
+		statusBar.text = title;
+		return statusBar;
 	}
 }
 

@@ -9,7 +9,7 @@ import { devToolsMessages } from "../messages/devtools.messages";
 import { IEditor } from "@types";
 import { Confirmation, RecommendedExtensionsOptions } from "@constants";
 
-class DevTools {
+class DevToolsExtension {
 	vscodeEditor: VSCodeEditor;
 	mcdev: Mcdev;
 	constructor(context: IEditor.IExtensionContext) {
@@ -19,11 +19,11 @@ class DevTools {
 
 	async init() {
 		console.log("== Init ==");
-		const isDevToolsProject: boolean = await this.isProject();
+		const isDevToolsProject: boolean = await this.isDevToolsProject();
 		if (isDevToolsProject) this.loadConfiguration();
 	}
 
-	async isProject(): Promise<boolean> {
+	async isDevToolsProject(): Promise<boolean> {
 		console.log("== Is Project ==");
 		const requiredProjectFiles: string[] = devToolsConfig.requiredFiles || [];
 		const filesInFolderResult: boolean[] = await Promise.all(
@@ -40,15 +40,16 @@ class DevTools {
 		const mcdevInstalled: boolean = this.mcdev.isInstalled();
 
 		// request user to install mcdev
-		if (!mcdevInstalled) await this.installMcdev();
+		if (!mcdevInstalled) await this.mcdevInstall();
 		else {
 			// activate recommended extensions
 			this.activateRecommendedExtensions();
 			// activate editor containers
+			this.activateContainers();
 		}
 	}
 
-	async installMcdev() {
+	async mcdevInstall() {
 		console.log("== Install Mcdev ==");
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
@@ -108,5 +109,12 @@ class DevTools {
 				vscodeCommands.installExtension(uninstalledExtensions);
 		}
 	}
+
+	activateContainers() {
+		console.log("== Activate Containers ==");
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+
+		vscodeWindow.createStatusBarItem("", "", "");
+	}
 }
-export default DevTools;
+export default DevToolsExtension;
