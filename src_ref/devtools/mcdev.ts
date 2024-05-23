@@ -1,7 +1,7 @@
 import { terminal } from "../utils/terminal";
 
 class Mcdev {
-	packageName: string = "mcdev";
+	private packageName: string = "mcdev";
 	isInstalled(): boolean {
 		try {
 			// Checks if mcdev package is installed

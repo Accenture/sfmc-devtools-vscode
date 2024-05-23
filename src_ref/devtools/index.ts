@@ -10,8 +10,8 @@ import { IEditor } from "@types";
 import { Confirmation, RecommendedExtensionsOptions } from "@constants";
 
 class DevToolsExtension {
-	vscodeEditor: VSCodeEditor;
-	mcdev: Mcdev;
+	private vscodeEditor: VSCodeEditor;
+	private mcdev: Mcdev;
 	constructor(context: IEditor.IExtensionContext) {
 		this.vscodeEditor = new VSCodeEditor(context);
 		this.mcdev = new Mcdev();

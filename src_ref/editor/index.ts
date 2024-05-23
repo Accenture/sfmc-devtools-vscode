@@ -6,11 +6,11 @@ import VSCodeExtensions from "./extensions";
 import { IEditor } from "@types";
 
 class VSCodeEditor {
-	vscodeContext: VSCodeContext;
-	vscodeWorkspace: VSCodeWorkspace;
-	vscodeWindow: VSCodeWindow;
-	vscodeCommands: VSCodeCommands;
-	vscodeExtensions: VSCodeExtensions;
+	private vscodeContext: VSCodeContext;
+	private vscodeWorkspace: VSCodeWorkspace;
+	private vscodeWindow: VSCodeWindow;
+	private vscodeCommands: VSCodeCommands;
+	private vscodeExtensions: VSCodeExtensions;
 	constructor(context: IEditor.IExtensionContext) {
 		this.vscodeContext = new VSCodeContext(context);
 		this.vscodeWorkspace = new VSCodeWorkspace();

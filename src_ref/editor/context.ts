@@ -1,7 +1,7 @@
 import { IEditor } from "@types";
 
 class VSCodeContext {
-	context: IEditor.IExtensionContext;
+	private context: IEditor.IExtensionContext;
 	constructor(context: IEditor.IExtensionContext) {
 		this.context = context;
 	}
