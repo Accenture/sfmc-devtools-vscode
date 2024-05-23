@@ -61,22 +61,17 @@
       "menus": {
          "explorer/context": [
             {
-               "when": "resourcePath =~ /retrieve/",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/",
                "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /deploy/",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)",
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "group": "devtools"
-            },
-            {
-               "when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
@@ -97,33 +92,29 @@
          ],
          "editor/title/context": [
             {
-               "when": "resourcePath =~ /retrieve/",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/",
                "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /deploy/",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript')))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript')",
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "group": "devtools"
-            },
-            {
-               "when": "resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
          ]
       },
       "configuration": {
-         "title": "sfmc-devtools-vscode",
+         "title": "SFMC DevTools",
          "properties": {
             "sfmc-devtools-vscode.recommendExtensions": {
                "type": "boolean",
-               "default": true
+               "default": true,
+               "description": "Indicates if recommended extensions popup should be shown to user or not."
             }
          }
       }
@@ -139,7 +130,7 @@
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@types/chai": "^4.3.14",
+      "@types/chai": "^4.3.16",
       "@types/jest": "^29.5.11",
       "@types/node": "^20.12.8",
       "@types/vscode": "^1.88.0",

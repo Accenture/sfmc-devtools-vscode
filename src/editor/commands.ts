@@ -20,7 +20,7 @@ function executeCommand(command: string | string[], args: (string | boolean | st
         );
 }
 
-function setCommandContext(command: string | string[], args: (string | boolean | number)[]){
+function setCommandContext(command: string | string[], args: string | boolean | number){
     [command]
         .flat()
         .forEach(

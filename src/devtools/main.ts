@@ -14,6 +14,7 @@ import DevToolsCommandSetting from "../shared/interfaces/devToolsCommandSetting"
 import DevToolsPathComponents from "../shared/interfaces/devToolsPathComponents";
 import { lib } from "../shared/utils/lib";
 import { file } from "../shared/utils/file";
+import { editorCommands } from "../editor/commands";
 
 
 async function initDevToolsExtension(): Promise<void>{
@@ -21,34 +22,19 @@ async function initDevToolsExtension(): Promise<void>{
     try{
         log("info", "Running SFMC DevTools extension...");
 
-        editorDependencies.activateExtensionDependencies(mainConfig.extensionsDependencies);
+        const anyDevToolsProject: boolean = await isDevToolsProject() || await anySubFolderIsDevToolsProject();
 
-        // Deactivates Compact folders for command right execution
-        editorDependencies.deactivateCompactFolders();
-        
-        // activate the status bar
-        devtoolsContainers.activateStatusBar();
-
-        // activate the context menus options
-        devtoolsContainers.activateContextMenuCommands();
-
-        // If it's already a mcdev project it will check if prerequisites and devtools are installed
-        if(await isADevToolsProject()){
+        if(anyDevToolsProject){
             await handleDevToolsRequirements();
-        }else{
-            // activate status bar immediately when isDevToolsProject is false 
-            // devtoolsContainers.activateStatusBar(false, DevToolsCommands.commandPrefix);
-            if(await anySubFolderIsDevToolsProject()){
-                // init DevTools Commands
-                DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
-            }
+            activateDependencies();
+            activateContainers();
         }
     }catch(error){
         log("error", `[main_initDevToolsExtension] Error: ${error}`);
     }
 }
 
-async function isADevToolsProject(projectName?: string): Promise<boolean> {
+async function isDevToolsProject(projectName?: string): Promise<boolean> {
     log("debug", "Checking if folder is a SFMC DevTools project...");
     log("debug", `DevTools files: [${mainConfig.requiredFiles}]`);
 
@@ -76,14 +62,10 @@ async function handleDevToolsRequirements(/*isDevToolsProject: boolean*/): Promi
         }
         log("info", "SFMC DevTools is installed.");
 
-        // Needs to check if it's a DevTools Project or not
-        // if(isDevToolsProject){
-        //     // activate status bar immediately when isDevToolsProject is true 
-        //     devtoolsContainers.activateStatusBar(true, DevToolsCommands.commandPrefix);
-        // }
-
+        // Deactivates Compact folders for command right execution
+        editorDependencies.deactivateCompactFolders();
         // init DevTools Commands
-        DevToolsCommands.init(editorWorkspace.getWorkspaceURIPath());
+        DevToolsCommands.init();
         return;
     }
     log("debug", `Missing Pre-requisites: [${prerequisites.missingPrerequisites}]`);
@@ -97,12 +79,25 @@ async function anySubFolderIsDevToolsProject(): Promise<boolean> {
     const subFolders: string[] = await editorWorkspace.getWorkspaceSubFolders();
     if(subFolders.length){
         const subFolderProjects: boolean[] = 
-            await Promise.all(subFolders.map(async (sf: string) => await isADevToolsProject(sf + "/")));
+            await Promise.all(subFolders.map(async (sf: string) => await isDevToolsProject(sf + "/")));
         return subFolderProjects.some((sfResult: boolean) => sfResult);
     }else{
         log("debug", "Workspace doesn't contain any sub folders.");
     }
     return false;
+}
+
+function activateDependencies(){
+    editorDependencies.activateExtensionDependencies(mainConfig.extensionsDependencies);
+    editorCommands.setCommandContext("sfmc-devtools-vscode.isDevToolsProject", true);
+}
+
+function activateContainers(){
+    // activate the status bar
+    devtoolsContainers.activateStatusBar();
+
+    // activate the context menus options
+    devtoolsContainers.activateContextMenuCommands();
 }
 
 function handleStatusBarActions(action: string): void {
@@ -460,7 +455,7 @@ async function handleDevToolsCMCommand(action: string, selectedPaths: string[]):
                 if(workspaceFolderPath !== projectPath){
                     // Check if folder is a DevTools project
                     const isSubFolderDevToolsProject: boolean = 
-                        await isADevToolsProject( projectName + "/" );
+                        await isDevToolsProject( projectName + "/" );
                     log("debug", 
                         `SubFolder project '${projectPath}' ${ isSubFolderDevToolsProject ?  'is': 'is not'} a DevTools Project.`
                     );
