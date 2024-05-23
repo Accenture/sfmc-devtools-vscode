@@ -109,11 +109,12 @@
          ]
       },
       "configuration": {
-         "title": "sfmc-devtools-vscode",
+         "title": "SFMC DevTools",
          "properties": {
             "sfmc-devtools-vscode.recommendExtensions": {
                "type": "boolean",
-               "default": true
+               "default": true,
+               "description": "Indicates if recommended extensions popup should be shown to user or not."
             }
          }
       }
