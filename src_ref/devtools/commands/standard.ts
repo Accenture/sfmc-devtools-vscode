@@ -1,5 +1,3 @@
-import Commands from ".";
-
-class StandardCommands extends Commands {}
+class StandardCommands {}
 
 export default StandardCommands;

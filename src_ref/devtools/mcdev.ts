@@ -1,3 +1,4 @@
+import { IDevTools } from "@types";
 import { terminal } from "../utils/terminal";
 import MetadataTypes from "./metadatatypes";
 
@@ -33,10 +34,23 @@ class Mcdev {
 		}
 	}
 
-	execute(action: string, files: string[]) {
-		console.log("== Mcdev: Execute ==");
-		console.log(action);
-		console.log(files);
+	convertFilePaths(paths: string[]) {
+		console.log("== Mcdev: Convert File Paths ==");
+		const convertMcdevFormat: (path: string) => IDevTools.FileFormat = (path: string) => {
+			const [projectPath, relativeFilePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
+			if (projectPath && !relativeFilePath) return { level: "top_folder", projectPath };
+
+			const [credentialsName, businessUnit, metadataType, ...file]: string[] = relativeFilePath.split("/");
+			if (file.length) {
+				const name: string = "";
+				return { level: "file", projectPath, credentialsName, businessUnit, metadataType, name };
+			} else if (metadataType)
+				return { level: "mdt_folder", projectPath, credentialsName, businessUnit, metadataType };
+			else if (businessUnit) return { level: "bu_folder", projectPath, credentialsName, businessUnit };
+			else if (credentialsName) return { level: "cred_folder", projectPath, credentialsName };
+			return {} as IDevTools.FileFormat;
+		};
+		return paths.map((path: string) => convertMcdevFormat(path));
 	}
 }
 

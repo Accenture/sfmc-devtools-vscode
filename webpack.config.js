@@ -23,7 +23,8 @@ const config = {
 	resolve: {
 		extensions: [".ts", ".js",],
 		alias: {
-			"@constants": path.resolve(__dirname, "src_ref/constants")
+			"@constants": path.resolve(__dirname, "src_ref/constants"),
+			"@config": path.resolve(__dirname, "src_ref/config")
 		}
 	},
 	module: {

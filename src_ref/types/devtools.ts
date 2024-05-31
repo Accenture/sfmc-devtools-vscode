@@ -23,4 +23,15 @@ interface MetadataTypes {
 	description: string;
 }
 
-export { IConfig, MetadataTypes };
+type FileLevel = "top_folder" | "cred_folder" | "bu_folder" | "mdt_folder" | "file";
+
+interface FileFormat {
+	level: FileLevel;
+	projectPath: string;
+	credentialsName?: string;
+	businessUnit?: string;
+	metadataType?: string;
+	name?: string;
+}
+
+export { IConfig, MetadataTypes, FileFormat };

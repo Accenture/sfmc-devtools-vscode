@@ -4,9 +4,9 @@ import VSCodeWindow from "../editor/window";
 import VSCodeCommands from "../editor/commands";
 import VSCodeExtensions from "../editor/extensions";
 import VSCodeWorkspace from "../editor/workspace";
-import { devToolsConfig } from "@config";
 import { devToolsMessages } from "../messages/devtools.messages";
 import { IEditor } from "@types";
+import { devToolsConfig } from "@config";
 import { Confirmation, RecommendedExtensionsOptions, StatusBarIcon } from "@constants";
 
 class DevToolsExtension {
@@ -151,17 +151,7 @@ class DevToolsExtension {
 
 	executeMenuCommands(command: string, files: string[]) {
 		console.log("== Execute Menu Commands ==");
-		console.log(files);
-		switch (command) {
-			case "retrieve" || "deploy":
-				this.mcdev.execute(command, files);
-				break;
-			case "copytobu":
-				break;
-			default:
-				throw new Error(`DevTools: Command '${command}' is invalid.`);
-				break;
-		}
+		console.log(this.mcdev.convertFilePaths(files));
 	}
 }
 export default DevToolsExtension;
