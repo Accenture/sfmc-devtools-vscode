@@ -15,7 +15,9 @@
 		"forceConsistentCasingInFileNames": true,
 		"paths": {
 			"@types": ["./src_ref/types/index"],
-			"@constants": ["./src_ref/constants/index"]
+			"@constants": ["./src_ref/constants/index"],
+			"@config": ["./src_ref/config/index"],
+			"@editor": ["./src_ref/editor/*"]
 		}
 	},
 	"include": ["src_ref/**/*.ts"],

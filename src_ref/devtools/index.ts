@@ -4,10 +4,10 @@ import VSCodeWindow from "../editor/window";
 import VSCodeCommands from "../editor/commands";
 import VSCodeExtensions from "../editor/extensions";
 import VSCodeWorkspace from "../editor/workspace";
-import { devToolsConfig } from "../config/devtools.config";
+import { devToolsConfig } from "@config";
 import { devToolsMessages } from "../messages/devtools.messages";
 import { IEditor } from "@types";
-import { Confirmation, RecommendedExtensionsOptions } from "@constants";
+import { Confirmation, RecommendedExtensionsOptions, StatusBarIcon } from "@constants";
 
 class DevToolsExtension {
 	private vscodeEditor: VSCodeEditor;
@@ -42,10 +42,14 @@ class DevToolsExtension {
 		// request user to install mcdev
 		if (!mcdevInstalled) await this.mcdevInstall();
 		else {
+			// activate extension context variables
+			this.activateContextVariables();
 			// activate recommended extensions
 			this.activateRecommendedExtensions();
 			// activate editor containers
 			this.activateContainers();
+			// activate menu commands
+			this.activateMenuCommands();
 		}
 	}
 
@@ -72,6 +76,12 @@ class DevToolsExtension {
 				} else vscodeWindow.showInformationMessageWithOptions(devToolsMessages.mcdevInstallError, []);
 			});
 		}
+	}
+
+	activateContextVariables() {
+		console.log("== Activate Context Variables ==");
+		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
+		vscodeCommands.executeCommandContext(`${devToolsConfig.extensionName}.config.isproject`, [true]);
 	}
 
 	async activateRecommendedExtensions() {
@@ -113,8 +123,45 @@ class DevToolsExtension {
 	activateContainers() {
 		console.log("== Activate Containers ==");
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
 
-		vscodeWindow.createStatusBarItem("", "", "");
+		const statusBarCommand: string = `${devToolsConfig.extensionName}.openOutputChannel`;
+		const statusBarTitle: string = `$(${StatusBarIcon.success}) mcdev`;
+		const statusBarName: string = `mcdev`;
+
+		vscodeCommands.registerCommand({
+			command: statusBarCommand,
+			callbackAction: () => vscodeWindow.displayOutputChannel(statusBarName)
+		});
+		vscodeWindow.createStatusBarItem(statusBarCommand, statusBarTitle, statusBarName);
+		vscodeWindow.displayStatusBarItem(statusBarName);
+	}
+
+	activateMenuCommands() {
+		console.log("== Activate Menu Commands ==");
+		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
+
+		devToolsConfig.menuCommands.forEach((command: string) =>
+			vscodeCommands.registerCommand({
+				command: `${devToolsConfig.extensionName}.${command}`,
+				callbackAction: (files: string[]) => this.executeMenuCommands(command, files)
+			})
+		);
+	}
+
+	executeMenuCommands(command: string, files: string[]) {
+		console.log("== Execute Menu Commands ==");
+		console.log(files);
+		switch (command) {
+			case "retrieve" || "deploy":
+				this.mcdev.execute(command, files);
+				break;
+			case "copytobu":
+				break;
+			default:
+				throw new Error(`DevTools: Command '${command}' is invalid.`);
+				break;
+		}
 	}
 }
 export default DevToolsExtension;

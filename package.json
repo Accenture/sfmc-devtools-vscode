@@ -43,33 +43,67 @@
    "contributes": {
       "commands": [
          {
-            "command": "sfmc-devtools-vscode.mcdevRetrieve",
+            "command": "sfmc-devtools-vscode.retrieve",
             "title": "mcdev: Retrieve"
          },
          {
-            "command": "sfmc-devtools-vscode.mcdevDeploy",
+            "command": "sfmc-devtools-vscode.deploy",
             "title": "mcdev: Deploy"
          },
          {
-            "command": "sfmc-devtools-vscode.mcdevCopyToBU",
+            "command": "sfmc-devtools-vscode.copytobu",
             "title": "mcdev: Copy to Business Unit..."
          }
       ],
       "menus": {
          "explorer/context": [
             {
-               "when": "resourcePath =~ /retrieve/",
-               "command": "sfmc-devtools-vscode.mcdevRetrieve",
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/",
                "group": "devtools"
             },
             {
-               "when": "resourcePath =~ /deploy/",
-               "command": "sfmc-devtools-vscode.mcdevDeploy",
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /deploy/ || resourcePath =~ /retrieve/)",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.copytobu",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
                "group": "devtools"
             }
          ],
-         "commandPalette": [],
-         "editor/title/context": []
+         "commandPalette": [
+            {
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "false"
+            },
+            {
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "false"
+            },
+            {
+               "command": "sfmc-devtools-vscode.copytobu",
+               "when": "false"
+            }
+         ],
+         "editor/title/context": [
+            {
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /deploy/ || resourcePath =~ /retrieve/)",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.copytobu",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "group": "devtools"
+            }
+         ]
       },
       "configuration": {
          "title": "sfmc-devtools-vscode",
@@ -115,7 +149,6 @@
    "dependencies": {
       "@salesforce-ux/design-system": "^2.23.2",
       "@vscode/codicons": "^0.0.35",
-      "mcdev": "^6.0.2",
       "winston": "^3.13.0"
    }
 }

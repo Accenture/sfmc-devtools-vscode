@@ -21,7 +21,7 @@ const config = {
 		vscode: "commonjs vscode"
 	},
 	resolve: {
-		extensions: [".ts", ".js"],
+		extensions: [".ts", ".js",],
 		alias: {
 			"@constants": path.resolve(__dirname, "src_ref/constants")
 		}

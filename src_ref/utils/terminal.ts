@@ -11,7 +11,7 @@ function executeCommandSync(command: string, args: string[]): TerminalOutput {
 }
 
 function executeCommand(command: string, args: string[]) {
-	let terminalOutput: TerminalOutput = { output: "", error: "", code: 0 };
+	const terminalOutput: TerminalOutput = { output: "", error: "", code: 0 };
 	spawn(command, args, { shell: true });
 	return terminalOutput;
 }
@@ -28,7 +28,7 @@ function getGlobalInstalledPackages(): string[] {
 		if (!terminal.output.includes('"dependencies"'))
 			throw new Error(`Error retrieving global packages: no "dependencies" found.`);
 
-		const terminalOutput: { name: string; dependencies: Record<string, {}> } = JSON.parse(terminal.output);
+		const terminalOutput: { name: string; dependencies: Record<string, unknown> } = JSON.parse(terminal.output);
 		return Object.keys(terminalOutput.dependencies || {});
 	} catch (error) {
 		throw new Error(`Error retrieving global packages: failed to parse JSON output.`);

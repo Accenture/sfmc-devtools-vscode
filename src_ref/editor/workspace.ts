@@ -34,9 +34,12 @@ class VSCodeWorkspace {
 		const uri: Uri | undefined = this.getURI();
 		if (uri) {
 			const folderFiles: [string, FileType][] = await this.getWokspaceFiles(uri);
-			return folderFiles
-				.filter(([name, type]: [string, FileType]) => type === FileType.Directory)
-				.map(([name]: [string, FileType]) => name);
+			return (
+				folderFiles
+					// eslint-disable-next-line @typescript-eslint/no-unused-vars
+					.filter(([_, type]: [string, FileType]) => type === FileType.Directory)
+					.map(([name]: [string, FileType]) => name)
+			);
 		}
 		// throw Error
 		return [];

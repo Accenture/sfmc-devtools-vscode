@@ -9,4 +9,13 @@ enum RecommendedExtensionsOptions {
 	"Do not show again" = "do not show again"
 }
 
-export { Confirmation, RecommendedExtensionsOptions };
+enum StatusBarIcon {
+	success = "check-all",
+	retrieve = "cloud-download",
+	deploy = "cloud-upload",
+	error = "warning",
+	copy_to_folder = "file-symlink-directory",
+	info = "extensions-info-message"
+}
+
+export { Confirmation, RecommendedExtensionsOptions, StatusBarIcon };

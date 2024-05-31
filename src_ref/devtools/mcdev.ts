@@ -1,7 +1,14 @@
 import { terminal } from "../utils/terminal";
+import MetadataTypes from "./metadatatypes";
 
 class Mcdev {
 	private packageName: string = "mcdev";
+	private metadataTypes: MetadataTypes;
+
+	constructor() {
+		this.metadataTypes = new MetadataTypes();
+	}
+
 	isInstalled(): boolean {
 		try {
 			// Checks if mcdev package is installed
@@ -24,6 +31,12 @@ class Mcdev {
 			// log error
 			return { success: false };
 		}
+	}
+
+	execute(action: string, files: string[]) {
+		console.log("== Mcdev: Execute ==");
+		console.log(action);
+		console.log(files);
 	}
 }
 
