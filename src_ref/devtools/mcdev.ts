@@ -36,21 +36,20 @@ class Mcdev {
 
 	convertFilePaths(paths: string[]) {
 		console.log("== Mcdev: Convert File Paths ==");
-		const convertMcdevFormat: (path: string) => IDevTools.FileFormat = (path: string) => {
+		const convertToMcdevFormat: (path: string) => IDevTools.FileFormat = (path: string) => {
 			const [projectPath, relativeFilePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
 			if (projectPath && !relativeFilePath) return { level: "top_folder", projectPath };
 
 			const [credentialsName, businessUnit, metadataType, ...file]: string[] = relativeFilePath.split("/");
 			if (file.length) {
-				const name: string = "";
-				return { level: "file", projectPath, credentialsName, businessUnit, metadataType, name };
+				return { level: "file", projectPath, credentialsName, businessUnit, metadataType };
 			} else if (metadataType)
 				return { level: "mdt_folder", projectPath, credentialsName, businessUnit, metadataType };
 			else if (businessUnit) return { level: "bu_folder", projectPath, credentialsName, businessUnit };
 			else if (credentialsName) return { level: "cred_folder", projectPath, credentialsName };
 			return {} as IDevTools.FileFormat;
 		};
-		return paths.map((path: string) => convertMcdevFormat(path));
+		return paths.map((path: string) => convertToMcdevFormat(path));
 	}
 }
 
