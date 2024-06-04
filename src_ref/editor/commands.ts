@@ -1,4 +1,5 @@
 import { Uri, commands } from "vscode";
+import { removeDuplicates } from "../utils/lib";
 
 interface CommandRegister {
 	command: string;
@@ -10,7 +11,7 @@ class VSCodeCommands {
 		[register].flat().forEach(registry =>
 			commands.registerCommand(registry.command, (...files: Uri[]) => {
 				const filePaths: string[] = files.flat().map((file: Uri) => file.path);
-				registry.callbackAction([...new Set(filePaths)]);
+				registry.callbackAction(removeDuplicates(filePaths) as string[]);
 			})
 		);
 	}

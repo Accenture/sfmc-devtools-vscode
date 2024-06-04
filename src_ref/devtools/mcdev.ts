@@ -37,16 +37,22 @@ class Mcdev {
 	convertFilePaths(paths: string[]) {
 		console.log("== Mcdev: Convert File Paths ==");
 		const convertToMcdevFormat: (path: string) => IDevTools.FileFormat = (path: string) => {
+			// Splits file path by 'retrieve' or 'deploy' folder
 			const [projectPath, relativeFilePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
+
+			// If file is the retrieve or deploy folder
 			if (projectPath && !relativeFilePath) return { level: "top_folder", projectPath };
 
-			const [credentialsName, businessUnit, metadataType, ...file]: string[] = relativeFilePath.split("/");
-			if (file.length) {
+			// Else get the folder structure for the file according to mcdev folder structure:
+			// Credentials Name -> Business Unit -> MetadataType -> file or folder (Asset/Folders)
+			const [credentialsName, businessUnit, metadataType, ...fileParts]: string[] = relativeFilePath.split("/");
+			if (fileParts.length) {
+				this.metadataTypes.handleFileConfiguration(metadataType, fileParts);
 				return { level: "file", projectPath, credentialsName, businessUnit, metadataType };
-			} else if (metadataType)
-				return { level: "mdt_folder", projectPath, credentialsName, businessUnit, metadataType };
-			else if (businessUnit) return { level: "bu_folder", projectPath, credentialsName, businessUnit };
-			else if (credentialsName) return { level: "cred_folder", projectPath, credentialsName };
+			}
+			if (metadataType) return { level: "mdt_folder", projectPath, credentialsName, businessUnit, metadataType };
+			if (businessUnit) return { level: "bu_folder", projectPath, credentialsName, businessUnit };
+			if (credentialsName) return { level: "cred_folder", projectPath, credentialsName };
 			return {} as IDevTools.FileFormat;
 		};
 		return paths.map((path: string) => convertToMcdevFormat(path));
