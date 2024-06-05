@@ -175,21 +175,21 @@ function activateContextMenuCommands() {
 		editorCommands.registerCommand({
 			command,
 			callbackAction: (file: Uri, multipleFiles: Uri[]) => {
-				let filesUri = [];
+				let filesURI: Uri[] = [];
 
 				// If file is undefined it could be that the command is being called from the commands palette
 				// else it should be the menu command
 				if (!file) {
 					// Gets the file uri that is currently open in the editor
 					const fileURI: Uri | undefined = editorContainers.getActiveTabFileURI();
-					filesUri = fileURI ? [fileURI] : [];
+					if (fileURI) filesURI.push(fileURI);
 				} else {
-					filesUri = !Array.isArray(multipleFiles) ? [file] : multipleFiles;
+					filesURI = !Array.isArray(multipleFiles) ? [file] : multipleFiles;
 				}
 
-				if (filesUri.length) {
+				if (filesURI.length) {
 					// Gets the file path from the URI
-					const filesPath: string[] = editorWorkspace.getFilesURIPath(filesUri);
+					const filesPath: string[] = editorWorkspace.getFilesURIPath(filesURI);
 					const [__, key]: string[] = command.split(".devtools");
 					// Executes the command
 					return devtoolsMain.handleContextMenuActions(key, filesPath);
