@@ -79,15 +79,15 @@
          "commandPalette": [
             {
                "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-               "when": "false"
+               "when": "sfmc-devtools-vscode.isDevToolsProject"
             },
             {
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "when": "false"
+               "when": "sfmc-devtools-vscode.isDevToolsProject"
             },
             {
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "when": "false"
+               "when": "sfmc-devtools-vscode.isDevToolsProject"
             }
          ],
          "editor/title/context": [

@@ -39,7 +39,11 @@ function log(level: keyof typeof LogLevel, output: string | number | object, log
 		outputChannel.hide();
 	}
 
-	if (LogLevel[level] === LogLevel.info || LogLevel[level] === LogLevel.error) {
+	if (
+		LogLevel[level] === LogLevel.info ||
+		LogLevel[level] === LogLevel.error ||
+		LogLevel[level] === LogLevel.warning
+	) {
 		outputChannel.appendLine(`${outputStr}`);
 	}
 

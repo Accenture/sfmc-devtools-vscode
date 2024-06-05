@@ -119,7 +119,6 @@ function handleStatusBarActions(action: string): void {
 
 function handleContextMenuActions(action: string, selectedFiles: string[]): void {
 	devtoolsContainers.modifyStatusBar("mcdev", "success");
-
 	log("debug", "Setting Context Menu Actions...");
 	log("debug", `Action: ${action} Number of Selected Files: ${selectedFiles.length}`);
 	switch (action.toLowerCase()) {
