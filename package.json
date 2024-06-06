@@ -59,6 +59,20 @@
          }
       ],
       "menus": {
+         "commandPalette": [
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /retrieve/"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript')))"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /retrieve/"
+            }
+         ],
          "explorer/context": [
             {
                "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/",
@@ -74,20 +88,6 @@
                "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
-            }
-         ],
-         "commandPalette": [
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /retrieve/"
-            },
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript')))"
-            },
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /retrieve/"
             }
          ],
          "editor/title/context": [
