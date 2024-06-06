@@ -12,7 +12,7 @@
         "@typescript-eslint/naming-convention": "off",
         "@typescript-eslint/semi": "warn",
         "@typescript-eslint/camelcase": "off",
-        "curly": "off",
+        "curly": "warn",
         "eqeqeq": "warn",
         "no-throw-literal": "warn",
         "semi": "off"

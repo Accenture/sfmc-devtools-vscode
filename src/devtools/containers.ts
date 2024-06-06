@@ -177,12 +177,13 @@ function activateContextMenuCommands() {
 			callbackAction: (file: Uri, multipleFiles: Uri[]) => {
 				let filesURI: Uri[] = [];
 
+				// Gets the file uri that is currently open in the editor
+				const fileURI: Uri | undefined = editorContainers.getActiveTabFileURI();
+
 				// If file is undefined it could be that the command is being called from the commands palette
 				// else it should be the menu command
-				if (!file) {
-					// Gets the file uri that is currently open in the editor
-					const fileURI: Uri | undefined = editorContainers.getActiveTabFileURI();
-					if (fileURI) filesURI.push(fileURI);
+				if (!file && fileURI) {
+					filesURI.push(fileURI);
 				} else {
 					filesURI = !Array.isArray(multipleFiles) ? [file] : multipleFiles;
 				}
@@ -194,7 +195,6 @@ function activateContextMenuCommands() {
 					// Executes the command
 					return devtoolsMain.handleContextMenuActions(key, filesPath);
 				}
-				log("warning", "Warn: No file was selected or is currently open in the editor.");
 			}
 		})
 	);
