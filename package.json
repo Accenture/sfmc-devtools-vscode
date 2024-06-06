@@ -76,18 +76,21 @@
                "group": "devtools"
             }
          ],
-         "commandPalette": [
+         "editor/context": [
             {
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/",
                "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-               "when": "false"
+               "group": "devtools"
             },
             {
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "when": "false"
+               "group": "devtools"
             },
             {
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "when": "false"
+               "group": "devtools"
             }
          ],
          "editor/title/context": [
@@ -105,6 +108,20 @@
                "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
+            }
+         ],
+         "commandPalette": [
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+               "when": "false"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "when": "false"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+               "when": "false"
             }
          ]
       },
