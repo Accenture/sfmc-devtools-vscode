@@ -123,20 +123,6 @@
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
-         ],
-         "commandPalette": [
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-               "when": "false"
-            },
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "when": "false"
-            },
-            {
-               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "when": "false"
-            }
          ]
       },
       "configuration": {
