@@ -5,7 +5,7 @@ import VSCodeCommands from "../editor/commands";
 import VSCodeExtensions from "../editor/extensions";
 import VSCodeWorkspace from "../editor/workspace";
 import { devToolsMessages } from "../messages/devtools.messages";
-import { IEditor } from "@types";
+import { IDevTools, IEditor } from "@types";
 import { devToolsConfig } from "@config";
 import { Confirmation, RecommendedExtensionsOptions, StatusBarIcon } from "@constants";
 
@@ -151,7 +151,29 @@ class DevToolsExtension {
 
 	executeMenuCommands(command: string, files: string[]) {
 		console.log("== Execute Menu Commands ==");
-		console.log(this.mcdev.convertFilePaths(files));
+		console.log(command);
+		const filesFormatted: IDevTools.IFileFormat[] = this.mcdev.convertFilePaths(files);
+
+		if (filesFormatted.length > 0) {
+			const isTopFolder: boolean =
+				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "top_folder").length > 1;
+
+			const isCredentialsFolder: boolean =
+				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "cred_folder").length > 1;
+
+			const isBUFolder: boolean =
+				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "bu_folder").length > 1;
+
+			if (isTopFolder) {
+				// show option to select credential name
+			}
+
+			// change mcdev status bar icon
+			// running popup
+			// execute command
+			// change mcdev status bar icon
+			// show conclusion popup
+		}
 	}
 }
 export default DevToolsExtension;

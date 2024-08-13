@@ -64,7 +64,7 @@
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /deploy/ || resourcePath =~ /retrieve/)",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && resourceFilename != 'retrieve'))",
                "group": "devtools"
             },
             {
