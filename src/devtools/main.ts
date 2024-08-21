@@ -685,21 +685,23 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]) {
 						const buSelected: string[] = buOptions.map((bu: InputOptionsSettings) => bu.id);
 
 						const filePathsConfigured: FileCopyConfig[] = supportedMetadataTypes
-							.map((configPath: DevToolsPathConfiguration) => {
-								const { absolutePath, businessUnit } = configPath;
-
+							.map(({ absolutePath, businessUnit, metadataType, keys }: DevToolsPathConfiguration) => {
 								if (businessUnit) {
 									let paths: string[] = [];
-
-									if (file.isPathADirectory(absolutePath)) {
-										paths = [...paths, absolutePath];
+									// When the selected file to copy is inside a folder in asset type
+									// the whole folder and all files inside should be copied
+									if (metadataType === "asset" && keys.length > 2) {
+										const [_, assetKey]: string[] = keys;
+										paths.push(absolutePath.split(assetKey).shift() + assetKey);
+									} else if (file.isPathADirectory(absolutePath)) {
+										paths.push(absolutePath);
 									} else {
 										const [currentFileExt]: string[] = mainConfig.fileExtensions.filter(
 											(fileExt: string) => absolutePath.endsWith(fileExt)
 										);
 										if (currentFileExt) {
-											paths = [
-												...paths,
+											// Copies the same file for multiple extensions, eg sql & json
+											paths.push(
 												...file.fileExists(
 													mainConfig.fileExtensions
 														.filter(
@@ -710,7 +712,7 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]) {
 															absolutePath.replace(currentFileExt, fileExtension)
 														)
 												)
-											];
+											);
 										}
 									}
 
