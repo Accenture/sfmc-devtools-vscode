@@ -44,8 +44,7 @@ abstract class DevToolsCommands {
 
 	async configureCommandWithParameters(
 		config: DevToolsCommandSetting,
-		args: { [key: string]: string | string[] | boolean },
-		mdTypes: SupportedMetadataTypes[]
+		args: { [key: string]: string | string[] | boolean }
 	): Promise<string> {
 		log("debug", `ConfigureCommandWithParameters: ${JSON.stringify(config)}`);
 		let { command } = config;
@@ -54,14 +53,6 @@ abstract class DevToolsCommands {
 			for (const param of config.requiredParams) {
 				if (param in args && args[param]) {
 					command = command.replace(`{{${param}}}`, args[param] as string);
-				} else {
-					// Requests user
-					if (param.toLowerCase() === "mdtypes" && mdTypes.length) {
-						const userSelecteMDTypes: string | undefined = await this.handleMetadataTypeRequest(mdTypes);
-						if (userSelecteMDTypes) {
-							command = command.replace(`{{${param}}}`, `"${userSelecteMDTypes}"`);
-						}
-					}
 				}
 			}
 		}
@@ -76,26 +67,6 @@ abstract class DevToolsCommands {
 			});
 		}
 		return command;
-	}
-
-	async handleMetadataTypeRequest(mdTypes: SupportedMetadataTypes[]): Promise<string | undefined> {
-		const mdTypeInputOptions: InputOptionsSettings[] = mdTypes.map((mdType: SupportedMetadataTypes) => ({
-			id: mdType.apiName,
-			label: mdType.name,
-			detail: ""
-		}));
-		const userResponse: InputOptionsSettings | InputOptionsSettings[] | undefined =
-			await editorInput.handleQuickPickSelection(
-				mdTypeInputOptions,
-				"Please select one or multiple metadata types...",
-				true
-			);
-		if (userResponse && Array.isArray(userResponse)) {
-			const mdTypes: string = `${userResponse.map((response: InputOptionsSettings) => response.id)}`;
-			log("debug", `User selected metadata types: "${mdTypes}"`);
-			return mdTypes;
-		}
-		return;
 	}
 
 	hasPlaceholders(command: string): boolean {
