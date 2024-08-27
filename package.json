@@ -85,7 +85,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy' && resourcePath =~ /retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
@@ -119,7 +119,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy' && resourcePath =~ /retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
