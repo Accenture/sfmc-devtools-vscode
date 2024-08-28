@@ -15,6 +15,7 @@ import DevToolsPathComponents from "../shared/interfaces/devToolsPathComponents"
 import { lib } from "../shared/utils/lib";
 import { file } from "../shared/utils/file";
 import { editorCommands } from "../editor/commands";
+import SupportedMetadataTypes from "../shared/interfaces/supportedMetadataTypes";
 
 async function initDevToolsExtension(): Promise<void> {
 	try {
@@ -622,7 +623,23 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]) {
 		const { supportedMetadataTypes, unsupportedMetadataTypes }: SupportedMetadataTypeConfiguration =
 			configuredSelectedPaths.reduce(
 				(accObj: SupportedMetadataTypeConfiguration, configPath: DevToolsPathConfiguration) => {
-					if (DevToolsCommands.isSupportedMetadataType("deploy", configPath.metadataType)) {
+					if (!configPath.metadataType) {
+						// Gets all the metadata types that are supported for deployment
+						const allDeployMetadataTypes: SupportedMetadataTypes[] =
+							DevToolsCommands.getMetadataTypes().filter((mdType: SupportedMetadataTypes) =>
+								DevToolsCommands.isSupportedMetadataType("deploy", mdType.apiName)
+							);
+						// Configures and adds all the metadata types that exist in the BU folder
+						accObj.supportedMetadataTypes = allDeployMetadataTypes
+							.map((mdType: SupportedMetadataTypes) => ({
+								...configPath,
+								absolutePath: `${configPath.absolutePath}/${mdType.apiName}`,
+								metadataType: mdType.apiName
+							}))
+							.filter((pathConfig: DevToolsPathConfiguration) =>
+								file.isPathADirectory(pathConfig.absolutePath)
+							);
+					} else if (DevToolsCommands.isSupportedMetadataType("deploy", configPath.metadataType)) {
 						accObj.supportedMetadataTypes.push(configPath);
 					} else {
 						accObj.unsupportedMetadataTypes = lib.removeDuplicates([
@@ -717,7 +734,6 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]) {
 									}
 
 									return buSelected
-										.filter((buSelected: string) => buSelected !== businessUnit)
 										.map((buSelected: string) =>
 											paths.map((keyFilePath: string) => ({
 												sourceFilePath: keyFilePath,
