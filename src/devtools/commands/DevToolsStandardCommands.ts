@@ -13,7 +13,6 @@ class DevToolsStandardCommands extends DevToolsCommands {
 			commandHandlers: { [key: string]: (args?: any) => void }
 		) => void;
 	} = {};
-	private metadataTypes: SupportedMetadataTypes[] = [];
 	constructor() {
 		super();
 		log("debug", "DevToolsStandardCommands Class created");
@@ -35,20 +34,14 @@ class DevToolsStandardCommands extends DevToolsCommands {
 		}
 	}
 
-	setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void {
-		this.metadataTypes = mdTypes;
-	}
-
-	getMetadataTypes(): SupportedMetadataTypes[] {
-		return this.metadataTypes;
-	}
-
 	getSupportedMetadataTypeByAction(action: string) {
 		const supportedActions: { [key: string]: () => SupportedMetadataTypes[] } = {
 			retrieve: () =>
-				this.getMetadataTypes().filter((mdType: SupportedMetadataTypes) => mdType.supports.retrieve),
+				DevToolsCommands.getMetadataTypes().filter(
+					(mdType: SupportedMetadataTypes) => mdType.supports.retrieve
+				),
 			deploy: () =>
-				this.getMetadataTypes().filter(
+				DevToolsCommands.getMetadataTypes().filter(
 					(mdType: SupportedMetadataTypes) => mdType.supports.create || mdType.supports.update
 				)
 		};

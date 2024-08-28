@@ -3,7 +3,6 @@ import * as commandsConfig from "./commands.config.json";
 import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
 import DevToolsCommandRunner from "../../shared/interfaces/devToolsCommandRunner";
 import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
-import InputOptionsSettings from "../../shared/interfaces/inputOptionsSettings";
 import { editorInput } from "../../editor/input";
 import { log } from "../../editor/output";
 import { lib } from "../../shared/utils/lib";
@@ -13,10 +12,9 @@ import { metadatatypes } from "../../config/metadatatypes.config";
 abstract class DevToolsCommands {
 	static readonly commandPrefix: string = "mcdev";
 	static commandMap: { [key: string]: DevToolsCommands };
+	static metadataTypes: SupportedMetadataTypes[];
 
 	abstract run(commandRunner: DevToolsCommandRunner): void;
-	abstract setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void;
-	abstract getMetadataTypes(): SupportedMetadataTypes[] | void;
 	abstract isSupportedMetadataType(action: string, metadataType: string): boolean | void;
 
 	executeCommand(command: string, path: string, showOnTerminal: boolean): Promise<string | number> {
@@ -101,14 +99,11 @@ abstract class DevToolsCommands {
 			}, {});
 		}
 
-		// Sends the supported mtdata types to each DevTools Command
-		Object.keys(this.commandMap).forEach((key: string) => {
-			const devToolCommand: DevToolsCommands = this.commandMap[key];
-			const sortedSuppMdtByName: SupportedMetadataTypes[] = metadatatypes.sort((a, b) =>
-				a.name.localeCompare(b.name)
-			);
-			devToolCommand.setMetadataTypes(sortedSuppMdtByName);
-		});
+		// Sets the metadata types sorted by name
+		const sortedSuppMdtByName: SupportedMetadataTypes[] = metadatatypes.sort((a, b) =>
+			a.name.localeCompare(b.name)
+		);
+		this.setMetadataTypes(sortedSuppMdtByName);
 	}
 
 	static async runCommand(
@@ -188,6 +183,14 @@ abstract class DevToolsCommands {
 		}
 		log("error", `[DevToolsCommands_runCommand] Error: Failed to retrieve ${id} from commands configuration.`);
 		return false;
+	}
+
+	static setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void {
+		this.metadataTypes = mdTypes;
+	}
+
+	static getMetadataTypes(): SupportedMetadataTypes[] {
+		return this.metadataTypes;
 	}
 
 	static isSupportedMetadataType(action: string, metadataType: string) {
