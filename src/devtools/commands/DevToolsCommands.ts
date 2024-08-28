@@ -3,7 +3,6 @@ import * as commandsConfig from "./commands.config.json";
 import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
 import DevToolsCommandRunner from "../../shared/interfaces/devToolsCommandRunner";
 import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
-import InputOptionsSettings from "../../shared/interfaces/inputOptionsSettings";
 import { editorInput } from "../../editor/input";
 import { log } from "../../editor/output";
 import { lib } from "../../shared/utils/lib";
@@ -13,10 +12,9 @@ import { metadatatypes } from "../../config/metadatatypes.config";
 abstract class DevToolsCommands {
 	static readonly commandPrefix: string = "mcdev";
 	static commandMap: { [key: string]: DevToolsCommands };
+	static metadataTypes: SupportedMetadataTypes[];
 
 	abstract run(commandRunner: DevToolsCommandRunner): void;
-	abstract setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void;
-	abstract getMetadataTypes(): SupportedMetadataTypes[] | void;
 	abstract isSupportedMetadataType(action: string, metadataType: string): boolean | void;
 
 	executeCommand(command: string, path: string, showOnTerminal: boolean): Promise<string | number> {
@@ -44,8 +42,7 @@ abstract class DevToolsCommands {
 
 	async configureCommandWithParameters(
 		config: DevToolsCommandSetting,
-		args: { [key: string]: string | string[] | boolean },
-		mdTypes: SupportedMetadataTypes[]
+		args: { [key: string]: string | string[] | boolean }
 	): Promise<string> {
 		log("debug", `ConfigureCommandWithParameters: ${JSON.stringify(config)}`);
 		let { command } = config;
@@ -54,14 +51,6 @@ abstract class DevToolsCommands {
 			for (const param of config.requiredParams) {
 				if (param in args && args[param]) {
 					command = command.replace(`{{${param}}}`, args[param] as string);
-				} else {
-					// Requests user
-					if (param.toLowerCase() === "mdtypes" && mdTypes.length) {
-						const userSelecteMDTypes: string | undefined = await this.handleMetadataTypeRequest(mdTypes);
-						if (userSelecteMDTypes) {
-							command = command.replace(`{{${param}}}`, `"${userSelecteMDTypes}"`);
-						}
-					}
 				}
 			}
 		}
@@ -76,26 +65,6 @@ abstract class DevToolsCommands {
 			});
 		}
 		return command;
-	}
-
-	async handleMetadataTypeRequest(mdTypes: SupportedMetadataTypes[]): Promise<string | undefined> {
-		const mdTypeInputOptions: InputOptionsSettings[] = mdTypes.map((mdType: SupportedMetadataTypes) => ({
-			id: mdType.apiName,
-			label: mdType.name,
-			detail: ""
-		}));
-		const userResponse: InputOptionsSettings | InputOptionsSettings[] | undefined =
-			await editorInput.handleQuickPickSelection(
-				mdTypeInputOptions,
-				"Please select one or multiple metadata types...",
-				true
-			);
-		if (userResponse && Array.isArray(userResponse)) {
-			const mdTypes: string = `${userResponse.map((response: InputOptionsSettings) => response.id)}`;
-			log("debug", `User selected metadata types: "${mdTypes}"`);
-			return mdTypes;
-		}
-		return;
 	}
 
 	hasPlaceholders(command: string): boolean {
@@ -130,14 +99,11 @@ abstract class DevToolsCommands {
 			}, {});
 		}
 
-		// Sends the supported mtdata types to each DevTools Command
-		Object.keys(this.commandMap).forEach((key: string) => {
-			const devToolCommand: DevToolsCommands = this.commandMap[key];
-			const sortedSuppMdtByName: SupportedMetadataTypes[] = metadatatypes.sort((a, b) =>
-				a.name.localeCompare(b.name)
-			);
-			devToolCommand.setMetadataTypes(sortedSuppMdtByName);
-		});
+		// Sets the metadata types sorted by name
+		const sortedSuppMdtByName: SupportedMetadataTypes[] = metadatatypes.sort((a, b) =>
+			a.name.localeCompare(b.name)
+		);
+		this.setMetadataTypes(sortedSuppMdtByName);
 	}
 
 	static async runCommand(
@@ -217,6 +183,14 @@ abstract class DevToolsCommands {
 		}
 		log("error", `[DevToolsCommands_runCommand] Error: Failed to retrieve ${id} from commands configuration.`);
 		return false;
+	}
+
+	static setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void {
+		this.metadataTypes = mdTypes;
+	}
+
+	static getMetadataTypes(): SupportedMetadataTypes[] {
+		return this.metadataTypes;
 	}
 
 	static isSupportedMetadataType(action: string, metadataType: string) {

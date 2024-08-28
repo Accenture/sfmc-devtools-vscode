@@ -41,8 +41,8 @@
                 "id":"retrieve", 
                 "title": "Retrieve", 
                 "command": "mcdev retrieve {{bu}} {{mdtypes}} {{key}} --skipInteraction", 
-                "requiredParams": ["bu", "mdtypes"],
-                "optionalParams": ["key"],
+                "requiredParams": ["bu"],
+                "optionalParams": ["key", "mdtypes"],
                 "description": "Retrieves metadata of a business unit.", 
                 "isAvailable": true
             },
@@ -50,8 +50,8 @@
                 "id":"deploy", 
                 "title": "Deploy", 
                 "command": "mcdev deploy {{bu}} {{mdtypes}} {{key}} {{fromRetrieve}} --skipInteraction", 
-                "requiredParams": ["bu", "mdtypes"],
-                "optionalParams": ["key", "fromRetrieve"],
+                "requiredParams": ["bu"],
+                "optionalParams": ["key", "mdtypes", "fromRetrieve"],
                 "description": "Deploys local metadata to a business unit.", 
                 "isAvailable": true
             },

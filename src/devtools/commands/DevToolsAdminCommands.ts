@@ -59,11 +59,7 @@ class DevToolsAdminCommands extends DevToolsCommands {
 			}
 			log("debug", `Init payload: ${JSON.stringify(initArgs)}`);
 
-			const commandConfigured: string | undefined = await this.configureCommandWithParameters(
-				config,
-				initArgs,
-				[]
-			);
+			const commandConfigured: string | undefined = await this.configureCommandWithParameters(config, initArgs);
 			// Checks if the command is still missing so required parameter
 			if (this.hasPlaceholders(commandConfigured)) {
 				log("debug", `Required Parameters missing from Init command: ${commandConfigured}`);
@@ -89,11 +85,7 @@ class DevToolsAdminCommands extends DevToolsCommands {
 		try {
 			log("info", `Running DevTools Admin Command: Explain Types...`);
 			if ("command" in config && config.command) {
-				const commandConfigured: string | undefined = await this.configureCommandWithParameters(
-					config,
-					args,
-					[]
-				);
+				const commandConfigured: string | undefined = await this.configureCommandWithParameters(config, args);
 				log("debug", `Explain types final command: ${commandConfigured}`);
 				const commandResult: string | number = await this.executeCommand(
 					commandConfigured,
