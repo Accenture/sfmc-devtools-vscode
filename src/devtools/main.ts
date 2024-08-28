@@ -734,7 +734,6 @@ async function handleCopyToBuCMCommand(selectedPaths: string[]) {
 									}
 
 									return buSelected
-										.filter((buSelected: string) => buSelected !== businessUnit)
 										.map((buSelected: string) =>
 											paths.map((keyFilePath: string) => ({
 												sourceFilePath: keyFilePath,
