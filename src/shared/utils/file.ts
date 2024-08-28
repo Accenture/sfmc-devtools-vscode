@@ -18,11 +18,7 @@ function fileExists(path: string | string[]): string[] {
 }
 
 function isPathADirectory(path: string): boolean {
-	try {
-		return fs.lstatSync(path.replace(/^\/[a-zA-Z]:/g, "")).isDirectory();
-	} catch (error) {
-		throw error;
-	}
+	return fileExists(path).length > 0 && fs.lstatSync(path.replace(/^\/[a-zA-Z]:/g, "")).isDirectory();
 }
 
 function createFilePath(pathArray: string[]): string {

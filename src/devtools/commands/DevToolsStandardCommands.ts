@@ -13,7 +13,6 @@ class DevToolsStandardCommands extends DevToolsCommands {
 			commandHandlers: { [key: string]: (args?: any) => void }
 		) => void;
 	} = {};
-	private metadataTypes: SupportedMetadataTypes[] = [];
 	constructor() {
 		super();
 		log("debug", "DevToolsStandardCommands Class created");
@@ -35,20 +34,14 @@ class DevToolsStandardCommands extends DevToolsCommands {
 		}
 	}
 
-	setMetadataTypes(mdTypes: SupportedMetadataTypes[]): void {
-		this.metadataTypes = mdTypes;
-	}
-
-	getMetadataTypes(): SupportedMetadataTypes[] {
-		return this.metadataTypes;
-	}
-
 	getSupportedMetadataTypeByAction(action: string) {
 		const supportedActions: { [key: string]: () => SupportedMetadataTypes[] } = {
 			retrieve: () =>
-				this.getMetadataTypes().filter((mdType: SupportedMetadataTypes) => mdType.supports.retrieve),
+				DevToolsCommands.getMetadataTypes().filter(
+					(mdType: SupportedMetadataTypes) => mdType.supports.retrieve
+				),
 			deploy: () =>
-				this.getMetadataTypes().filter(
+				DevToolsCommands.getMetadataTypes().filter(
 					(mdType: SupportedMetadataTypes) => mdType.supports.create || mdType.supports.update
 				)
 		};
@@ -70,15 +63,8 @@ class DevToolsStandardCommands extends DevToolsCommands {
 	) {
 		log("info", `Running DevTools Standard Command: Retrieve...`);
 		if ("command" in config && config.command) {
-			// Gets that metadata types that are supported for retrieve
-			const supportedMdTypes: SupportedMetadataTypes[] = this.getSupportedMetadataTypeByAction("retrieve");
-
 			// Configures the command to replace all the parameters with the values
-			const commandConfigured: string | undefined = await this.configureCommandWithParameters(
-				config,
-				args,
-				supportedMdTypes
-			);
+			const commandConfigured: string | undefined = await this.configureCommandWithParameters(config, args);
 
 			// Checks if the command is still missing so required parameter
 			if (this.hasPlaceholders(commandConfigured)) {
@@ -89,6 +75,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
 
 			log("debug", `Retrieve Command configured: ${commandConfigured}`);
 			loadingNotification();
+
 			const commandResult: string | number = await this.executeCommand(commandConfigured, path, true);
 			if (typeof commandResult === "number") {
 				handleCommandResult({ success: commandResult === 0, cancelled: false });
@@ -106,15 +93,8 @@ class DevToolsStandardCommands extends DevToolsCommands {
 	) {
 		log("info", `Running DevTools Standard Command: Deploy...`);
 		if ("command" in config && config.command) {
-			// Gets that metadata types that are supported for deploy
-			const supportedMdTypes: SupportedMetadataTypes[] = this.getSupportedMetadataTypeByAction("deploy");
-
 			// Configures the command to replace all the parameters with the values
-			const commandConfigured: string | undefined = await this.configureCommandWithParameters(
-				config,
-				args,
-				supportedMdTypes
-			);
+			const commandConfigured: string | undefined = await this.configureCommandWithParameters(config, args);
 
 			// Checks if the command is still missing so required parameter
 			if (this.hasPlaceholders(commandConfigured)) {
@@ -125,6 +105,7 @@ class DevToolsStandardCommands extends DevToolsCommands {
 
 			log("debug", `Deploy Command configured: ${commandConfigured}`);
 			loadingNotification();
+
 			const commandResult: string | number = await this.executeCommand(commandConfigured, path, true);
 			if (typeof commandResult === "number") {
 				handleCommandResult({ success: commandResult === 0, cancelled: false });

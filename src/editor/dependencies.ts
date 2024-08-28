@@ -39,18 +39,8 @@ async function activateExtensionDependencies(dependencies: string | string[]) {
 	}
 }
 
-function deactivateCompactFolders() {
-	const workspaceConfiguration = editorWorkspace.handleWorkspaceConfiguration("explorer", "Workspace");
-	const isCompactFoldersEnabled: boolean = Boolean(workspaceConfiguration.get("compactFolders", true));
-	if (isCompactFoldersEnabled) {
-		// Disable Compact Folders
-		workspaceConfiguration.set("compactFolders", false);
-	}
-}
-
 const editorDependencies = {
-	activateExtensionDependencies,
-	deactivateCompactFolders
+	activateExtensionDependencies
 };
 
 export { editorDependencies };

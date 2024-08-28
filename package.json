@@ -70,7 +70,7 @@
             },
             {
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /retrieve/"
+               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/"
             }
          ],
          "explorer/context": [
@@ -85,7 +85,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
@@ -102,7 +102,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
@@ -119,7 +119,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
@@ -152,7 +152,7 @@
       "@types/node": "^20.12.8",
       "@types/vscode": "^1.81.1",
       "@typescript-eslint/eslint-plugin": "^7.8.0",
-      "@typescript-eslint/parser": "^7.7.0",
+      "@typescript-eslint/parser": "^7.18.0",
       "@vscode/test-electron": "^2.3.9",
       "chai": "^5.1.0",
       "eslint": "^8.56.0",
@@ -165,7 +165,7 @@
    },
    "dependencies": {
       "@salesforce-ux/design-system": "^2.23.2",
-      "@vscode/codicons": "^0.0.35",
+      "@vscode/codicons": "^0.0.36",
       "winston": "^3.13.0"
    }
 }
