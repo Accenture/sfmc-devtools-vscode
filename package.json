@@ -1,7 +1,7 @@
 {
    "name": "sfmc-devtools-vscode",
    "displayName": "SFMC DevTools",
-   "description": "Unofficial IDE for Salesforce Marketing Cloud",
+   "description": "Unofficial IDE for Salesforce Marketing Cloud - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
    "version": "1.0.2",
    "license": "MIT",
    "publisher": "Accenture-oss",
@@ -160,7 +160,7 @@
       "ts-jest": "^29.2.4",
       "ts-loader": "^9.5.1",
       "typescript": "^5.3.3",
-      "webpack": "^5.91.0",
+      "webpack": "^5.94.0",
       "webpack-cli": "^5.1.4"
    },
    "dependencies": {
