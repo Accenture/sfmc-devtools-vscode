@@ -34,8 +34,6 @@ class DevToolsAdminCommands extends DevToolsCommands {
 		}
 	}
 
-	getMetadataTypes(): SupportedMetadataTypes[] | void {}
-	setMetadataTypes(_: SupportedMetadataTypes[]): void {}
 	isSupportedMetadataType(_action: string, _metadataType: string): boolean | void {}
 
 	async init(
