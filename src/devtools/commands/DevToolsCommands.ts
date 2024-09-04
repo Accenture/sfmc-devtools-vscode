@@ -99,11 +99,23 @@ abstract class DevToolsCommands {
 			}, {});
 		}
 
-		// Sets the metadata types sorted by name
-		const sortedSuppMdtByName: SupportedMetadataTypes[] = metadatatypes.sort((a, b) =>
-			a.name.localeCompare(b.name)
+		// sets default metadata type file
+		this.setMetadataTypes(metadatatypes);
+
+		// Updates metadatypes with the result from explainTypes command, not blocking code execution
+		this.runCommand(
+			"admin",
+			"etypes",
+			"",
+			{ json: true },
+			{
+				handleCommandResult: ({ success, data }: { success: boolean; data: string }) => {
+					if (success) {
+						this.setMetadataTypes(JSON.parse(data) as SupportedMetadataTypes[]);
+					}
+				}
+			}
 		);
-		this.setMetadataTypes(sortedSuppMdtByName);
 	}
 
 	static async runCommand(

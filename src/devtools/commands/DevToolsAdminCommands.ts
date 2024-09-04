@@ -1,7 +1,6 @@
 import DevToolsCommands from "./DevToolsCommands";
 import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
 import DevToolsCommandRunner from "../../shared/interfaces/devToolsCommandRunner";
-import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
 import { log } from "../../editor/output";
 
 class DevToolsAdminCommands extends DevToolsCommands {

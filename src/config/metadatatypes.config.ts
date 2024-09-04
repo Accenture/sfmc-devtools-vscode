@@ -1,4 +1,6 @@
-export const metadatatypes = [
+import SupportedMetadataTypes from "../shared/interfaces/supportedMetadataTypes";
+
+export const metadatatypes: SupportedMetadataTypes[] = [
 	{
 		name: "Asset-[Subtype]",
 		apiName: "asset",
