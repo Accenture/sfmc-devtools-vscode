@@ -1,6 +1,6 @@
 import { IDevTools } from "@types";
 
-export const metadataTypesList: IDevTools.MetadataTypes[] = [
+export const metadataTypesList: IDevTools.IMetadataTypes[] = [
 	{
 		name: "Asset-[Subtype]",
 		apiName: "asset",

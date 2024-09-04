@@ -56,51 +56,68 @@
          }
       ],
       "menus": {
-         "explorer/context": [
-            {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && resourceFilename != 'retrieve'))",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.copytobu",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
-               "group": "devtools"
-            }
-         ],
          "commandPalette": [
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "false"
+               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\/"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "false"
+               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/)))"
             },
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "false"
+               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/"
+            }
+         ],
+         "editor/context": [
+            {
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.copytobu",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
+               "group": "devtools"
+            }
+         ],
+         "explorer/context": [
+            {
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.copytobu",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
+               "group": "devtools"
             }
          ],
          "editor/title/context": [
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
                "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /deploy/ || resourcePath =~ /retrieve/)",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/)))",
                "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "group": "devtools"
             }
          ]
