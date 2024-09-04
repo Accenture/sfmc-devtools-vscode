@@ -1,7 +1,6 @@
 import DevToolsCommands from "./DevToolsCommands";
 import DevToolsCommandSetting from "../../shared/interfaces/devToolsCommandSetting";
 import DevToolsCommandRunner from "../../shared/interfaces/devToolsCommandRunner";
-import SupportedMetadataTypes from "../../shared/interfaces/supportedMetadataTypes";
 import { log } from "../../editor/output";
 
 class DevToolsAdminCommands extends DevToolsCommands {
@@ -34,8 +33,6 @@ class DevToolsAdminCommands extends DevToolsCommands {
 		}
 	}
 
-	getMetadataTypes(): SupportedMetadataTypes[] | void {}
-	setMetadataTypes(_: SupportedMetadataTypes[]): void {}
 	isSupportedMetadataType(_action: string, _metadataType: string): boolean | void {}
 
 	async init(
