@@ -1,7 +1,7 @@
 {
    "name": "sfmc-devtools-vscode",
    "displayName": "SFMC DevTools",
-   "description": "Unofficial IDE for Salesforce Marketing Cloud",
+   "description": "Unofficial IDE for Salesforce Marketing Cloud - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
    "version": "1.0.2",
    "license": "MIT",
    "publisher": "Accenture-oss",
@@ -59,6 +59,20 @@
          }
       ],
       "menus": {
+         "commandPalette": [
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /retrieve/"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript')))"
+            },
+            {
+               "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/"
+            }
+         ],
          "explorer/context": [
             {
                "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/",
@@ -71,23 +85,26 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
          ],
-         "commandPalette": [
+         "editor/context": [
             {
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/",
                "command": "sfmc-devtools-vscext.devtoolsCMRetrieve",
-               "when": "false"
+               "group": "devtools"
             },
             {
+               "when": "sfmc-devtools-vscode.isDevToolsProject && (resourcePath =~ /deploy/ || (resourcePath =~ /retrieve/ && (resourceExtname == '.json' || resourceExtname == '.html' || resourceExtname == '.sql' || resourceExtname == '.ssjs' || resourceLangId == 'markdown' || resourceLangId == 'AMPscript' || resourceLangId == 'ampscript' || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
                "command": "sfmc-devtools-vscext.devtoolsCMDeploy",
-               "when": "false"
+               "group": "devtools"
             },
             {
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
-               "when": "false"
+               "group": "devtools"
             }
          ],
          "editor/title/context": [
@@ -102,7 +119,7 @@
                "group": "devtools"
             },
             {
-               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /retrieve/ && resourceFilename != 'retrieve' && resourceFilename != 'deploy'",
+               "when": "sfmc-devtools-vscode.isDevToolsProject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "command": "sfmc-devtools-vscext.devtoolsCMCopyToBU",
                "group": "devtools"
             }
@@ -133,22 +150,22 @@
       "@types/chai": "^4.3.16",
       "@types/jest": "^29.5.11",
       "@types/node": "^20.12.8",
-      "@types/vscode": "^1.81.1",
-      "@typescript-eslint/eslint-plugin": "^7.8.0",
-      "@typescript-eslint/parser": "^7.7.0",
-      "@vscode/test-electron": "^2.3.9",
+      "@types/vscode": "^1.92.0",
+      "@typescript-eslint/eslint-plugin": "^8.3.0",
+      "@typescript-eslint/parser": "^7.18.0",
+      "@vscode/test-electron": "^2.4.1",
       "chai": "^5.1.0",
       "eslint": "^8.56.0",
       "jest": "^29.7.0",
-      "ts-jest": "^29.1.2",
+      "ts-jest": "^29.2.4",
       "ts-loader": "^9.5.1",
-      "typescript": "^5.3.3",
-      "webpack": "^5.91.0",
+      "typescript": "^5.5.4",
+      "webpack": "^5.94.0",
       "webpack-cli": "^5.1.4"
    },
    "dependencies": {
-      "@salesforce-ux/design-system": "^2.23.2",
-      "@vscode/codicons": "^0.0.35",
+      "@salesforce-ux/design-system": "^2.24.5",
+      "@vscode/codicons": "^0.0.36",
       "winston": "^3.13.0"
    }
 }
