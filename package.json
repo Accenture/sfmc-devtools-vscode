@@ -14,7 +14,7 @@
    },
    "icon": "resources/images/sfmc-devtools-logo.jpg",
    "engines": {
-      "vscode": "^1.81.1"
+      "vscode": "^1.92.0"
    },
    "keywords": [
       "amp",
