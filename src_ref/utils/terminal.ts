@@ -51,9 +51,6 @@ function installPackage(packageName: string): TerminalOutput {
 	} catch (error) {
 		throw new Error(`[terminal_isPackageInstalled]: ${error}`);
 	}
-	const terminal: TerminalOutput = executeTerminalCommand("npm", ["install", "-g", packageName], true);
-	if (terminal.error) return { ...terminal, error: `Error installing '${packageName}' package: ${terminal.error}` };
-	return terminal;
 }
 
 export const terminal = { isPackageInstalled, installPackage };

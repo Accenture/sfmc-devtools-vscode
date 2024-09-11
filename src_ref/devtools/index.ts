@@ -154,6 +154,7 @@ class DevToolsExtension {
 		console.log(command);
 		const filesFormatted: IDevTools.IFileFormat[] = this.mcdev.convertFilePaths(files);
 
+		console.log(filesFormatted);
 		if (filesFormatted.length > 0) {
 			const isTopFolder: boolean =
 				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "top_folder").length > 1;
@@ -165,8 +166,12 @@ class DevToolsExtension {
 				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "bu_folder").length > 1;
 
 			if (isTopFolder) {
-				// show option to select credential name
+				// show option to select all or one credential name
+			} else if (isCredentialsFolder) {
+				// show option to select all or one bussiness unit
 			}
+
+			this.mcdev.execute(command);
 
 			// change mcdev status bar icon
 			// running popup

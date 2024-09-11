@@ -2,20 +2,23 @@ import { IDevTools } from "@types";
 import { terminal } from "../utils/terminal";
 import MetadataTypes from "./metadatatypes";
 import StandardCommands from "./commands/standard";
-import Commands from "./commands";
+import Commands from "./commands/commands";
+import AdminCommands from "./commands/admin";
 
 const mcdevCommands: { [key: string]: Commands } = {
+	admin: new AdminCommands(),
 	standard: new StandardCommands()
 };
 
 class Mcdev {
 	private packageName: string = "mcdev";
 	private metadataTypes: MetadataTypes;
-	private credentials: { [key: string]: IDevTools.ICredentials };
+	// private credentials: { [key: string]: IDevTools.ICredentials };
 
 	constructor() {
 		this.metadataTypes = new MetadataTypes();
-		this.credentials = this.loadCredentials();
+		// this.credentials = this.loadCredentials();
+		Commands.setPackageName(this.packageName);
 	}
 
 	isInstalled(): boolean {
@@ -82,6 +85,23 @@ class Mcdev {
 
 	getCredentialsList() {
 		console.log("== Mcdev: Get Credentials List ==");
+	}
+
+	getCommandBySubCommandName(name: string): Commands {
+		console.log("== Mcdev: Get Command By Sub Command name ==");
+
+		const commandsTypes: string[] = Object.keys(mcdevCommands);
+		const [commandTypeName]: string[] = commandsTypes.filter((typeName: string) =>
+			mcdevCommands[typeName].commandsList().includes(name)
+		);
+		if (commandTypeName) return mcdevCommands[commandTypeName];
+		else throw new Error(""); // log error
+	}
+
+	execute(command: string) {
+		console.log("== Mcdev: Execute ==");
+		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
+		if (mcdevCommand) mcdevCommand.run(command);
 	}
 }
 
