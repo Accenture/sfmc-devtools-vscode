@@ -40,4 +40,10 @@ interface ICredentials {
 	businessUnits: { [key: string]: number };
 }
 
-export { IConfig, IMetadataTypes, IFileFormat, ICredentials };
+interface ICommandParameters {
+	credential: string;
+	metadata: { metadatatype: ""; key: "" }[];
+	optional: string[];
+}
+
+export { IConfig, IMetadataTypes, IFileFormat, ICredentials, ICommandParameters };

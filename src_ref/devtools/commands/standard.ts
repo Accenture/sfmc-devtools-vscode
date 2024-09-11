@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Commands from "./commands";
 
 class StandardCommands extends Commands {

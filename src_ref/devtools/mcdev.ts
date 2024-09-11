@@ -98,9 +98,32 @@ class Mcdev {
 		else throw new Error(""); // log error
 	}
 
-	execute(command: string) {
+	private getAllFilesCredentials(files: IDevTools.IFileFormat[]): string[] {
+		return [...new Set<string>(files.map((file: IDevTools.IFileFormat) => this.getCredentialByFileLevel(file)))];
+	}
+
+	private getCredentialByFileLevel({ level, credentialsName, businessUnit }: IDevTools.IFileFormat): string {
+		if (level === "top_folder") return "*";
+		else if (level === "cred_folder") return `${credentialsName}/*`;
+		else return `${credentialsName}/${businessUnit}`;
+	}
+
+	private getMetadataByFileLevel({ level, metadataType, filename }: IDevTools.IFileFormat):
+		| {
+				metadatatype: string;
+				key: string;
+		  }
+		| undefined {
+		if (level === "bu_folder") return { metadatatype: "", key: "" };
+		else if (level === "mdt_folder") return { metadatatype: metadataType as string, key: "" };
+		else if (level === "file") return { metadatatype: metadataType as string, key: filename as string };
+		else return;
+	}
+
+	execute(command: string, files: IDevTools.IFileFormat[]) {
 		console.log("== Mcdev: Execute ==");
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
+		const credentialsList: string[] = this.getAllFilesCredentials(files);
 		if (mcdevCommand) mcdevCommand.run(command);
 	}
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Mcdev from "./mcdev";
 import VSCodeEditor from "../editor/index";
 import VSCodeWindow from "../editor/window";
@@ -171,7 +172,7 @@ class DevToolsExtension {
 				// show option to select all or one bussiness unit
 			}
 
-			this.mcdev.execute(command);
+			this.mcdev.execute(command, filesFormatted);
 
 			// change mcdev status bar icon
 			// running popup
