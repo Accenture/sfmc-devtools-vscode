@@ -42,8 +42,11 @@ interface ICredentials {
 
 interface ICommandParameters {
 	credential: string;
-	metadata: { metadatatype: ""; key: "" }[];
-	optional: string[];
+	metadata: { metadatatype: string; key: string }[];
+	optional?: string[];
 }
 
-export { IConfig, IMetadataTypes, IFileFormat, ICredentials, ICommandParameters };
+type FileLevelMap = { [key in FileLevel]: IFileFormat[] };
+type CredentialsFileMap = { [key: string]: FileLevelMap };
+
+export { IConfig, IMetadataTypes, IFileFormat, ICredentials, ICommandParameters, FileLevelMap, CredentialsFileMap };

@@ -4,6 +4,7 @@ import MetadataTypes from "./metadatatypes";
 import StandardCommands from "./commands/standard";
 import Commands from "./commands/commands";
 import AdminCommands from "./commands/admin";
+import { existsValueInArrObjects, extractValueInArrObjects } from "../utils/lib";
 
 const mcdevCommands: { [key: string]: Commands } = {
 	admin: new AdminCommands(),
@@ -98,8 +99,78 @@ class Mcdev {
 		else throw new Error(""); // log error
 	}
 
-	private getAllFilesCredentials(files: IDevTools.IFileFormat[]): string[] {
-		return [...new Set<string>(files.map((file: IDevTools.IFileFormat) => this.getCredentialByFileLevel(file)))];
+	private organizeFilesByFileLevel(files: IDevTools.IFileFormat[]) {
+		return files.reduce((fileLevelMap: IDevTools.FileLevelMap, file: IDevTools.IFileFormat) => {
+			if (!(file.level in fileLevelMap)) fileLevelMap[file.level] = [file];
+			else fileLevelMap[file.level].push(file);
+			return fileLevelMap;
+		}, {} as IDevTools.FileLevelMap);
+	}
+
+	private removeUnneededFiles(files: IDevTools.IFileFormat[]) {
+		const finalFileList: IDevTools.IFileFormat[] = [];
+		const { cred_folder, bu_folder, mdt_folder, file }: IDevTools.FileLevelMap =
+			this.organizeFilesByFileLevel(files);
+		const selectedCredentialsFolders: string[] = cred_folder
+			? (extractValueInArrObjects(cred_folder, "credentialsName") as string[])
+			: [];
+		const selectedBusinessUnitsFolders: string[] = bu_folder
+			? (extractValueInArrObjects(bu_folder, "businessUnit") as string[])
+			: [];
+		const selectedMetadataTypesFolders: string[] = bu_folder
+			? (extractValueInArrObjects(mdt_folder, "metadataType") as string[])
+			: [];
+
+		if (cred_folder && cred_folder.length) finalFileList.push(...cred_folder);
+		if (bu_folder && bu_folder.length)
+			finalFileList.push(
+				...bu_folder.filter(
+					({ credentialsName }: IDevTools.IFileFormat) =>
+						credentialsName && !selectedCredentialsFolders.includes(credentialsName)
+				)
+			);
+		if (mdt_folder && mdt_folder.length)
+			finalFileList.push(
+				...mdt_folder.filter(
+					({ credentialsName, businessUnit }: IDevTools.IFileFormat) =>
+						credentialsName &&
+						!selectedCredentialsFolders.includes(credentialsName) &&
+						businessUnit &&
+						!selectedBusinessUnitsFolders.includes(businessUnit)
+				)
+			);
+		if (file && file.length)
+			finalFileList.push(
+				...file.filter(
+					({ credentialsName, businessUnit, metadataType }: IDevTools.IFileFormat) =>
+						credentialsName &&
+						!selectedCredentialsFolders.includes(credentialsName) &&
+						businessUnit &&
+						!selectedBusinessUnitsFolders.includes(businessUnit) &&
+						metadataType &&
+						!selectedMetadataTypesFolders.includes(metadataType)
+				)
+			);
+		return finalFileList;
+	}
+
+	private mapToCommandParameters(files: IDevTools.IFileFormat[]) {
+		const filesToCommandParams: IDevTools.ICommandParameters[] = files.map((file: IDevTools.IFileFormat) => ({
+			credential: this.getCredentialByFileLevel(file),
+			metadata: [this.getMetadataByFileLevel(file)].filter(obj => obj !== undefined)
+		}));
+
+		console.log(filesToCommandParams);
+	}
+
+	private getAllCredentialsFromFiles(files: IDevTools.IFileFormat[]): string[] {
+		return [
+			...new Set<string>(
+				files
+					.map((file: IDevTools.IFileFormat) => file.credentialsName || "")
+					.filter((credName: string) => credName !== "")
+			)
+		];
 	}
 
 	private getCredentialByFileLevel({ level, credentialsName, businessUnit }: IDevTools.IFileFormat): string {
@@ -114,8 +185,7 @@ class Mcdev {
 				key: string;
 		  }
 		| undefined {
-		if (level === "bu_folder") return { metadatatype: "", key: "" };
-		else if (level === "mdt_folder") return { metadatatype: metadataType as string, key: "" };
+		if (level === "mdt_folder") return { metadatatype: metadataType as string, key: "" };
 		else if (level === "file") return { metadatatype: metadataType as string, key: filename as string };
 		else return;
 	}
@@ -123,7 +193,8 @@ class Mcdev {
 	execute(command: string, files: IDevTools.IFileFormat[]) {
 		console.log("== Mcdev: Execute ==");
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
-		const credentialsList: string[] = this.getAllFilesCredentials(files);
+		const finalFilesList: IDevTools.IFileFormat[] = this.removeUnneededFiles(files);
+		this.mapToCommandParameters(finalFilesList);
 		if (mcdevCommand) mcdevCommand.run(command);
 	}
 }
