@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { IDevTools } from "@types";
 import Commands from "./commands";
 
 class StandardCommands extends Commands {
@@ -7,25 +8,29 @@ class StandardCommands extends Commands {
 		return ["retrieve", "deploy"];
 	}
 
-	run(name: string): void {
+	run(name: string, parameters: IDevTools.ICommandParameters[]): void {
 		console.log("== StandardCommands: Run ==");
 		switch (name) {
 			case "retrieve":
-				this.retrieve();
+				this.retrieve(parameters);
 				break;
 			case "deploy":
-				this.deploy();
+				this.deploy(parameters);
 				break;
 			default:
 				throw new Error(""); // log error
 		}
 	}
 
-	retrieve() {
+	retrieve(parameters: IDevTools.ICommandParameters[]) {
 		console.log("== StandardCommands: Retrieve ==");
 		const retrieveCommand: string = `${Commands.getPackageName()} retrieve`;
+		const parametersList = parameters.map((parameter: IDevTools.ICommandParameters) =>
+			this.configureParameters(parameter)
+		);
 	}
-	deploy() {
+
+	deploy(parameters: IDevTools.ICommandParameters[]) {
 		console.log("== StandardCommands: Deploy ==");
 		const deployCommand: string = `${Commands.getPackageName()} deploy`;
 	}

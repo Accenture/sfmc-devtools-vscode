@@ -40,13 +40,24 @@ interface ICredentials {
 	businessUnits: { [key: string]: number };
 }
 
+type MetadataCommand = { metadatatype: string; key: string };
+
 interface ICommandParameters {
 	credential: string;
-	metadata: { metadatatype: string; key: string }[];
+	metadata: MetadataCommand[];
 	optional?: string[];
 }
 
 type FileLevelMap = { [key in FileLevel]: IFileFormat[] };
 type CredentialsFileMap = { [key: string]: FileLevelMap };
 
-export { IConfig, IMetadataTypes, IFileFormat, ICredentials, ICommandParameters, FileLevelMap, CredentialsFileMap };
+export {
+	IConfig,
+	IMetadataTypes,
+	IFileFormat,
+	ICredentials,
+	ICommandParameters,
+	FileLevelMap,
+	CredentialsFileMap,
+	MetadataCommand
+};

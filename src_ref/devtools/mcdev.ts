@@ -4,7 +4,7 @@ import MetadataTypes from "./metadatatypes";
 import StandardCommands from "./commands/standard";
 import Commands from "./commands/commands";
 import AdminCommands from "./commands/admin";
-import { existsValueInArrObjects, extractValueInArrObjects } from "../utils/lib";
+import { extractValueInArrObjects } from "../utils/lib";
 
 const mcdevCommands: { [key: string]: Commands } = {
 	admin: new AdminCommands(),
@@ -108,79 +108,64 @@ class Mcdev {
 	}
 
 	private removeUnneededFiles(files: IDevTools.IFileFormat[]): IDevTools.IFileFormat[] {
-		const finalFileList: IDevTools.IFileFormat[] = [];
+		type SelectedFoldersFilter = Partial<{ [key in keyof IDevTools.IFileFormat]: string[] }>;
 		const { cred_folder, bu_folder, mdt_folder, file }: IDevTools.FileLevelMap =
 			this.organizeFilesByFileLevel(files);
-		const selectedCredentialsFolders: string[] = cred_folder
-			? (extractValueInArrObjects(cred_folder, "credentialsName") as string[])
-			: [];
-		const selectedBusinessUnitsFolders: string[] = bu_folder
-			? (extractValueInArrObjects(bu_folder, "businessUnit") as string[])
-			: [];
-		const selectedMetadataTypesFolders: string[] = bu_folder
-			? (extractValueInArrObjects(mdt_folder, "metadataType") as string[])
-			: [];
 
-		if (cred_folder && cred_folder.length) finalFileList.push(...cred_folder);
-		if (bu_folder && bu_folder.length)
-			finalFileList.push(
-				...bu_folder.filter(
-					({ credentialsName }: IDevTools.IFileFormat) =>
-						credentialsName && !selectedCredentialsFolders.includes(credentialsName)
-				)
-			);
-		if (mdt_folder && mdt_folder.length)
-			finalFileList.push(
-				...mdt_folder.filter(
-					({ credentialsName, businessUnit }: IDevTools.IFileFormat) =>
-						credentialsName &&
-						!selectedCredentialsFolders.includes(credentialsName) &&
-						businessUnit &&
-						!selectedBusinessUnitsFolders.includes(businessUnit)
-				)
-			);
-		if (file && file.length)
-			finalFileList.push(
-				...file.filter(
-					({ credentialsName, businessUnit, metadataType }: IDevTools.IFileFormat) =>
-						credentialsName &&
-						!selectedCredentialsFolders.includes(credentialsName) &&
-						businessUnit &&
-						!selectedBusinessUnitsFolders.includes(businessUnit) &&
-						metadataType &&
-						!selectedMetadataTypesFolders.includes(metadataType)
-				)
-			);
-		return finalFileList;
+		const extractFolderByFileField = (
+			folder: IDevTools.IFileFormat[] | undefined,
+			field: keyof IDevTools.IFileFormat
+		) => (folder ? extractValueInArrObjects(folder, field) : []) as string[];
+
+		const filterFilesBySelectedFolders = (
+			folder: IDevTools.IFileFormat[] | undefined,
+			filter: SelectedFoldersFilter
+		) =>
+			folder
+				? folder.filter((file: IDevTools.IFileFormat) =>
+						Object.entries(filter).every(([field, selectedFolder]) => {
+							const fileFieldValue = file[field as keyof IDevTools.IFileFormat] as string | undefined;
+							return fileFieldValue && !selectedFolder.includes(fileFieldValue);
+						})
+					)
+				: [];
+
+		const selectedCredentialsFolders: string[] = extractFolderByFileField(cred_folder, "credentialsName");
+		const selectedBusinessUnitsFolders: string[] = extractFolderByFileField(bu_folder, "businessUnit");
+		const selectedMetadataTypesFolders: string[] = extractFolderByFileField(mdt_folder, "metadataType");
+
+		return [
+			...(cred_folder || []),
+			...filterFilesBySelectedFolders(bu_folder, { credentialsName: selectedCredentialsFolders }),
+			...filterFilesBySelectedFolders(mdt_folder, {
+				credentialsName: selectedCredentialsFolders,
+				businessUnit: selectedBusinessUnitsFolders
+			}),
+			...filterFilesBySelectedFolders(file, {
+				credentialsName: selectedCredentialsFolders,
+				businessUnit: selectedBusinessUnitsFolders,
+				metadataType: selectedMetadataTypesFolders
+			})
+		];
 	}
 
 	private mapToCommandParameters(files: IDevTools.IFileFormat[]) {
-		type MetadataByCredential = { [key: string]: { metadatatype: string; key: string }[] };
+		type MetadataByCredential = { [key: string]: IDevTools.MetadataCommand[] };
 		// Appends all selected metadata files mapped by credential name
 		const metadataByCredential = files.reduce((mdtByCred: MetadataByCredential, file: IDevTools.IFileFormat) => {
 			const credential: string = this.getCredentialByFileLevel(file);
-			const metadata: { metadatatype: string; key: string }[] = [this.getMetadataByFileLevel(file)].filter(
-				obj => obj !== undefined
-			);
-			if (!(credential in mdtByCred)) mdtByCred[credential] = metadata;
-			else mdtByCred[credential].push(...metadata);
+			const metadata: IDevTools.MetadataCommand | undefined = this.getMetadataByFileLevel(file);
+			if (metadata) {
+				mdtByCred[credential] = mdtByCred[credential] || [];
+				mdtByCred[credential].push(metadata);
+			}
 			return mdtByCred;
 		}, {} as MetadataByCredential);
 		// Maps to the Command Parameters format
-		return Object.keys(metadataByCredential).map((credential: string) => ({
+		return Object.entries(metadataByCredential).map(([credential, metadata]) => ({
 			credential,
-			metadata: metadataByCredential[credential]
+			metadata
 		}));
-	}
-
-	private getAllCredentialsFromFiles(files: IDevTools.IFileFormat[]): string[] {
-		return [
-			...new Set<string>(
-				files
-					.map((file: IDevTools.IFileFormat) => file.credentialsName || "")
-					.filter((credName: string) => credName !== "")
-			)
-		];
 	}
 
 	private getCredentialByFileLevel({ level, credentialsName, businessUnit }: IDevTools.IFileFormat): string {
@@ -189,12 +174,11 @@ class Mcdev {
 		else return `${credentialsName}/${businessUnit}`;
 	}
 
-	private getMetadataByFileLevel({ level, metadataType, filename }: IDevTools.IFileFormat):
-		| {
-				metadatatype: string;
-				key: string;
-		  }
-		| undefined {
+	private getMetadataByFileLevel({
+		level,
+		metadataType,
+		filename
+	}: IDevTools.IFileFormat): IDevTools.MetadataCommand | undefined {
 		if (level === "mdt_folder") return { metadatatype: metadataType as string, key: "" };
 		else if (level === "file") return { metadatatype: metadataType as string, key: filename as string };
 		else return;
@@ -203,10 +187,9 @@ class Mcdev {
 	execute(command: string, files: IDevTools.IFileFormat[]) {
 		console.log("== Mcdev: Execute ==");
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
-		const finalFilesList: IDevTools.IFileFormat[] = this.removeUnneededFiles(files);
-		const commandParameters: IDevTools.ICommandParameters[] = this.mapToCommandParameters(finalFilesList);
-		console.log(commandParameters);
-		if (mcdevCommand) mcdevCommand.run(command);
+		const cleanFileList: IDevTools.IFileFormat[] = this.removeUnneededFiles(files);
+		const commandParameters: IDevTools.ICommandParameters[] = this.mapToCommandParameters(cleanFileList);
+		if (mcdevCommand) mcdevCommand.run(command, commandParameters);
 	}
 }
 

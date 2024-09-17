@@ -14,7 +14,7 @@ function existsValueInArrObjects(
 }
 
 function extractValueInArrObjects(array: any[], key: string): (string | number)[] {
-	return array.filter((object: any) => key in object && object[key] !== undefined).map((object: any) => object[key]);
+	return array.map((object: any) => object[key]).filter(Boolean);
 }
 
 export { removeDuplicates, existsValueInArrObjects, extractValueInArrObjects };
