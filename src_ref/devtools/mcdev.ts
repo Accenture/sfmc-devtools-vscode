@@ -107,7 +107,7 @@ class Mcdev {
 		}, {} as IDevTools.FileLevelMap);
 	}
 
-	private removeUnneededFiles(files: IDevTools.IFileFormat[]) {
+	private removeUnneededFiles(files: IDevTools.IFileFormat[]): IDevTools.IFileFormat[] {
 		const finalFileList: IDevTools.IFileFormat[] = [];
 		const { cred_folder, bu_folder, mdt_folder, file }: IDevTools.FileLevelMap =
 			this.organizeFilesByFileLevel(files);
@@ -155,12 +155,22 @@ class Mcdev {
 	}
 
 	private mapToCommandParameters(files: IDevTools.IFileFormat[]) {
-		const filesToCommandParams: IDevTools.ICommandParameters[] = files.map((file: IDevTools.IFileFormat) => ({
-			credential: this.getCredentialByFileLevel(file),
-			metadata: [this.getMetadataByFileLevel(file)].filter(obj => obj !== undefined)
+		type MetadataByCredential = { [key: string]: { metadatatype: string; key: string }[] };
+		// Appends all selected metadata files mapped by credential name
+		const metadataByCredential = files.reduce((mdtByCred: MetadataByCredential, file: IDevTools.IFileFormat) => {
+			const credential: string = this.getCredentialByFileLevel(file);
+			const metadata: { metadatatype: string; key: string }[] = [this.getMetadataByFileLevel(file)].filter(
+				obj => obj !== undefined
+			);
+			if (!(credential in mdtByCred)) mdtByCred[credential] = metadata;
+			else mdtByCred[credential].push(...metadata);
+			return mdtByCred;
+		}, {} as MetadataByCredential);
+		// Maps to the Command Parameters format
+		return Object.keys(metadataByCredential).map((credential: string) => ({
+			credential,
+			metadata: metadataByCredential[credential]
 		}));
-
-		console.log(filesToCommandParams);
 	}
 
 	private getAllCredentialsFromFiles(files: IDevTools.IFileFormat[]): string[] {
@@ -194,7 +204,8 @@ class Mcdev {
 		console.log("== Mcdev: Execute ==");
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
 		const finalFilesList: IDevTools.IFileFormat[] = this.removeUnneededFiles(files);
-		this.mapToCommandParameters(finalFilesList);
+		const commandParameters: IDevTools.ICommandParameters[] = this.mapToCommandParameters(finalFilesList);
+		console.log(commandParameters);
 		if (mcdevCommand) mcdevCommand.run(command);
 	}
 }
