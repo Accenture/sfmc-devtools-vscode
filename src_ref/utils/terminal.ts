@@ -53,4 +53,4 @@ function installPackage(packageName: string): TerminalOutput {
 	}
 }
 
-export const terminal = { isPackageInstalled, installPackage };
+export const terminal = { executeTerminalCommand, isPackageInstalled, installPackage };

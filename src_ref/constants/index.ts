@@ -14,7 +14,7 @@ enum StatusBarIcon {
 	retrieve = "cloud-download",
 	deploy = "cloud-upload",
 	error = "warning",
-	copy_to_folder = "file-symlink-directory",
+	copytobu = "file-symlink-directory",
 	info = "extensions-info-message"
 }
 

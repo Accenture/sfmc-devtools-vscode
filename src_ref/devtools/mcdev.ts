@@ -12,7 +12,7 @@ const mcdevCommands: { [key: string]: Commands } = {
 };
 
 class Mcdev {
-	private packageName: string = "mcdev";
+	public packageName: string = "mcdev";
 	private metadataTypes: MetadataTypes;
 	// private credentials: { [key: string]: IDevTools.ICredentials };
 
@@ -155,10 +155,8 @@ class Mcdev {
 		const metadataByCredential = files.reduce((mdtByCred: MetadataByCredential, file: IDevTools.IFileFormat) => {
 			const credential: string = this.getCredentialByFileLevel(file);
 			const metadata: IDevTools.MetadataCommand | undefined = this.getMetadataByFileLevel(file);
-			if (metadata) {
-				mdtByCred[credential] = mdtByCred[credential] || [];
-				mdtByCred[credential].push(metadata);
-			}
+			if (!(credential in mdtByCred)) mdtByCred[credential] = [];
+			if (metadata) mdtByCred[credential].push(metadata);
 			return mdtByCred;
 		}, {} as MetadataByCredential);
 		// Maps to the Command Parameters format

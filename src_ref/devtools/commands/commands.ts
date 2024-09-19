@@ -15,13 +15,20 @@ abstract class Commands {
 
 	protected configureParameters({ credential, metadata, optional }: IDevTools.ICommandParameters): string {
 		console.log("== Commands: configureParameters ==");
-		const buildMetadataParams = ({ metadatatype, key }: IDevTools.MetadataCommand): string =>
-			`-m ${metadatatype}${key ? ":" + key : ""}`;
-		if (!credential) throw new Error("");
-		const paramaters: string = `${credential}`;
-		// { credential: "", metadata: [{metadatatype: "", key: ""}], optional: ["json", "fromRetrieve"]}
 		const defaultParameter: string = "--skipInteraction";
-		return `${defaultParameter}`;
+		const buildMetadataParameter = ({ metadatatype, key }: IDevTools.MetadataCommand): string =>
+			`-m ${metadatatype}${key && ":" + key}`;
+		const buildOptionalParameter = (optionalParam: string) => `${optionalParam && "--" + optionalParam}`;
+		if (!credential) throw new Error("");
+		const metadataParameters: string = metadata
+			.map((mdt: IDevTools.MetadataCommand) => buildMetadataParameter(mdt))
+			.join(" ");
+		const optionalParameters: string = (optional || [])
+			.map((param: string) => buildOptionalParameter(param))
+			.join(" ");
+		return `${credential} ${metadataParameters} ${optionalParameters} ${defaultParameter}`;
 	}
+
+	protected execute() {}
 }
 export default Commands;

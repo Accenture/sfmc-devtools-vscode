@@ -1,4 +1,5 @@
-import { OutputChannel, ProgressLocation, StatusBarAlignment, StatusBarItem, window } from "vscode";
+import { OutputChannel, ProgressLocation, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
+import { IEditor } from "@types";
 
 type ProgressWindowLocal = "SourceControl" | "Window" | "Notification";
 
@@ -59,6 +60,15 @@ class VSCodeWindow {
 	displayStatusBarItem(name: string) {
 		const statusBarItem: StatusBarItem = this.getStatusBarItem(name);
 		if (statusBarItem) statusBarItem.show();
+	}
+
+	updateStatusBarItem(name: string, fieldsToUpdate: { [key in IEditor.StatusBarFields]?: string }) {
+		const statusBarItem: StatusBarItem = this.getStatusBarItem(name);
+		Object.entries(fieldsToUpdate).forEach(([field, value]) => {
+			if (field === "text") statusBarItem[field] = value;
+			else if (field === "backgroundColor")
+				statusBarItem[field] = new ThemeColor(`statusBarItem.${value}Background`);
+		});
 	}
 }
 

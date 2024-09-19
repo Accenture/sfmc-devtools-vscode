@@ -126,16 +126,24 @@ class DevToolsExtension {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
 
+		if (!this.mcdev.packageName) throw new Error("");
+
 		const statusBarCommand: string = `${devToolsConfig.extensionName}.openOutputChannel`;
-		const statusBarTitle: string = `$(${StatusBarIcon.success}) mcdev`;
-		const statusBarName: string = `mcdev`;
+		const statusBarTitle: string = `$(${StatusBarIcon.success}) ${this.mcdev.packageName}`;
+		const statusBarName: string = this.mcdev.packageName;
 
 		vscodeCommands.registerCommand({
 			command: statusBarCommand,
 			callbackAction: () => vscodeWindow.displayOutputChannel(statusBarName)
 		});
+
 		vscodeWindow.createStatusBarItem(statusBarCommand, statusBarTitle, statusBarName);
 		vscodeWindow.displayStatusBarItem(statusBarName);
+	}
+
+	updateContainers(containerName: string, fields: { [key in IEditor.StatusBarFields]?: string }) {
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		vscodeWindow.updateStatusBarItem(containerName, fields);
 	}
 
 	activateMenuCommands() {
@@ -152,28 +160,14 @@ class DevToolsExtension {
 
 	executeMenuCommands(command: string, files: string[]) {
 		console.log("== Execute Menu Commands ==");
-		console.log(command);
 		const filesFormatted: IDevTools.IFileFormat[] = this.mcdev.convertFilePaths(files);
 
-		console.log(filesFormatted);
 		if (filesFormatted.length > 0) {
-			const isTopFolder: boolean =
-				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "top_folder").length > 1;
+			const statusBarName: string = this.mcdev.packageName;
+			const statusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${statusBarName}`;
 
-			const isCredentialsFolder: boolean =
-				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "cred_folder").length > 1;
-
-			const isBUFolder: boolean =
-				filesFormatted.filter((files: IDevTools.IFileFormat) => files.level === "bu_folder").length > 1;
-
-			if (isTopFolder) {
-				// show option to select all or one credential name
-			} else if (isCredentialsFolder) {
-				// show option to select all or one bussiness unit
-			}
-
-			this.mcdev.execute(command, filesFormatted);
-
+			this.updateContainers(statusBarName, { text: statusBarTitle });
+			// this.mcdev.execute(command, filesFormatted);
 			// change mcdev status bar icon
 			// running popup
 			// execute command

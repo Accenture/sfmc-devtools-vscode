@@ -1,5 +1,7 @@
 import { ExtensionContext } from "vscode";
 
+type StatusBarFields = "text" | "color" | "backgroundColor";
+
 interface IExtensionContext extends ExtensionContext {}
 interface IWorkspace {
 	isFileInFolder: (file: string) => Promise<boolean>;
@@ -9,4 +11,4 @@ interface IInstance {
 	workspace: IWorkspace;
 }
 
-export { IExtensionContext, IInstance, IWorkspace };
+export { StatusBarFields, IExtensionContext, IInstance, IWorkspace };
