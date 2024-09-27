@@ -70,6 +70,21 @@ class VSCodeWindow {
 				statusBarItem[field] = new ThemeColor(`statusBarItem.${value}Background`);
 		});
 	}
+
+	displayInProgressBar(title: string, location: keyof typeof ProgressLocation, cancellable: boolean) {
+		window.withProgress(
+			{
+				title,
+				location: ProgressLocation[location],
+				cancellable
+			},
+			async (progress, token) => {
+				return new Promise(async resolve => {
+					progress.report({ message: "testing..." });
+				});
+			}
+		);
+	}
 }
 
 export default VSCodeWindow;

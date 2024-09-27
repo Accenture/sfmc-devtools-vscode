@@ -40,10 +40,11 @@ interface ICredentials {
 	businessUnits: { [key: string]: number };
 }
 
-type MetadataCommand = { metadatatype: string; key: string };
+type MetadataCommand = { metadatatype: string; key: string; path: string };
 
 interface ICommandParameters {
 	credential: string;
+	projectPath: string;
 	metadata: MetadataCommand[];
 	optional?: string[];
 }

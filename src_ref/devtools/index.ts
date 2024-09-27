@@ -126,11 +126,11 @@ class DevToolsExtension {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
 
-		if (!this.mcdev.packageName) throw new Error("");
+		if (!this.mcdev.getPackageName()) throw new Error("");
 
 		const statusBarCommand: string = `${devToolsConfig.extensionName}.openOutputChannel`;
-		const statusBarTitle: string = `$(${StatusBarIcon.success}) ${this.mcdev.packageName}`;
-		const statusBarName: string = this.mcdev.packageName;
+		const statusBarTitle: string = `$(${StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
+		const statusBarName: string = this.mcdev.getPackageName();
 
 		vscodeCommands.registerCommand({
 			command: statusBarCommand,
@@ -144,6 +144,11 @@ class DevToolsExtension {
 	updateContainers(containerName: string, fields: { [key in IEditor.StatusBarFields]?: string }) {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.updateStatusBarItem(containerName, fields);
+	}
+
+	activateProgressBar(title: string) {
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		vscodeWindow.displayInProgressBar(title, "Notification", true);
 	}
 
 	activateMenuCommands() {
@@ -163,11 +168,13 @@ class DevToolsExtension {
 		const filesFormatted: IDevTools.IFileFormat[] = this.mcdev.convertFilePaths(files);
 
 		if (filesFormatted.length > 0) {
-			const statusBarName: string = this.mcdev.packageName;
+			const statusBarName: string = this.mcdev.getPackageName();
 			const statusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${statusBarName}`;
+			const inProgressBarTitle: string = devToolsMessages.runningCommand;
 
 			this.updateContainers(statusBarName, { text: statusBarTitle });
-			// this.mcdev.execute(command, filesFormatted);
+			// this.activateProgressBar(inProgressBarTitle);
+			this.mcdev.execute(command, filesFormatted);
 			// change mcdev status bar icon
 			// running popup
 			// execute command

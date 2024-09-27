@@ -32,6 +32,8 @@ class StandardCommands extends Commands {
 		const retrieveCommandList: string[] = parametersList.map(
 			(parameters: string) => `${retrieveCommand} ${parameters}`
 		);
+		console.log(retrieveCommandList);
+		terminal.executeTerminalCommand(retrieveCommandList[0], [], false);
 	}
 
 	deploy(parameters: IDevTools.ICommandParameters[]) {
