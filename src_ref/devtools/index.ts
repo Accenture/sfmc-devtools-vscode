@@ -165,16 +165,14 @@ class DevToolsExtension {
 
 	executeMenuCommands(command: string, files: string[]) {
 		console.log("== Execute Menu Commands ==");
-		const filesFormatted: IDevTools.IFileFormat[] = this.mcdev.convertFilePaths(files);
-
-		if (filesFormatted.length > 0) {
+		if (files.length > 0) {
 			const statusBarName: string = this.mcdev.getPackageName();
 			const statusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${statusBarName}`;
 			const inProgressBarTitle: string = devToolsMessages.runningCommand;
 
 			this.updateContainers(statusBarName, { text: statusBarTitle });
 			// this.activateProgressBar(inProgressBarTitle);
-			this.mcdev.execute(command, filesFormatted);
+			this.mcdev.execute(command, files);
 			// change mcdev status bar icon
 			// running popup
 			// execute command

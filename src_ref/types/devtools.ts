@@ -1,3 +1,6 @@
+type FileLevel = "top_folder" | "cred_folder" | "bu_folder" | "mdt_folder" | "file";
+type FileLevelMap = { [key in FileLevel]: IFileFormat[] };
+
 interface IConfig {
 	extensionName: string;
 	requiredFiles: string[];
@@ -23,8 +26,6 @@ interface IMetadataTypes {
 	description: string;
 }
 
-type FileLevel = "top_folder" | "cred_folder" | "bu_folder" | "mdt_folder" | "file";
-
 interface IFileFormat {
 	level: FileLevel;
 	projectPath: string;
@@ -40,25 +41,30 @@ interface ICredentials {
 	businessUnits: { [key: string]: number };
 }
 
-type MetadataCommand = { metadatatype: string; key: string; path: string };
+interface IMetadataCommand {
+	metadatatype: string;
+	key: string;
+	path: string;
+}
 
 interface ICommandParameters {
 	credential: string;
 	projectPath: string;
-	metadata: MetadataCommand[];
+	metadata: IMetadataCommand[];
 	optional?: string[];
 }
 
-type FileLevelMap = { [key in FileLevel]: IFileFormat[] };
-type CredentialsFileMap = { [key: string]: FileLevelMap };
+interface ICredentialsFileMap {
+	[key: string]: FileLevelMap;
+}
 
 export {
+	FileLevelMap,
 	IConfig,
 	IMetadataTypes,
 	IFileFormat,
 	ICredentials,
 	ICommandParameters,
-	FileLevelMap,
-	CredentialsFileMap,
-	MetadataCommand
+	ICredentialsFileMap,
+	IMetadataCommand
 };

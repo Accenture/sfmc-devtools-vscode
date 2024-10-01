@@ -17,4 +17,22 @@ function extractValueInArrObjects(array: any[], key: string): (string | number)[
 	return array.map((object: any) => object[key]).filter(Boolean);
 }
 
-export { removeDuplicates, existsValueInArrObjects, extractValueInArrObjects };
+function removeSubPathsByParent(paths: string[]): string[] {
+	paths.sort((pathA: string, pathB: string) => pathA.localeCompare(pathB));
+
+	const selectedParentPaths: Set<string> = new Set<string>();
+
+	const removePaths = (currentPath: string) => {
+		const isChild: boolean = [...selectedParentPaths].some((parentPath: string) =>
+			currentPath.startsWith(`${parentPath}`)
+		);
+		if (isChild) return false;
+
+		selectedParentPaths.add(currentPath);
+		return true;
+	};
+
+	return paths.filter(removePaths);
+}
+
+export { removeDuplicates, existsValueInArrObjects, extractValueInArrObjects, removeSubPathsByParent };

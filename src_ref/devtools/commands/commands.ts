@@ -16,12 +16,12 @@ abstract class Commands {
 	protected configureParameters({ credential, metadata, optional }: IDevTools.ICommandParameters): string {
 		console.log("== Commands: configureParameters ==");
 		const defaultParameter: string = "--skipInteraction";
-		const buildMetadataParameter = ({ metadatatype, key }: IDevTools.MetadataCommand): string =>
+		const buildMetadataParameter = ({ metadatatype, key }: IDevTools.IMetadataCommand): string =>
 			`-m ${metadatatype}${key && ":" + key}`;
 		const buildOptionalParameter = (optionalParam: string) => `${optionalParam && "--" + optionalParam}`;
 		if (!credential) throw new Error("");
 		const metadataParameters: string = metadata
-			.map((mdt: IDevTools.MetadataCommand) => buildMetadataParameter(mdt))
+			.map((mdt: IDevTools.IMetadataCommand) => buildMetadataParameter(mdt))
 			.join(" ");
 		const optionalParameters: string = (optional || [])
 			.map((param: string) => buildOptionalParameter(param))
