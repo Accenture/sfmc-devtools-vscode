@@ -1,34 +1,65 @@
-import { spawn, spawnSync, SpawnSyncReturns } from "child_process";
+import { ChildProcess, spawn, spawnSync, SpawnSyncReturns } from "child_process";
+import { removeLeadingDrivePath } from "./lib";
+import { TUtils } from "@types";
 
-type TerminalOutput = { output: string; error: string; code?: number };
-
-function executeCommandSync(command: string, args: string[]): TerminalOutput {
-	const terminal: SpawnSyncReturns<Buffer> = spawnSync(command, args, { shell: true });
+function executeCommandSync({
+	command,
+	commandArgs,
+	commandCwd
+}: TUtils.ITerminalCommandRunner): TUtils.ITerminalCommandResult {
+	const terminal = <SpawnSyncReturns<Buffer>>spawnSync(command, commandArgs, { shell: true, cwd: commandCwd });
 	return {
-		output: terminal.stdout.toString().trim(),
-		error: terminal.stderr.toString().trim()
+		success: terminal.status === 0,
+		stdStreams: { output: terminal.stdout.toString().trim(), error: terminal.stderr.toString().trim() }
 	};
 }
 
-function executeCommand(command: string, args: string[]) {
-	const terminalOutput: TerminalOutput = { output: "", error: "", code: 0 };
-	spawn(command, args, { shell: true });
-	return terminalOutput;
+function executeCommand({
+	command,
+	commandArgs,
+	commandCwd,
+	commandHandler
+}: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
+	return new Promise(resolve => {
+		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
+		const proccess: ChildProcess = spawn(command, commandArgs, { shell: true, cwd: commandCwd });
+
+		if (proccess.stdout && commandHandler)
+			proccess.stdout.on("data", (data: Buffer) =>
+				commandHandler({ ...terminalOutput, output: data.toString().trim() })
+			);
+		if (proccess.stderr && commandHandler)
+			proccess.stderr.on("data", (data: Buffer) =>
+				commandHandler({ ...terminalOutput, error: data.toString().trim() })
+			);
+
+		proccess.on("close", (code: number | null) => resolve({ success: code === 0, stdStreams: terminalOutput }));
+	});
 }
 
-function executeTerminalCommand(command: string, args: string[], sync: boolean): TerminalOutput {
-	return sync ? executeCommandSync(command, args) : executeCommand(command, args);
+function executeTerminalCommand(
+	{ command, commandArgs, commandCwd, commandHandler }: TUtils.ITerminalCommandRunner,
+	sync: boolean
+): TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult> {
+	if (commandCwd) commandCwd = removeLeadingDrivePath(commandCwd);
+	return sync
+		? executeCommandSync({ command, commandArgs, commandCwd })
+		: executeCommand({ command, commandArgs, commandCwd, commandHandler });
 }
 
 function getGlobalInstalledPackages(): string[] {
 	try {
-		const terminal: TerminalOutput = executeTerminalCommand("npm", ["list", "-g", "--json"], true);
+		const commandArgs: TUtils.ITerminalCommandRunner = { command: "npm", commandArgs: ["list", "-g", "--json"] };
+		const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
 
-		if (terminal.error) throw new Error(`Error retrieving global packages: ${terminal.error}`);
-		if (!terminal.output.includes('"dependencies"'))
+		if (terminal.stdStreams.error)
+			throw new Error(`Error retrieving global packages: ${terminal.stdStreams.error}`);
+		if (!terminal.stdStreams.output.includes('"dependencies"'))
 			throw new Error(`Error retrieving global packages: no "dependencies" found.`);
 
-		const terminalOutput: { name: string; dependencies: Record<string, unknown> } = JSON.parse(terminal.output);
+		const terminalOutput: { name: string; dependencies: Record<string, unknown> } = JSON.parse(
+			terminal.stdStreams.output
+		);
 		return Object.keys(terminalOutput.dependencies || {});
 	} catch (error) {
 		throw new Error(`Error retrieving global packages: failed to parse JSON output.`);
@@ -44,9 +75,13 @@ function isPackageInstalled(packageName: string): boolean {
 	}
 }
 
-function installPackage(packageName: string): TerminalOutput {
+function installPackage(packageName: string): TUtils.ITerminalCommandResult {
 	try {
-		const terminal: TerminalOutput = executeTerminalCommand("npm", ["install", "-g", packageName], true);
+		const commandArgs: TUtils.ITerminalCommandRunner = {
+			command: "npm",
+			commandArgs: ["install", "-g", packageName]
+		};
+		const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
 		return terminal;
 	} catch (error) {
 		throw new Error(`[terminal_isPackageInstalled]: ${error}`);

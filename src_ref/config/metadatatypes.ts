@@ -1,6 +1,6 @@
-import { IDevTools } from "@types";
+import { TDevTools } from "@types";
 
-export const metadataTypesList: IDevTools.IMetadataTypes[] = [
+const metadataTypesList: TDevTools.IMetadataTypes[] = [
 	{
 		name: "Asset-[Subtype]",
 		apiName: "asset",
@@ -532,3 +532,5 @@ export const metadataTypesList: IDevTools.IMetadataTypes[] = [
 		description: "Check DataExtension for a row count"
 	}
 ];
+
+export { metadataTypesList };

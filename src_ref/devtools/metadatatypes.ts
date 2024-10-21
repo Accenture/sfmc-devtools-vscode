@@ -1,12 +1,12 @@
-import { IDevTools } from "@types";
-import { metadataTypesList } from "@config";
+import { TDevTools } from "@types";
+import { CMetatadataTypes } from "@config";
 import { extractFileName } from "../utils/file";
 
 class MetadataTypes {
-	private metadataTypes: IDevTools.IMetadataTypes[] = [];
+	private metadataTypes: TDevTools.IMetadataTypes[] = [];
 
 	constructor() {
-		this.metadataTypes = metadataTypesList;
+		this.metadataTypes = CMetatadataTypes.metadataTypesList;
 	}
 
 	handleFileConfiguration(mdt: string, files: string[]): { filename?: string; metadataType?: string } {

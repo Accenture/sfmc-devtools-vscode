@@ -3,7 +3,7 @@ import VSCodeWorkspace from "./workspace";
 import VSCodeWindow from "./window";
 import VSCodeCommands from "./commands";
 import VSCodeExtensions from "./extensions";
-import { IEditor } from "@types";
+import { TEditor } from "@types";
 
 class VSCodeEditor {
 	private vscodeContext: VSCodeContext;
@@ -11,7 +11,7 @@ class VSCodeEditor {
 	private vscodeWindow: VSCodeWindow;
 	private vscodeCommands: VSCodeCommands;
 	private vscodeExtensions: VSCodeExtensions;
-	constructor(context: IEditor.IExtensionContext) {
+	constructor(context: TEditor.IExtensionContext) {
 		this.vscodeContext = new VSCodeContext(context);
 		this.vscodeWorkspace = new VSCodeWorkspace();
 		this.vscodeWindow = new VSCodeWindow();

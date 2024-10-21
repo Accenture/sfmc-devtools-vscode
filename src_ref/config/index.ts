@@ -1,2 +1,2 @@
-export * from "./devtools.config";
-export * from "./metadatatypes.config";
+export * as CDevTools from "./devtools";
+export * as CMetatadataTypes from "./metadatatypes";

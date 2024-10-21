@@ -1,4 +1,4 @@
-import { IDevTools } from "@types";
+import { TDevTools, TUtils } from "@types";
 import { terminal } from "../utils/terminal";
 import MetadataTypes from "./metadatatypes";
 import StandardCommands from "./commands/standard";
@@ -10,12 +10,9 @@ class Mcdev {
 	private packageName: string = "mcdev";
 	private metadataTypes: MetadataTypes;
 	private commandsTypes: Commands[] = [new AdminCommands(), new StandardCommands()];
-	// private credentials: { [key: string]: IDevTools.ICredentials };
 
 	constructor() {
 		this.metadataTypes = new MetadataTypes();
-		// this.credentials = this.loadCredentials();
-		Commands.setPackageName(this.packageName);
 	}
 
 	public getPackageName(): string {
@@ -35,48 +32,49 @@ class Mcdev {
 	public install() {
 		console.log("== Mcdev: Install ==");
 		try {
-			const terminalOutcome = terminal.installPackage(this.packageName);
-			if (terminalOutcome.error) {
+			const terminalOutcome: TUtils.ITerminalCommandResult = terminal.installPackage(this.packageName);
+			if (!terminalOutcome.success) {
 				// log error
 			}
-			return { success: terminalOutcome.error.length == 0 };
+			return { success: terminalOutcome.success };
 		} catch (error) {
 			// log error
 			return { success: false };
 		}
 	}
 
-	public convertPathsToFiles(paths: string[]): IDevTools.IFileFormat[] {
+	public convertPathsToFiles(paths: string[]): TDevTools.IFileFormat[] {
 		console.log("== Mcdev: Convert File Paths ==");
 
-		const convertToFileFormat = (path: string): IDevTools.IFileFormat => {
+		const convertToFileFormat = (path: string): TDevTools.IFileFormat => {
 			// Splits file path by 'retrieve' or 'deploy' folder
-			const [projectPath, relativeFilePath]: string[] = path.split(/\/retrieve\/|\/deploy\//);
+			const [projectPath, topFolder, relativeFilePath]: string[] = path.split(/(\/retrieve\/|\/deploy\/)/g);
+
+			// Top Folder Configuration Fields
+			const topFormat: TDevTools.IFileFormat = { level: "top_folder", projectPath, topFolder, path };
 
 			// If file is the retrieve or deploy folder
-			if (projectPath && !relativeFilePath) return { level: "top_folder", projectPath, path };
+			if (projectPath && !relativeFilePath) return topFormat;
 
 			// Else get the folder structure for the file according to mcdev folder structure:
 			// Credentials Name -> Business Unit -> MetadataType -> file or folder (Asset/Folders)
 			const [credentialsName, businessUnit, metadataType, ...fileParts]: string[] = relativeFilePath.split("/");
 			if (fileParts.length) {
-				const { filename, metadatatype }: { filename?: string; metadatatype?: string } =
+				const { filename, mdtType }: { filename?: string; mdtType?: string } =
 					this.metadataTypes.handleFileConfiguration(metadataType, fileParts);
 				return {
+					...topFormat,
 					level: "file",
-					projectPath,
-					path,
 					credentialsName,
 					businessUnit,
-					metadataType: metadatatype || metadataType,
+					metadataType: mdtType || metadataType,
 					filename
 				};
 			}
-			if (metadataType)
-				return { level: "mdt_folder", projectPath, path, credentialsName, businessUnit, metadataType };
-			if (businessUnit) return { level: "bu_folder", projectPath, path, credentialsName, businessUnit };
-			if (credentialsName) return { level: "cred_folder", projectPath, path, credentialsName };
-			return {} as IDevTools.IFileFormat;
+			if (metadataType) return { ...topFormat, level: "mdt_folder", credentialsName, businessUnit, metadataType };
+			if (businessUnit) return { ...topFormat, level: "bu_folder", credentialsName, businessUnit };
+			if (credentialsName) return { ...topFormat, level: "cred_folder", credentialsName };
+			return {} as TDevTools.IFileFormat;
 		};
 		return paths.map(convertToFileFormat);
 	}
@@ -90,28 +88,38 @@ class Mcdev {
 		else throw new Error(""); // log error
 	}
 
-	private mapToCommandParameters(files: IDevTools.IFileFormat[]): IDevTools.ICommandParameters[] {
-		type MetadataByCredential = { [projectPath: string]: { [credential: string]: IDevTools.IMetadataCommand[] } };
+	private mapToCommandParameters(files: TDevTools.IFileFormat[]): TDevTools.ICommandParameters[] {
+		type MetadataByCredential = {
+			[projectPath: string]: { [topFolder: string]: { [credential: string]: TDevTools.IMetadataCommand[] } };
+		};
 		// Appends all selected metadata files mapped by credential name
-		const metadataByCredential = files.reduce((mdtByCred: MetadataByCredential, file: IDevTools.IFileFormat) => {
-			const { projectPath }: IDevTools.IFileFormat = file;
+		const metadataByCredential = files.reduce((mdtByCred: MetadataByCredential, file: TDevTools.IFileFormat) => {
+			const { projectPath, topFolder }: TDevTools.IFileFormat = file;
 			const credential: string = this.getCredentialByFileLevel(file);
-			const metadata: IDevTools.IMetadataCommand | undefined = this.getMetadataByFileLevel(file);
+			const metadata: TDevTools.IMetadataCommand | undefined = this.getMetadataByFileLevel(file);
 
 			mdtByCred[projectPath] = mdtByCred[projectPath] || {};
-			mdtByCred[projectPath][credential] = mdtByCred[projectPath][credential] || [];
+			mdtByCred[projectPath][topFolder] = mdtByCred[projectPath][topFolder] || {};
+			mdtByCred[projectPath][topFolder][credential] = mdtByCred[projectPath][topFolder][credential] || [];
 
-			if (metadata) mdtByCred[projectPath][credential].push(metadata);
+			if (metadata) mdtByCred[projectPath][topFolder][credential].push(metadata);
 			return mdtByCred;
 		}, {} as MetadataByCredential);
 
 		// Maps to the Command Parameters format
-		return Object.entries(metadataByCredential).flatMap(([projectPath, credentials]) =>
-			Object.entries(credentials).map(([credential, metadata]) => ({ credential, metadata, projectPath }))
+		return Object.entries(metadataByCredential).flatMap(([projectPath, projectTopFolder]) =>
+			Object.entries(projectTopFolder).flatMap(([topFolder, credentials]) =>
+				Object.entries(credentials).map(([credential, metadata]) => ({
+					credential,
+					metadata,
+					projectPath,
+					topFolder
+				}))
+			)
 		);
 	}
 
-	private getCredentialByFileLevel({ level, credentialsName, businessUnit }: IDevTools.IFileFormat): string {
+	private getCredentialByFileLevel({ level, credentialsName, businessUnit }: TDevTools.IFileFormat): string {
 		switch (level) {
 			case "top_folder":
 				return "*";
@@ -127,7 +135,7 @@ class Mcdev {
 		path,
 		metadataType,
 		filename
-	}: IDevTools.IFileFormat): IDevTools.IMetadataCommand | undefined {
+	}: TDevTools.IFileFormat): TDevTools.IMetadataCommand | undefined {
 		switch (level) {
 			case "mdt_folder":
 				return { metadatatype: metadataType as string, key: "", path };
@@ -138,7 +146,11 @@ class Mcdev {
 		}
 	}
 
-	public execute(command: string, filePaths: string[]) {
+	public async execute(
+		command: string,
+		commandHandler: (output: string, error: string) => void,
+		filePaths: string[]
+	) {
 		console.log("== Mcdev: Execute ==");
 		// Gets the MCDEV command class based on the selected command
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
@@ -147,13 +159,30 @@ class Mcdev {
 		const filteredPathsByParent: string[] = removeSubPathsByParent(filePaths);
 
 		// Convert paths to file structure following MCDEV command requirements
-		const selectedFiles: IDevTools.IFileFormat[] = this.convertPathsToFiles(filteredPathsByParent);
+		const selectedFiles: TDevTools.IFileFormat[] = this.convertPathsToFiles(filteredPathsByParent);
 
 		// Convert files to MCDEV Command Parameters
-		const commandParameters: IDevTools.ICommandParameters[] = this.mapToCommandParameters(selectedFiles);
+		const commandParameters: TDevTools.ICommandParameters[] = this.mapToCommandParameters(selectedFiles);
 
+		const commandResults: boolean[] = [];
 		// Calls the mcdev command to run with the right parameters
-		if (mcdevCommand) mcdevCommand.run(command, commandParameters);
+		if (mcdevCommand) {
+			const commandConfig: TDevTools.ICommandConfig = mcdevCommand.run(command, commandParameters);
+			for (const [parameters, projectPath] of commandConfig.config) {
+				const terminalConfig: TUtils.ITerminalCommandRunner = {
+					command: this.getPackageName(),
+					commandArgs: [commandConfig.alias, parameters],
+					commandCwd: projectPath,
+					commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler(output, error)
+				};
+				const { success }: TUtils.ITerminalCommandResult = await terminal.executeTerminalCommand(
+					terminalConfig,
+					false
+				);
+				commandResults.push(success);
+			}
+		}
+		return { success: commandResults.every((result: boolean) => result === true) };
 	}
 }
 

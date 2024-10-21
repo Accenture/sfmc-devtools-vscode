@@ -35,4 +35,8 @@ function removeSubPathsByParent(paths: string[]): string[] {
 	return paths.filter(removePaths);
 }
 
-export { removeDuplicates, existsValueInArrObjects, extractValueInArrObjects, removeSubPathsByParent };
+function removeLeadingDrivePath(path: string): string {
+	return path.replace(/^\/[a-zA-Z]:/i, "");
+}
+
+export { removeDuplicates, existsValueInArrObjects, extractValueInArrObjects, removeSubPathsByParent, removeLeadingDrivePath };

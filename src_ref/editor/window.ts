@@ -1,56 +1,62 @@
-import { OutputChannel, ProgressLocation, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
-import { IEditor } from "@types";
-
-type ProgressWindowLocal = "SourceControl" | "Window" | "Notification";
+import { TEditor, VSCode } from "@types";
 
 class VSCodeWindow {
-	private statusBarItems: { [name: string]: StatusBarItem };
-	private outputChannelItems: { [name: string]: OutputChannel };
+	private window: typeof VSCode.window = VSCode.window;
+	private statusBarItems: { [name: string]: VSCode.StatusBarItem };
+	private outputChannelItems: { [name: string]: VSCode.OutputChannel };
 
 	constructor() {
 		this.statusBarItems = this.outputChannelItems = {};
 	}
 
 	async showInformationMessageWithOptions(message: string, actions: string[]): Promise<string | undefined> {
-		const response: string | undefined = await window.showInformationMessage(message, ...actions);
+		const response: string | undefined = await this.window.showInformationMessage(message, ...actions);
 		return response;
 	}
 
-	async showInProgressMessage(local: ProgressWindowLocal, progressMessage: string, progressFn: () => void) {
-		await window.withProgress(
-			{ location: ProgressLocation[local as keyof typeof ProgressLocation] },
-			async progress => {
-				progress.report({ message: progressMessage });
-				progressFn();
-			}
+	async showProgressBar(
+		title: string,
+		local: TEditor.ProgressWindowLocal,
+		cancellable: boolean,
+		progressHandler: (
+			progress: TEditor.ProgressBar,
+			cancelToken: TEditor.ProgressBarCancellation
+		) => Thenable<unknown>
+	) {
+		this.window.withProgress(
+			{ title, location: VSCode.ProgressLocation[local as keyof typeof VSCode.ProgressLocation], cancellable },
+			progressHandler
 		);
 	}
 
 	createOutputChannel(name: string) {
-		const outputChannel: OutputChannel = window.createOutputChannel(name);
+		const outputChannel: VSCode.OutputChannel = this.window.createOutputChannel(name);
 		if (!outputChannel) throw new Error(`VSCodeWindow: Failed to create OutputChannel name = ${name}.`);
 		this.outputChannelItems = { ...this.outputChannelItems, [name]: outputChannel };
 	}
 
-	getOutputChannel(name: string): OutputChannel {
+	getOutputChannel(name: string): VSCode.OutputChannel {
 		if (!this.outputChannelItems || !this.outputChannelItems[name]) this.createOutputChannel(name);
 		return this.outputChannelItems[name];
 	}
 
 	displayOutputChannel(name: string) {
-		const outputChannel: OutputChannel = this.getOutputChannel(name);
+		const outputChannel: VSCode.OutputChannel = this.getOutputChannel(name);
 		outputChannel.show();
 	}
 
 	createStatusBarItem(command: string, title: string, name: string) {
-		const statusBarItem: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 110);
+		const statusBarItem: VSCode.StatusBarItem = this.window.createStatusBarItem(
+			VSCode.StatusBarAlignment.Right,
+			110
+		);
 		statusBarItem.name = name;
 		statusBarItem.command = command;
 		statusBarItem.text = title;
 		this.statusBarItems = { ...this.statusBarItems, [name]: statusBarItem };
 	}
 
-	getStatusBarItem(name: string): StatusBarItem {
+	getStatusBarItem(name: string): VSCode.StatusBarItem {
 		if (!this.statusBarItems) throw new Error("VSCodeWindow: Status Bar Item is undefined.");
 		if (!this.statusBarItems[name])
 			throw new Error(`VSCodeWindow: Status Bar Item with name = ${name} wasn't found.`);
@@ -58,32 +64,17 @@ class VSCodeWindow {
 	}
 
 	displayStatusBarItem(name: string) {
-		const statusBarItem: StatusBarItem = this.getStatusBarItem(name);
+		const statusBarItem: VSCode.StatusBarItem = this.getStatusBarItem(name);
 		if (statusBarItem) statusBarItem.show();
 	}
 
-	updateStatusBarItem(name: string, fieldsToUpdate: { [key in IEditor.StatusBarFields]?: string }) {
-		const statusBarItem: StatusBarItem = this.getStatusBarItem(name);
+	updateStatusBarItem(name: string, fieldsToUpdate: { [key in TEditor.StatusBarFields]?: string }) {
+		const statusBarItem: VSCode.StatusBarItem = this.getStatusBarItem(name);
 		Object.entries(fieldsToUpdate).forEach(([field, value]) => {
 			if (field === "text") statusBarItem[field] = value;
 			else if (field === "backgroundColor")
-				statusBarItem[field] = new ThemeColor(`statusBarItem.${value}Background`);
+				statusBarItem[field] = new VSCode.ThemeColor(`statusBarItem.${value}Background`);
 		});
-	}
-
-	displayInProgressBar(title: string, location: keyof typeof ProgressLocation, cancellable: boolean) {
-		window.withProgress(
-			{
-				title,
-				location: ProgressLocation[location],
-				cancellable
-			},
-			async (progress, token) => {
-				return new Promise(async resolve => {
-					progress.report({ message: "testing..." });
-				});
-			}
-		);
 	}
 }
 

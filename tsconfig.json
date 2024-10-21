@@ -16,7 +16,8 @@
 		"paths": {
 			"@types": ["./src_ref/types/index"],
 			"@constants": ["./src_ref/constants/index"],
-			"@config": ["./src_ref/config/index"]
+			"@config": ["./src_ref/config/index"],
+			"@messages": ["./src_ref/messages/index"]
 		}
 	},
 	"include": ["src_ref/**/*.ts"],

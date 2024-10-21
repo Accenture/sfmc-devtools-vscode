@@ -5,15 +5,16 @@ import VSCodeWindow from "../editor/window";
 import VSCodeCommands from "../editor/commands";
 import VSCodeExtensions from "../editor/extensions";
 import VSCodeWorkspace from "../editor/workspace";
-import { devToolsMessages } from "../messages/devtools.messages";
-import { IDevTools, IEditor } from "@types";
-import { devToolsConfig } from "@config";
+import { TEditor } from "@types";
+import { CDevTools } from "@config";
+import { MDevTools, MEditor } from "@messages";
 import { Confirmation, RecommendedExtensionsOptions, StatusBarIcon } from "@constants";
 
 class DevToolsExtension {
 	private vscodeEditor: VSCodeEditor;
 	private mcdev: Mcdev;
-	constructor(context: IEditor.IExtensionContext) {
+
+	constructor(context: TEditor.IExtensionContext) {
 		this.vscodeEditor = new VSCodeEditor(context);
 		this.mcdev = new Mcdev();
 	}
@@ -26,7 +27,7 @@ class DevToolsExtension {
 
 	async isDevToolsProject(): Promise<boolean> {
 		console.log("== Is Project ==");
-		const requiredProjectFiles: string[] = devToolsConfig.requiredFiles || [];
+		const requiredProjectFiles: string[] = CDevTools.requiredFiles || [];
 		const filesInFolderResult: boolean[] = await Promise.all(
 			requiredProjectFiles.map(
 				async (file: string) => await this.vscodeEditor.getWorkspace().isFileInFolder(file)
@@ -37,9 +38,9 @@ class DevToolsExtension {
 
 	async loadConfiguration() {
 		console.log("== Load Configuration ==");
+
 		// Check if Mcdev is installed
 		const mcdevInstalled: boolean = this.mcdev.isInstalled();
-
 		// request user to install mcdev
 		if (!mcdevInstalled) await this.mcdevInstall();
 		else {
@@ -56,42 +57,51 @@ class DevToolsExtension {
 
 	async mcdevInstall() {
 		console.log("== Install Mcdev ==");
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
+
 		// Asks user if he wishes to install mcdev
-		const userAnswer: string | undefined = await vscodeWindow.showInformationMessageWithOptions(
-			devToolsMessages.noMcdevInstalled,
+		const userAnswer: string | undefined = await this.showInformationMessage(
+			MDevTools.noMcdevInstalled,
 			Object.keys(Confirmation)
 		);
+
+		const handleInstallResult = async (success: boolean): Promise<void> => {
+			// if mcdev was successfully installed -> reloads vscode editor window
+			if (success) {
+				const reload: string | undefined = await this.showInformationMessage(MDevTools.mcdevInstallSuccess, [
+					"Reload Window"
+				]);
+				if (reload) vscodeCommands.reloadWorkspace();
+			} else this.showInformationMessage(MDevTools.mcdevInstallError, []);
+		};
+
 		if (userAnswer && userAnswer.toLowerCase() === Confirmation.Yes) {
 			// Shows loading notification
-			await vscodeWindow.showInProgressMessage("Notification", devToolsMessages.mcdevInstallLoading, async () => {
-				const { success }: { success: boolean } = this.mcdev.install();
-				// if mcdev was successfully installed -> reloads vscode editor window
-				if (success) {
-					const reload: string | undefined = await vscodeWindow.showInformationMessageWithOptions(
-						devToolsMessages.mcdevInstallSuccess,
-						["Reload Window"]
-					);
-					if (reload) vscodeCommands.reloadWorkspace();
-				} else vscodeWindow.showInformationMessageWithOptions(devToolsMessages.mcdevInstallError, []);
-			});
+			this.activateNotificationProgressBar(
+				MDevTools.mcdevInstallLoading,
+				false,
+				() =>
+					new Promise(resolve => {
+						const { success }: { success: boolean } = this.mcdev.install();
+						handleInstallResult(success);
+						resolve(success);
+					})
+			);
 		}
 	}
 
 	activateContextVariables() {
 		console.log("== Activate Context Variables ==");
 		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
-		vscodeCommands.executeCommandContext(`${devToolsConfig.extensionName}.config.isproject`, [true]);
+		vscodeCommands.executeCommandContext(`${CDevTools.extensionName}.config.isproject`, [true]);
 	}
 
 	async activateRecommendedExtensions() {
 		console.log("== Activate Recommended Extensions ==");
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		const vscodeWorkspace: VSCodeWorkspace = this.vscodeEditor.getWorkspace();
 		const vscodeExtensions: VSCodeExtensions = this.vscodeEditor.getExtensions();
 		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
-		const recommendedExtensions: string[] = devToolsConfig.recommendedExtensions;
+		const recommendedExtensions: string[] = CDevTools.recommendedExtensions;
 		const configurationKey: string = "recommendExtensions";
 
 		// Checks if recommended extensions are already installed
@@ -101,20 +111,20 @@ class DevToolsExtension {
 
 		// Checks if recommended extensions suggestion is enabled
 		const recommendExtensions: boolean = vscodeWorkspace.isConfigurationKeyEnabled(
-			devToolsConfig.extensionName,
+			CDevTools.extensionName,
 			configurationKey
 		);
 
 		if (uninstalledExtensions.length && recommendExtensions) {
 			// Asks the user if he wants to install recommended extensions
-			const userAnswer: string | undefined = await vscodeWindow.showInformationMessageWithOptions(
-				devToolsMessages.recommendeExtensions,
+			const userAnswer: string | undefined = await this.showInformationMessage(
+				MEditor.recommendedExtensions,
 				Object.keys(RecommendedExtensionsOptions)
 			);
 
 			// if user clicks on "do not show again" then recommendExtension disabled
 			if (userAnswer && userAnswer.toLowerCase() === RecommendedExtensionsOptions["Do not show again"])
-				vscodeWorkspace.setConfigurationKey(devToolsConfig.extensionName, configurationKey, false);
+				vscodeWorkspace.setConfigurationKey(CDevTools.extensionName, configurationKey, false);
 			// if user clicks on "install" then installs extensions
 			if (userAnswer && userAnswer.toLowerCase() === RecommendedExtensionsOptions.Install)
 				vscodeCommands.installExtension(uninstalledExtensions);
@@ -128,36 +138,51 @@ class DevToolsExtension {
 
 		if (!this.mcdev.getPackageName()) throw new Error("");
 
-		const statusBarCommand: string = `${devToolsConfig.extensionName}.openOutputChannel`;
+		const statusBarCommand: string = `${CDevTools.extensionName}.openOutputChannel`;
 		const statusBarTitle: string = `$(${StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
-		const statusBarName: string = this.mcdev.getPackageName();
+		const packageName: string = this.mcdev.getPackageName();
 
 		vscodeCommands.registerCommand({
 			command: statusBarCommand,
-			callbackAction: () => vscodeWindow.displayOutputChannel(statusBarName)
+			callbackAction: () => vscodeWindow.displayOutputChannel(packageName)
 		});
 
-		vscodeWindow.createStatusBarItem(statusBarCommand, statusBarTitle, statusBarName);
-		vscodeWindow.displayStatusBarItem(statusBarName);
+		vscodeWindow.createStatusBarItem(statusBarCommand, statusBarTitle, packageName);
+		vscodeWindow.displayStatusBarItem(packageName);
 	}
 
-	updateContainers(containerName: string, fields: { [key in IEditor.StatusBarFields]?: string }) {
+	updateContainers(containerName: string, fields: { [key in TEditor.StatusBarFields]?: string }) {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.updateStatusBarItem(containerName, fields);
 	}
 
-	activateProgressBar(title: string) {
+	async showInformationMessage(title: string, options: string[]): Promise<string | undefined> {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
-		vscodeWindow.displayInProgressBar(title, "Notification", true);
+		const answer: string | undefined = await vscodeWindow.showInformationMessageWithOptions(title, options);
+		return answer;
+	}
+
+	showOuputChannel(name: string) {
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		vscodeWindow.displayOutputChannel(name);
+	}
+
+	activateNotificationProgressBar(
+		title: string,
+		cancellable: boolean,
+		progressBarHandler: TEditor.ProgressBarHandler
+	) {
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		vscodeWindow.showProgressBar(title, "Notification", cancellable, progressBarHandler);
 	}
 
 	activateMenuCommands() {
 		console.log("== Activate Menu Commands ==");
 		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
 
-		devToolsConfig.menuCommands.forEach((command: string) =>
+		CDevTools.menuCommands.forEach((command: string) =>
 			vscodeCommands.registerCommand({
-				command: `${devToolsConfig.extensionName}.${command}`,
+				command: `${CDevTools.extensionName}.${command}`,
 				callbackAction: (files: string[]) => this.executeMenuCommands(command, files)
 			})
 		);
@@ -166,18 +191,46 @@ class DevToolsExtension {
 	executeMenuCommands(command: string, files: string[]) {
 		console.log("== Execute Menu Commands ==");
 		if (files.length > 0) {
-			const statusBarName: string = this.mcdev.getPackageName();
-			const statusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${statusBarName}`;
-			const inProgressBarTitle: string = devToolsMessages.runningCommand;
+			const packageName: string = this.mcdev.getPackageName();
+			let statusBarColor: string = "";
+			let statusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${packageName}`;
+			const inProgressBarTitle: string = MEditor.runningCommand;
 
-			this.updateContainers(statusBarName, { text: statusBarTitle });
-			// this.activateProgressBar(inProgressBarTitle);
-			this.mcdev.execute(command, files);
-			// change mcdev status bar icon
-			// running popup
-			// execute command
-			// change mcdev status bar icon
-			// show conclusion popup
+			const mcdevExecuteOnOutput = (output: string, error: string) => {
+				if (error) throw new Error("...");
+				console.log(output);
+			};
+
+			const mcdevExecuteOnResult = async (success: boolean) => {
+				const statusBarIcon: string = success ? StatusBarIcon.success : StatusBarIcon.error;
+				statusBarColor = success ? statusBarColor : "error";
+				statusBarTitle = `$(${statusBarIcon}) ${packageName}`;
+
+				this.updateContainers(packageName, { text: statusBarTitle, backgroundColor: statusBarColor });
+
+				const moreDetails: string | undefined = await this.showInformationMessage(
+					success ? MEditor.runningCommandSuccess : MEditor.runningCommandFailure,
+					["More Details"]
+				);
+				if (moreDetails) this.showOuputChannel(packageName);
+			};
+
+			this.updateContainers(packageName, { text: statusBarTitle });
+			this.activateNotificationProgressBar(
+				inProgressBarTitle,
+				false,
+				() =>
+					new Promise(async resolve => {
+						const { success }: { success: boolean } = await this.mcdev.execute(
+							command,
+							mcdevExecuteOnOutput,
+							files
+						);
+
+						mcdevExecuteOnResult(success);
+						resolve(success);
+					})
+			);
 		}
 	}
 }

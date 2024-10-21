@@ -1,8 +1,8 @@
-import { IEditor } from "@types";
+import { TEditor } from "@types";
 
 class VSCodeContext {
-	private context: IEditor.IExtensionContext;
-	constructor(context: IEditor.IExtensionContext) {
+	private context: TEditor.IExtensionContext;
+	constructor(context: TEditor.IExtensionContext) {
 		this.context = context;
 	}
 

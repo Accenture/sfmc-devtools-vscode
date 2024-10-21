@@ -1,44 +1,73 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { IDevTools } from "@types";
+import { TDevTools } from "@types";
 import Commands from "./commands";
-import { terminal } from "../../utils/terminal";
+
+enum StandardCommandsAlias {
+	retrieve = "r",
+	deploy = "d"
+}
 
 class StandardCommands extends Commands {
 	commandsList(): string[] {
 		console.log("== StandardCommands: commandsList ==");
-		return ["retrieve", "deploy"];
+		return Object.keys(StandardCommandsAlias);
 	}
 
-	run(name: string, parameters: IDevTools.ICommandParameters[]): void {
+	run(
+		name: keyof typeof StandardCommandsAlias,
+		parameters: TDevTools.ICommandParameters[]
+	): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Run ==");
+		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
 		switch (name) {
 			case "retrieve":
-				this.retrieve(parameters);
+				config = this.retrieve(parameters);
 				break;
 			case "deploy":
-				this.deploy(parameters);
+				config = this.deploy(parameters);
 				break;
 			default:
 				throw new Error(""); // log error
 		}
+		return config;
 	}
 
-	retrieve(parameters: IDevTools.ICommandParameters[]) {
+	retrieve(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Retrieve ==");
-		const retrieveCommand: string = `${Commands.getPackageName()} retrieve`;
-		const parametersList: string[] = parameters.map((parameter: IDevTools.ICommandParameters) =>
-			this.configureParameters(parameter)
-		);
-		const retrieveCommandList: string[] = parametersList.map(
-			(parameters: string) => `${retrieveCommand} ${parameters}`
-		);
-		console.log(retrieveCommandList);
-		terminal.executeTerminalCommand(retrieveCommandList[0], [], false);
+		const retrieveAlias: string = StandardCommandsAlias.retrieve;
+		const retrieveConfig: string[][] = parameters.map((parameter: TDevTools.ICommandParameters) => [
+			this.configureParameters(parameter),
+			parameter.projectPath
+		]);
+		return { alias: retrieveAlias, config: retrieveConfig };
 	}
 
-	deploy(parameters: IDevTools.ICommandParameters[]) {
+	deploy(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Deploy ==");
-		const deployCommand: string = `${Commands.getPackageName()} deploy`;
+		const deployAlias: string = StandardCommandsAlias.deploy;
+
+		// Checks if the deploy action is from the retrieve folder
+		parameters = parameters
+			.map((parameter: TDevTools.ICommandParameters) => {
+				const isFromRetrieveFolder: boolean = parameter.topFolder === "/retrieve/";
+				if (isFromRetrieveFolder) {
+					// Removes all the multi selected folder that cannot be deployed from retrieve folder
+					parameter.metadata = parameter.metadata.filter(
+						({ key }: TDevTools.IMetadataCommand) => key && key !== ""
+					);
+					parameter.optional = ["fromRetrieve"];
+				}
+				if (isFromRetrieveFolder && !parameter.metadata.length) return undefined;
+				return parameter;
+			})
+			.filter((param: TDevTools.ICommandParameters | undefined) => param !== undefined);
+
+		const deployConfig: string[][] = parameters.map((parameter: TDevTools.ICommandParameters) => [
+			this.configureParameters(parameter),
+			parameter.projectPath
+		]);
+
+		return { alias: deployAlias, config: deployConfig };
 	}
 }
 

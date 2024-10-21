@@ -29,6 +29,7 @@ interface IMetadataTypes {
 interface IFileFormat {
 	level: FileLevel;
 	projectPath: string;
+	topFolder: string;
 	path: string;
 	credentialsName?: string;
 	businessUnit?: string;
@@ -45,17 +46,24 @@ interface IMetadataCommand {
 	metadatatype: string;
 	key: string;
 	path: string;
+	fromRetrieveFolder?: boolean;
 }
 
 interface ICommandParameters {
 	credential: string;
 	projectPath: string;
+	topFolder: string;
 	metadata: IMetadataCommand[];
 	optional?: string[];
 }
 
 interface ICredentialsFileMap {
 	[key: string]: FileLevelMap;
+}
+
+interface ICommandConfig {
+	alias: string;
+	config: string[][];
 }
 
 export {
@@ -66,5 +74,6 @@ export {
 	ICredentials,
 	ICommandParameters,
 	ICredentialsFileMap,
-	IMetadataCommand
+	IMetadataCommand,
+	ICommandConfig
 };

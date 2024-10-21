@@ -1,8 +1,9 @@
-import { extensions } from "vscode";
+import { VSCode } from "@types";
 
 class VSCodeExtensions {
+	private extensions: typeof VSCode.extensions = VSCode.extensions;
 	isExtensionInstalled(extensionName: string): boolean {
-		return extensions.getExtension(extensionName) !== undefined;
+		return this.extensions.getExtension(extensionName) !== undefined;
 	}
 }
 
