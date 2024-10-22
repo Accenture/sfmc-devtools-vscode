@@ -9,7 +9,7 @@ abstract class Commands {
 		console.log("== Commands: configureParameters ==");
 		const defaultParameter: string = "--skipInteraction";
 		const buildMetadataParameter = ({ metadatatype, key }: TDevTools.IMetadataCommand): string =>
-			`-m ${metadatatype}${key && ":" + key}`;
+			`-m ${metadatatype}${key && ":" + '"' + key + '"'}`;
 		const buildOptionalParameter = (optionalParam: string) => `${optionalParam && "--" + optionalParam}`;
 		if (!credential) throw new Error("");
 		const metadataParameters: string = metadata

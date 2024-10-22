@@ -12,7 +12,10 @@ class VSCodeCommands {
 	registerCommand(register: CommandRegister | CommandRegister[]) {
 		[register].flat().forEach(registry =>
 			this.commands.registerCommand(registry.command, (...files: VSCode.Uri[]) => {
-				const filePaths: string[] = files.flat().map((file: VSCode.Uri) => file.path);
+				const filePaths: string[] = files
+					.flat()
+					.map((file: VSCode.Uri) => file.path)
+					.filter((path: string) => path !== undefined);
 				registry.callbackAction(removeDuplicates(filePaths) as string[]);
 			})
 		);

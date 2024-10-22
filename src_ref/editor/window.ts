@@ -45,6 +45,11 @@ class VSCodeWindow {
 		outputChannel.show();
 	}
 
+	appendTextToOutputChannel(name: string, text: string) {
+		const outputChannel: VSCode.OutputChannel = this.getOutputChannel(name);
+		outputChannel.appendLine(text);
+	}
+
 	createStatusBarItem(command: string, title: string, name: string) {
 		const statusBarItem: VSCode.StatusBarItem = this.window.createStatusBarItem(
 			VSCode.StatusBarAlignment.Right,
@@ -75,6 +80,12 @@ class VSCodeWindow {
 			else if (field === "backgroundColor")
 				statusBarItem[field] = new VSCode.ThemeColor(`statusBarItem.${value}Background`);
 		});
+	}
+
+	getEditorOpenedFilePath(): string {
+		const activeTextEditor: VSCode.TextEditor | undefined = this.window.activeTextEditor;
+		if (!activeTextEditor) throw new Error("VSCodeWindow: Active text editor is undefined.");
+		return activeTextEditor.document.uri.path;
 	}
 }
 

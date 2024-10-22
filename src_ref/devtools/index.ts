@@ -162,9 +162,19 @@ class DevToolsExtension {
 		return answer;
 	}
 
+	logTextOutputChannel(name: string, text: string) {
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		vscodeWindow.appendTextToOutputChannel(name, text);
+	}
+
 	showOuputChannel(name: string) {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.displayOutputChannel(name);
+	}
+
+	getActiveTabFilePath(): string {
+		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		return vscodeWindow.getEditorOpenedFilePath();
 	}
 
 	activateNotificationProgressBar(
@@ -183,7 +193,10 @@ class DevToolsExtension {
 		CDevTools.menuCommands.forEach((command: string) =>
 			vscodeCommands.registerCommand({
 				command: `${CDevTools.extensionName}.${command}`,
-				callbackAction: (files: string[]) => this.executeMenuCommands(command, files)
+				callbackAction: (files: string[]) => {
+					if (!files.length) files = [this.getActiveTabFilePath()];
+					this.executeMenuCommands(command, files);
+				}
 			})
 		);
 	}
@@ -198,7 +211,7 @@ class DevToolsExtension {
 
 			const mcdevExecuteOnOutput = (output: string, error: string) => {
 				if (error) throw new Error("...");
-				console.log(output);
+				this.logTextOutputChannel(packageName, output);
 			};
 
 			const mcdevExecuteOnResult = async (success: boolean) => {

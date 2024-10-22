@@ -175,6 +175,7 @@ class Mcdev {
 					commandCwd: projectPath,
 					commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler(output, error)
 				};
+				console.log(`${this.getPackageName()} ${commandConfig.alias} ${parameters}`);
 				const { success }: TUtils.ITerminalCommandResult = await terminal.executeTerminalCommand(
 					terminalConfig,
 					false
