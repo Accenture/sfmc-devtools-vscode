@@ -218,9 +218,9 @@ class DevToolsExtension {
 			let statusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${packageName}`;
 			const inProgressBarTitle: string = MEditor.runningCommand;
 
-			const mcdevExecuteOnOutput = (output: string, error: string) => {
-				if (error) throw new Error("...");
-				this.logTextOutputChannel(packageName, output);
+			const mcdevExecuteOnOutput = (info: string, output: string, error: string) => {
+				if (error) console.log(error);
+				this.logTextOutputChannel(packageName, info || output);
 			};
 
 			const mcdevExecuteOnResult = async (success: boolean) => {

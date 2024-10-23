@@ -1,5 +1,16 @@
 type FileLevel = "top_folder" | "cred_folder" | "bu_folder" | "mdt_folder" | "file";
 type FileLevelMap = { [key in FileLevel]: IFileFormat[] };
+type MetadataTypesActions =
+	| "retrieve"
+	| "create"
+	| "update"
+	| "delete"
+	| "changeKey"
+	| "buildTemplate"
+	| "retrieveAsTemplate";
+type MetadataTypesActionsMap = {
+	[key in MetadataTypesActions]: boolean;
+};
 
 interface IConfig {
 	extensionName: string;
@@ -7,22 +18,11 @@ interface IConfig {
 	recommendedExtensions: string[];
 	menuCommands: string[];
 }
-
-interface ISupportCommands {
-	retrieve: boolean;
-	create: boolean;
-	update: boolean;
-	delete: boolean;
-	changeKey: boolean | null;
-	buildTemplate: boolean;
-	retrieveAsTemplate: boolean;
-}
-
 interface IMetadataTypes {
 	name: string;
 	apiName: string;
 	retrieveByDefault: string[] | boolean;
-	supports: ISupportCommands;
+	supports: MetadataTypesActionsMap;
 	description: string;
 }
 
@@ -69,6 +69,7 @@ interface ICommandConfig {
 export {
 	FileLevelMap,
 	IConfig,
+	MetadataTypesActions,
 	IMetadataTypes,
 	IFileFormat,
 	ICredentials,

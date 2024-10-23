@@ -5,6 +5,7 @@ import StandardCommands from "./commands/standard";
 import Commands from "./commands/commands";
 import AdminCommands from "./commands/admin";
 import { removeSubPathsByParent } from "../utils/lib";
+import { MDevTools } from "@messages";
 
 class Mcdev {
 	private packageName: string = "mcdev";
@@ -45,9 +46,9 @@ class Mcdev {
 
 	public async updateMetadataTypes(projectPath: string) {
 		console.log("== Mcdev: Update MetadataType ==");
-		const executeOnResult = (output: string, error: string) => {
+		const executeOnResult = (_: string, output: string, error: string) => {
 			if (error) throw new Error("....");
-			this.metadataTypes.updateMetadataTypes(output);
+			if (output) this.metadataTypes.updateMetadataTypes(output);
 		};
 		this.execute("explainTypes", executeOnResult, [projectPath]);
 	}
@@ -69,14 +70,14 @@ class Mcdev {
 			// Credentials Name -> Business Unit -> MetadataType -> file or folder (Asset/Folders)
 			const [credentialsName, businessUnit, metadataType, ...fileParts]: string[] = relativeFilePath.split("/");
 			if (fileParts.length) {
-				const { filename, mdtType }: { filename?: string; mdtType?: string } =
+				const { filename, metadataTypeName }: { filename?: string; metadataTypeName?: string } =
 					this.metadataTypes.handleFileConfiguration(metadataType, fileParts);
 				return {
 					...topFormat,
 					level: "file",
 					credentialsName,
 					businessUnit,
-					metadataType: mdtType || metadataType,
+					metadataType: metadataTypeName || metadataType,
 					filename
 				};
 			}
@@ -149,58 +150,65 @@ class Mcdev {
 			case "mdt_folder":
 				return { metadatatype: metadataType as string, key: "", path };
 			case "file":
-				return { metadatatype: metadataType as string, key: filename as string, path };
+				return { metadatatype: metadataType as string, key: filename || "", path };
 			default:
 				return undefined;
 		}
 	}
 
-	private checkParametersByMetadataTypes(action: string, parameters: TDevTools.ICommandParameters[]) {
-		console.log("action = ", action);
-		console.log(parameters);
+	private validateFilesByMetadataTypeAction(action: string, files: TDevTools.IFileFormat[]) {
+		console.log("== Mcdev: Validate Files By Metadata Type Action ==");
+
+		const metadataTypes: MetadataTypes = this.metadataTypes;
 		const invalidMetadataTypes: string[] = [];
 
-		parameters = parameters.map((param: TDevTools.ICommandParameters) => {
-			param.metadata = param.metadata.filter(({ metadatatype }: TDevTools.IMetadataCommand) =>
-				this.metadataTypes.isSupportedActionForMetadataType(action, metadatatype)
-			);
-			return param;
-		});
+		const filterValidMetadataTypes = ({ level, metadataType }: TDevTools.IFileFormat) => {
+			if (level !== "mdt_folder" && level !== "file") return true;
+			const isValidMetadataType: boolean =
+				metadataType !== undefined && metadataTypes.isSupportedMetadataTypeByAction(action, metadataType);
+			if (!isValidMetadataType && metadataType) invalidMetadataTypes.push(metadataType);
+			return isValidMetadataType;
+		};
+		if (metadataTypes.isValidSupportedAction(action)) files = files.filter(filterValidMetadataTypes);
+		return { files, invalidMetadataTypes };
 	}
 
 	public async execute(
 		command: string,
-		commandHandler: (output: string, error: string) => void,
+		commandHandler: (info: string, output: string, error: string) => void,
 		filePaths: string[]
 	) {
 		console.log("== Mcdev: Execute ==");
-		console.log(command);
+
 		// Gets the MCDEV command class based on the selected command
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
 
-		// Filters the paths by parent folder to avoid repeating calling MCDEV commands
+		// Filters the paths by parent folder to avoid repeating calling MCDEV commands for same files
 		const filteredPathsByParent: string[] = removeSubPathsByParent(filePaths);
 
 		// Convert paths to file structure following MCDEV command requirements
 		const selectedFiles: TDevTools.IFileFormat[] = this.convertPathsToFiles(filteredPathsByParent);
 
 		// Removes all the selected files that are not supported for the command execution
+		const { files, invalidMetadataTypes }: { files: TDevTools.IFileFormat[]; invalidMetadataTypes: string[] } =
+			this.validateFilesByMetadataTypeAction(command, selectedFiles);
 
 		// Convert files to MCDEV Command Parameters
-		const commandParameters: TDevTools.ICommandParameters[] = this.mapToCommandParameters(selectedFiles);
+		const commandParameters: TDevTools.ICommandParameters[] = this.mapToCommandParameters(files);
 
 		const commandResults: boolean[] = [];
 		// Calls the mcdev command to run with the right parameters
-		if (mcdevCommand) {
+		if (mcdevCommand && commandParameters.length) {
 			const commandConfig: TDevTools.ICommandConfig = mcdevCommand.run(command, commandParameters);
 			for (const [parameters, projectPath] of commandConfig.config) {
 				const terminalConfig: TUtils.ITerminalCommandRunner = {
 					command: this.getPackageName(),
 					commandArgs: [commandConfig.alias, parameters],
 					commandCwd: projectPath,
-					commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler(output, error)
+					commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) =>
+						commandHandler("", output, error)
 				};
-				console.log(`${this.getPackageName()} ${commandConfig.alias} ${parameters}`);
+				commandHandler(`${this.getPackageName()} ${commandConfig.alias} ${parameters}`, "", "");
 				const { success }: TUtils.ITerminalCommandResult = await terminal.executeTerminalCommand(
 					terminalConfig,
 					false
@@ -208,6 +216,8 @@ class Mcdev {
 				commandResults.push(success);
 			}
 		}
+		if (invalidMetadataTypes.length)
+			commandHandler("", "", MDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes));
 		return { success: commandResults.every((result: boolean) => result === true) };
 	}
 }

@@ -419,7 +419,7 @@ const metadataTypesList: TDevTools.IMetadataTypes[] = [
 			create: true,
 			update: true,
 			delete: false,
-			changeKey: null,
+			changeKey: true,
 			buildTemplate: true,
 			retrieveAsTemplate: true
 		},
