@@ -11,12 +11,31 @@ class AdminCommands extends Commands {
 		return Object.keys(AdminCommandsAlias);
 	}
 
-	run(name: keyof typeof AdminCommandsAlias): TDevTools.ICommandConfig {
+	run(name: keyof typeof AdminCommandsAlias, parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
 		console.log("== AdminCommands: Run ==");
-		throw new Error("Method not implemented.");
+		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
+		switch (name) {
+			case "explainTypes":
+				config = this.explainTypes(parameters);
+		}
+		return config;
 	}
 
-	explainTypes() {}
+	explainTypes(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
+		console.log("== AdminCommands: Explain Types ==");
+		const explainTypesAlias: string = AdminCommandsAlias.explainTypes;
+		const explainTypesConfig: string[][] = parameters.map(({ projectPath }: TDevTools.ICommandParameters) => {
+			const commandParameters: TDevTools.ICommandParameters = {
+				credential: "",
+				metadata: [],
+				projectPath,
+				topFolder: "",
+				optional: ["json"]
+			};
+			return [this.configureParameters(commandParameters), projectPath];
+		});
+		return { alias: explainTypesAlias, config: explainTypesConfig };
+	}
 }
 
 export default AdminCommands;

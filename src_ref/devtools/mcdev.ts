@@ -43,6 +43,15 @@ class Mcdev {
 		}
 	}
 
+	public async updateMetadataTypes(projectPath: string) {
+		console.log("== Mcdev: Update MetadataType ==");
+		const executeOnResult = (output: string, error: string) => {
+			if (error) throw new Error("....");
+			this.metadataTypes.updateMetadataTypes(output);
+		};
+		this.execute("explainTypes", executeOnResult, [projectPath]);
+	}
+
 	public convertPathsToFiles(paths: string[]): TDevTools.IFileFormat[] {
 		console.log("== Mcdev: Convert File Paths ==");
 
@@ -146,12 +155,26 @@ class Mcdev {
 		}
 	}
 
+	private checkParametersByMetadataTypes(action: string, parameters: TDevTools.ICommandParameters[]) {
+		console.log("action = ", action);
+		console.log(parameters);
+		const invalidMetadataTypes: string[] = [];
+
+		parameters = parameters.map((param: TDevTools.ICommandParameters) => {
+			param.metadata = param.metadata.filter(({ metadatatype }: TDevTools.IMetadataCommand) =>
+				this.metadataTypes.isSupportedActionForMetadataType(action, metadatatype)
+			);
+			return param;
+		});
+	}
+
 	public async execute(
 		command: string,
 		commandHandler: (output: string, error: string) => void,
 		filePaths: string[]
 	) {
 		console.log("== Mcdev: Execute ==");
+		console.log(command);
 		// Gets the MCDEV command class based on the selected command
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
 
@@ -160,6 +183,8 @@ class Mcdev {
 
 		// Convert paths to file structure following MCDEV command requirements
 		const selectedFiles: TDevTools.IFileFormat[] = this.convertPathsToFiles(filteredPathsByParent);
+
+		// Removes all the selected files that are not supported for the command execution
 
 		// Convert files to MCDEV Command Parameters
 		const commandParameters: TDevTools.ICommandParameters[] = this.mapToCommandParameters(selectedFiles);

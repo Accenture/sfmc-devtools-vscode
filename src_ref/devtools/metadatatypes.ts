@@ -9,6 +9,23 @@ class MetadataTypes {
 		this.metadataTypes = CMetatadataTypes.metadataTypesList;
 	}
 
+	updateMetadataTypes(mdtTypes: string) {
+		if (!mdtTypes) throw new Error("");
+		this.metadataTypes = JSON.parse(mdtTypes);
+	}
+
+	getSupportedActions(): string[] {
+		if (this.metadataTypes.length) return Object.keys(this.metadataTypes[0].supports);
+		else throw new Error("");
+	}
+
+	isValidSupportedAction(action: string): boolean {
+		const supportedActions: string[] = this.getSupportedActions();
+		return supportedActions.includes(action) || action === "deploy";
+	}
+
+	isSupportedActionForMetadataType(action: string, metadataType: string) {}
+
 	handleFileConfiguration(mdt: string, files: string[]): { filename?: string; metadataType?: string } {
 		console.log("== MetadataTypes ExtractFileName ==");
 		if (mdt === "asset") {

@@ -11,7 +11,6 @@ abstract class Commands {
 		const buildMetadataParameter = ({ metadatatype, key }: TDevTools.IMetadataCommand): string =>
 			`-m ${metadatatype}${key && ":" + '"' + key + '"'}`;
 		const buildOptionalParameter = (optionalParam: string) => `${optionalParam && "--" + optionalParam}`;
-		if (!credential) throw new Error("");
 		const metadataParameters: string = metadata
 			.map((mdt: TDevTools.IMetadataCommand) => buildMetadataParameter(mdt))
 			.join(" ");

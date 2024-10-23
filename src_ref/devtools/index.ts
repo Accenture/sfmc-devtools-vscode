@@ -52,6 +52,8 @@ class DevToolsExtension {
 			this.activateContainers();
 			// activate menu commands
 			this.activateMenuCommands();
+			// Updates the metadata types file with latest changes
+			this.updateMetadataTypesFile();
 		}
 	}
 
@@ -154,6 +156,13 @@ class DevToolsExtension {
 	updateContainers(containerName: string, fields: { [key in TEditor.StatusBarFields]?: string }) {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.updateStatusBarItem(containerName, fields);
+	}
+
+	updateMetadataTypesFile() {
+		const workspace: VSCodeWorkspace = this.vscodeEditor.getWorkspace();
+		const projectPath: string | undefined = workspace.getWorkspacePath();
+		if (!projectPath) throw new Error("...");
+		this.mcdev.updateMetadataTypes(projectPath);
 	}
 
 	async showInformationMessage(title: string, options: string[]): Promise<string | undefined> {
