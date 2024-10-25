@@ -19,6 +19,10 @@ class VSCodeEditor {
 		this.vscodeExtensions = new VSCodeExtensions();
 	}
 
+	getContext() {
+		return this.vscodeContext;
+	}
+
 	getWorkspace() {
 		return this.vscodeWorkspace;
 	}

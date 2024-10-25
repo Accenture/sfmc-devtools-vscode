@@ -5,10 +5,12 @@ import VSCodeWindow from "../editor/window";
 import VSCodeCommands from "../editor/commands";
 import VSCodeExtensions from "../editor/extensions";
 import VSCodeWorkspace from "../editor/workspace";
-import { TEditor } from "@types";
+import VSCodeContext from "../editor/context";
+import { TEditor, TUtils } from "@types";
 import { CDevTools } from "@config";
 import { MDevTools, MEditor } from "@messages";
-import { Confirmation, RecommendedExtensionsOptions, StatusBarIcon } from "@constants";
+import { Confirmation, RecommendedExtensionsOptions, StatusBarIcon, LoggerLevel } from "@constants";
+import { executeAfterDelay, getCurrentTime } from "../utils/lib";
 
 class DevToolsExtension {
 	private vscodeEditor: VSCodeEditor;
@@ -52,6 +54,8 @@ class DevToolsExtension {
 			this.activateContainers();
 			// activate menu commands
 			this.activateMenuCommands();
+			// logs initial extension information into output channel
+			this.writeExtensionInformation();
 			// Updates the metadata types file with latest changes
 			this.updateMetadataTypesFile();
 		}
@@ -153,6 +157,23 @@ class DevToolsExtension {
 		vscodeWindow.displayStatusBarItem(packageName);
 	}
 
+	writeExtensionInformation() {
+		const packageName: string = this.mcdev.getPackageName();
+		const context: VSCodeContext = this.vscodeEditor.getContext();
+		const workspace: VSCodeWorkspace = this.vscodeEditor.getWorkspace();
+
+		const projectFsPath: string | undefined = workspace.getWorkspaceFsPath();
+		const [mcdevrcFile]: string[] = CDevTools.requiredFiles;
+		const mcdevrcFilePath: string = projectFsPath && mcdevrcFile ? `${projectFsPath}\\${mcdevrcFile}` : "";
+
+		const messages: string[] = [
+			`Extension name: ${context.getExtensionName()}`,
+			`Extension version: ${context.getExtensionVersion()}`,
+			`${MDevTools.mcdevConfigFile} ${mcdevrcFilePath}`
+		];
+		messages.forEach((message: string) => this.writeLog(packageName, message, LoggerLevel.INFO));
+	}
+
 	updateContainers(containerName: string, fields: { [key in TEditor.StatusBarFields]?: string }) {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.updateStatusBarItem(containerName, fields);
@@ -169,6 +190,12 @@ class DevToolsExtension {
 		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
 		const answer: string | undefined = await vscodeWindow.showInformationMessageWithOptions(title, options);
 		return answer;
+	}
+
+	writeLog(ouputChannel: string, message: string, level: LoggerLevel) {
+		const timestamp: string = getCurrentTime();
+		if (level !== "debug") message = `${timestamp} ${level}: ${message}`;
+		this.logTextOutputChannel(ouputChannel, message);
 	}
 
 	logTextOutputChannel(name: string, text: string) {
@@ -214,21 +241,32 @@ class DevToolsExtension {
 		console.log("== Execute Menu Commands ==");
 		if (files.length > 0) {
 			const packageName: string = this.mcdev.getPackageName();
-			let statusBarColor: string = "";
-			let statusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${packageName}`;
+			const initialStatusBarColor: string = "";
+			const initialStatusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${packageName}`;
 			const inProgressBarTitle: string = MEditor.runningCommand;
 
-			const mcdevExecuteOnOutput = (info: string, output: string, error: string) => {
-				if (error) console.log(error);
-				this.logTextOutputChannel(packageName, info || output);
+			const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
+				const message: string = info || output || error;
+				const loggerLevel = info ? LoggerLevel.INFO : error ? LoggerLevel.ERROR : LoggerLevel.DEBUG;
+				this.writeLog(packageName, message, loggerLevel);
 			};
 
 			const mcdevExecuteOnResult = async (success: boolean) => {
 				const statusBarIcon: string = success ? StatusBarIcon.success : StatusBarIcon.error;
-				statusBarColor = success ? statusBarColor : "error";
-				statusBarTitle = `$(${statusBarIcon}) ${packageName}`;
+				const newStatusBarColor = success ? initialStatusBarColor : "error";
+				const newStatusBarTitle = `$(${statusBarIcon}) ${packageName}`;
 
-				this.updateContainers(packageName, { text: statusBarTitle, backgroundColor: statusBarColor });
+				this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
+
+				if (!success)
+					executeAfterDelay(
+						() =>
+							this.updateContainers(packageName, {
+								text: `$(${StatusBarIcon.success}) ${packageName}`,
+								backgroundColor: initialStatusBarColor
+							}),
+						CDevTools.delayTimeUpdateStatusBar
+					);
 
 				const moreDetails: string | undefined = await this.showInformationMessage(
 					success ? MEditor.runningCommandSuccess : MEditor.runningCommandFailure,
@@ -237,7 +275,7 @@ class DevToolsExtension {
 				if (moreDetails) this.showOuputChannel(packageName);
 			};
 
-			this.updateContainers(packageName, { text: statusBarTitle });
+			this.updateContainers(packageName, { text: initialStatusBarTitle, backgroundColor: initialStatusBarColor });
 			this.activateNotificationProgressBar(
 				inProgressBarTitle,
 				false,

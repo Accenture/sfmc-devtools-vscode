@@ -15,4 +15,10 @@ interface ITerminalCommandStreams {
 	error: string;
 }
 
-export { ITerminalCommandRunner, ITerminalCommandStreams, ITerminalCommandResult };
+interface IOutputLogger {
+	info?: string;
+	output?: string;
+	error?: string;
+}
+
+export { ITerminalCommandRunner, ITerminalCommandStreams, ITerminalCommandResult, IOutputLogger };

@@ -30,7 +30,7 @@ class MetadataTypes {
 
 	isSupportedMetadataTypeByAction(action: string, metadataType: string): boolean {
 		const supportedActions: TDevTools.MetadataTypesActions[] = MetadataTypesSupportedActions[action];
-		console.log(metadataType);
+
 		if (metadataType.startsWith("asset-")) metadataType = "asset";
 		const [metadataTypeMap]: TDevTools.IMetadataTypes[] = this.metadataTypes.filter(
 			({ apiName }: TDevTools.IMetadataTypes) => apiName === metadataType

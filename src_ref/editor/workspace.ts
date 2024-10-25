@@ -32,6 +32,13 @@ class VSCodeWorkspace {
 		return;
 	}
 
+	getWorkspaceFsPath(): string | undefined {
+		const workspaceURI: VSCode.Uri | undefined = this.getWorkspaceURI();
+		if (workspaceURI) return workspaceURI.fsPath;
+		// throw Error
+		return;
+	}
+
 	async getWokspaceFiles(uri: VSCode.Uri): Promise<[string, VSCode.FileType][]> {
 		console.log("=== VSCodeWorkspace: Get Workspace Files ===");
 		const folderFiles: [string, VSCode.FileType][] = await this.workspace.fs.readDirectory(uri);

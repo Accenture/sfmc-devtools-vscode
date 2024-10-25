@@ -4,7 +4,7 @@ import MetadataTypes from "./metadatatypes";
 import StandardCommands from "./commands/standard";
 import Commands from "./commands/commands";
 import AdminCommands from "./commands/admin";
-import { removeSubPathsByParent } from "../utils/lib";
+import { removeSubPathsByParent, removeDuplicates } from "../utils/lib";
 import { MDevTools } from "@messages";
 
 class Mcdev {
@@ -46,7 +46,7 @@ class Mcdev {
 
 	public async updateMetadataTypes(projectPath: string) {
 		console.log("== Mcdev: Update MetadataType ==");
-		const executeOnResult = (_: string, output: string, error: string) => {
+		const executeOnResult = ({ output, error }: TUtils.IOutputLogger) => {
 			if (error) throw new Error("....");
 			if (output) this.metadataTypes.updateMetadataTypes(output);
 		};
@@ -156,7 +156,10 @@ class Mcdev {
 		}
 	}
 
-	private validateFilesByMetadataTypeAction(action: string, files: TDevTools.IFileFormat[]) {
+	private validateFilesByMetadataTypeAction(
+		action: string,
+		files: TDevTools.IFileFormat[]
+	): { files: TDevTools.IFileFormat[]; invalidMetadataTypes: string[] } {
 		console.log("== Mcdev: Validate Files By Metadata Type Action ==");
 
 		const metadataTypes: MetadataTypes = this.metadataTypes;
@@ -170,12 +173,12 @@ class Mcdev {
 			return isValidMetadataType;
 		};
 		if (metadataTypes.isValidSupportedAction(action)) files = files.filter(filterValidMetadataTypes);
-		return { files, invalidMetadataTypes };
+		return { files, invalidMetadataTypes: removeDuplicates(invalidMetadataTypes) as string[] };
 	}
 
 	public async execute(
 		command: string,
-		commandHandler: (info: string, output: string, error: string) => void,
+		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void,
 		filePaths: string[]
 	) {
 		console.log("== Mcdev: Execute ==");
@@ -206,9 +209,11 @@ class Mcdev {
 					commandArgs: [commandConfig.alias, parameters],
 					commandCwd: projectPath,
 					commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) =>
-						commandHandler("", output, error)
+						commandHandler({ output, error })
 				};
-				commandHandler(`${this.getPackageName()} ${commandConfig.alias} ${parameters}`, "", "");
+				commandHandler({
+					info: `${MDevTools.mcdevRunningCommand} ${this.getPackageName()} ${commandConfig.alias} ${parameters}\n`
+				});
 				const { success }: TUtils.ITerminalCommandResult = await terminal.executeTerminalCommand(
 					terminalConfig,
 					false
@@ -216,8 +221,10 @@ class Mcdev {
 				commandResults.push(success);
 			}
 		}
-		if (invalidMetadataTypes.length)
-			commandHandler("", "", MDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes));
+		if (invalidMetadataTypes.length) {
+			commandResults.push(false);
+			commandHandler({ error: MDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes) });
+		}
 		return { success: commandResults.every((result: boolean) => result === true) };
 	}
 }

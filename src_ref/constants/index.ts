@@ -18,4 +18,11 @@ enum StatusBarIcon {
 	info = "extensions-info-message"
 }
 
-export { Confirmation, RecommendedExtensionsOptions, StatusBarIcon };
+enum LoggerLevel {
+	DEBUG = "debug",
+	INFO = "info",
+	WARN = "warn",
+	ERROR = "error"
+}
+
+export { Confirmation, RecommendedExtensionsOptions, StatusBarIcon, LoggerLevel };

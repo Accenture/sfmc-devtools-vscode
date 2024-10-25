@@ -6,8 +6,12 @@ class VSCodeContext {
 		this.context = context;
 	}
 
-	getContext() {
-		return this.context;
+	getExtensionName(): string {
+		return this.context.extension.packageJSON.name;
+	}
+
+	getExtensionVersion(): string {
+		return this.context.extension.packageJSON.version;
 	}
 }
 

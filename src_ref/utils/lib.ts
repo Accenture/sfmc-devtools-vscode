@@ -2,6 +2,10 @@ function removeDuplicates(array: (string | number)[]): (string | number)[] {
 	return [...new Set(array)];
 }
 
+function executeAfterDelay(callback: () => void, delay: number) {
+	setTimeout(callback, delay);
+}
+
 function existsValueInArrObjects(
 	array: { [key: string]: string | number }[],
 	key: string,
@@ -39,10 +43,20 @@ function removeLeadingDrivePath(path: string): string {
 	return path.replace(/^\/[a-zA-Z]:/i, "");
 }
 
+function getCurrentTime() {
+	const now = new Date();
+	const hours = String(now.getHours()).padStart(2, "0");
+	const minutes = String(now.getMinutes()).padStart(2, "0");
+	const seconds = String(now.getSeconds()).padStart(2, "0");
+	return `${hours}:${minutes}:${seconds}`;
+}
+
 export {
 	removeDuplicates,
 	existsValueInArrObjects,
 	extractValueInArrObjects,
 	removeSubPathsByParent,
-	removeLeadingDrivePath
+	removeLeadingDrivePath,
+	executeAfterDelay,
+	getCurrentTime
 };
