@@ -1,11 +1,10 @@
-import { TDevTools, TUtils } from "@types";
-import { terminal } from "../utils/terminal";
 import MetadataTypes from "./metadatatypes";
 import StandardCommands from "./commands/standard";
 import Commands from "./commands/commands";
 import AdminCommands from "./commands/admin";
-import { removeSubPathsByParent, removeDuplicates } from "../utils/lib";
-import { MDevTools } from "@messages";
+import { MessagesDevTools } from "@messages";
+import { TDevTools, TUtils } from "@types";
+import { Lib, Terminal } from "utils";
 
 class Mcdev {
 	private packageName: string = "mcdev";
@@ -23,7 +22,7 @@ class Mcdev {
 	public isInstalled(): boolean {
 		try {
 			// Checks if mcdev package is installed
-			return terminal.isPackageInstalled(this.packageName);
+			return Terminal.isPackageInstalled(this.packageName);
 		} catch (error) {
 			// log error
 			return false;
@@ -33,7 +32,7 @@ class Mcdev {
 	public install() {
 		console.log("== Mcdev: Install ==");
 		try {
-			const terminalOutcome: TUtils.ITerminalCommandResult = terminal.installPackage(this.packageName);
+			const terminalOutcome: TUtils.ITerminalCommandResult = Terminal.installPackage(this.packageName);
 			if (!terminalOutcome.success) {
 				// log error
 			}
@@ -173,7 +172,7 @@ class Mcdev {
 			return isValidMetadataType;
 		};
 		if (metadataTypes.isValidSupportedAction(action)) files = files.filter(filterValidMetadataTypes);
-		return { files, invalidMetadataTypes: removeDuplicates(invalidMetadataTypes) as string[] };
+		return { files, invalidMetadataTypes: Lib.removeDuplicates(invalidMetadataTypes) as string[] };
 	}
 
 	public async execute(
@@ -187,7 +186,7 @@ class Mcdev {
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
 
 		// Filters the paths by parent folder to avoid repeating calling MCDEV commands for same files
-		const filteredPathsByParent: string[] = removeSubPathsByParent(filePaths);
+		const filteredPathsByParent: string[] = Lib.removeSubPathsByParent(filePaths);
 
 		// Convert paths to file structure following MCDEV command requirements
 		const selectedFiles: TDevTools.IFileFormat[] = this.convertPathsToFiles(filteredPathsByParent);
@@ -212,9 +211,9 @@ class Mcdev {
 						commandHandler({ output, error })
 				};
 				commandHandler({
-					info: `${MDevTools.mcdevRunningCommand} ${this.getPackageName()} ${commandConfig.alias} ${parameters}\n`
+					info: `${MessagesDevTools.mcdevRunningCommand} ${this.getPackageName()} ${commandConfig.alias} ${parameters}\n`
 				});
-				const { success }: TUtils.ITerminalCommandResult = await terminal.executeTerminalCommand(
+				const { success }: TUtils.ITerminalCommandResult = await Terminal.executeTerminalCommand(
 					terminalConfig,
 					false
 				);
@@ -223,7 +222,7 @@ class Mcdev {
 		}
 		if (invalidMetadataTypes.length) {
 			commandResults.push(false);
-			commandHandler({ error: MDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes) });
+			commandHandler({ error: MessagesDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes) });
 		}
 		return { success: commandResults.every((result: boolean) => result === true) };
 	}

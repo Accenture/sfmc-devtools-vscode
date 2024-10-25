@@ -1,5 +1,5 @@
-import { TDevTools } from "@types";
 import Commands from "./commands";
+import { TDevTools } from "@types";
 
 enum AdminCommandsAlias {
 	explainTypes = "et"

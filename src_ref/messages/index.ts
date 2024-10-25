@@ -1,2 +1,2 @@
-export * as MDevTools from "./devtools";
-export * as MEditor from "./editor";
+export * as MessagesDevTools from "./devtools";
+export * as MessagesEditor from "./editor";

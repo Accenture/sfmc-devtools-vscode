@@ -15,9 +15,10 @@
 		"forceConsistentCasingInFileNames": true,
 		"paths": {
 			"@types": ["./src_ref/types/index"],
-			"@constants": ["./src_ref/constants/index"],
+			"@enums": ["./src_ref/enums/index"],
 			"@config": ["./src_ref/config/index"],
-			"@messages": ["./src_ref/messages/index"]
+			"@messages": ["./src_ref/messages/index"],
+			"utils": ["./src_ref/utils/index"]
 		}
 	},
 	"include": ["src_ref/**/*.ts"],

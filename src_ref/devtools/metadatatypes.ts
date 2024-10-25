@@ -1,6 +1,6 @@
 import { TDevTools } from "@types";
-import { CMetatadataTypes } from "@config";
-import { extractFileName } from "../utils/file";
+import { ConfigMetadataTypes } from "@config";
+import { File } from "utils";
 
 const MetadataTypesSupportedActions: { [action: string]: TDevTools.MetadataTypesActions[] } = {
 	retrieve: ["retrieve"],
@@ -11,7 +11,7 @@ class MetadataTypes {
 	private metadataTypes: TDevTools.IMetadataTypes[] = [];
 
 	constructor() {
-		this.metadataTypes = CMetatadataTypes.metadataTypesList;
+		this.metadataTypes = ConfigMetadataTypes.metadataTypesList;
 	}
 
 	updateMetadataTypes(mdtTypes: string) {
@@ -50,12 +50,12 @@ class MetadataTypes {
 			// configuration for asset mdtype
 			if (files.length === 1) return { metadataTypeName: `asset-${assetName}` };
 			else if (files.length > 1)
-				return { metadataTypeName: `asset-${assetName}`, filename: extractFileName(filename)[0] };
+				return { metadataTypeName: `asset-${assetName}`, filename: File.extractFileName(filename)[0] };
 		}
 
 		if (files.length === 1 || mdt === "folder") {
 			// configuration for other mdtypes
-			const filenames: string[] = extractFileName(files);
+			const filenames: string[] = File.extractFileName(files);
 			if (filenames.length) return { filename: filenames[0] };
 		}
 		return { filename: "" };

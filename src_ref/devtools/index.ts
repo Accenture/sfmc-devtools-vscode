@@ -1,38 +1,33 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import Mcdev from "./mcdev";
-import VSCodeEditor from "../editor/index";
-import VSCodeWindow from "../editor/window";
-import VSCodeCommands from "../editor/commands";
-import VSCodeExtensions from "../editor/extensions";
-import VSCodeWorkspace from "../editor/workspace";
-import VSCodeContext from "../editor/context";
+import { ConfigDevTools } from "@config";
+import { MessagesDevTools, MessagesEditor } from "@messages";
+import { EnumsExtension } from "@enums";
 import { TEditor, TUtils } from "@types";
-import { CDevTools } from "@config";
-import { MDevTools, MEditor } from "@messages";
-import { Confirmation, RecommendedExtensionsOptions, StatusBarIcon, LoggerLevel } from "@constants";
-import { executeAfterDelay, getCurrentTime } from "../utils/lib";
+import { Lib } from "utils";
 
 class DevToolsExtension {
-	private vscodeEditor: VSCodeEditor;
+	private vscodeEditor: TEditor.VSCodeEditor;
 	private mcdev: Mcdev;
 
 	constructor(context: TEditor.IExtensionContext) {
-		this.vscodeEditor = new VSCodeEditor(context);
+		this.vscodeEditor = new TEditor.VSCodeEditor(context);
 		this.mcdev = new Mcdev();
 	}
 
 	async init() {
 		console.log("== Init ==");
+		// Checks if is there any DevTools Project
 		const isDevToolsProject: boolean = await this.isDevToolsProject();
 		if (isDevToolsProject) this.loadConfiguration();
 	}
 
 	async isDevToolsProject(): Promise<boolean> {
 		console.log("== Is Project ==");
-		const requiredProjectFiles: string[] = CDevTools.requiredFiles || [];
+		const requiredProjectFiles: string[] = ConfigDevTools.requiredFiles || [];
+		// Checks if the required DevTools files exist in the folder/folders
 		const filesInFolderResult: boolean[] = await Promise.all(
 			requiredProjectFiles.map(
-				async (file: string) => await this.vscodeEditor.getWorkspace().isFileInFolder(file)
+				async (file: string) => await this.vscodeEditor.getWorkspace().isFileInWorkspaceFolder(`**/${file}`)
 			)
 		);
 		return filesInFolderResult.every((fileResult: boolean) => fileResult);
@@ -63,28 +58,29 @@ class DevToolsExtension {
 
 	async mcdevInstall() {
 		console.log("== Install Mcdev ==");
-		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
+		const vscodeCommands: TEditor.VSCodeCommands = this.vscodeEditor.getCommands();
 
 		// Asks user if he wishes to install mcdev
 		const userAnswer: string | undefined = await this.showInformationMessage(
-			MDevTools.noMcdevInstalled,
-			Object.keys(Confirmation)
+			MessagesDevTools.noMcdevInstalled,
+			Object.keys(EnumsExtension.Confirmation)
 		);
 
 		const handleInstallResult = async (success: boolean): Promise<void> => {
 			// if mcdev was successfully installed -> reloads vscode editor window
 			if (success) {
-				const reload: string | undefined = await this.showInformationMessage(MDevTools.mcdevInstallSuccess, [
-					"Reload Window"
-				]);
+				const reload: string | undefined = await this.showInformationMessage(
+					MessagesDevTools.mcdevInstallSuccess,
+					["Reload Window"]
+				);
 				if (reload) vscodeCommands.reloadWorkspace();
-			} else this.showInformationMessage(MDevTools.mcdevInstallError, []);
+			} else this.showInformationMessage(MessagesDevTools.mcdevInstallError, []);
 		};
 
-		if (userAnswer && userAnswer.toLowerCase() === Confirmation.Yes) {
+		if (userAnswer && userAnswer.toLowerCase() === EnumsExtension.Confirmation.Yes) {
 			// Shows loading notification
 			this.activateNotificationProgressBar(
-				MDevTools.mcdevInstallLoading,
+				MessagesDevTools.mcdevInstallLoading,
 				false,
 				() =>
 					new Promise(resolve => {
@@ -98,16 +94,16 @@ class DevToolsExtension {
 
 	activateContextVariables() {
 		console.log("== Activate Context Variables ==");
-		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
-		vscodeCommands.executeCommandContext(`${CDevTools.extensionName}.config.isproject`, [true]);
+		const vscodeCommands: TEditor.VSCodeCommands = this.vscodeEditor.getCommands();
+		vscodeCommands.executeCommandContext(`${ConfigDevTools.extensionName}.config.isproject`, [true]);
 	}
 
 	async activateRecommendedExtensions() {
 		console.log("== Activate Recommended Extensions ==");
-		const vscodeWorkspace: VSCodeWorkspace = this.vscodeEditor.getWorkspace();
-		const vscodeExtensions: VSCodeExtensions = this.vscodeEditor.getExtensions();
-		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
-		const recommendedExtensions: string[] = CDevTools.recommendedExtensions;
+		const vscodeWorkspace: TEditor.VSCodeWorkspace = this.vscodeEditor.getWorkspace();
+		const vscodeExtensions: TEditor.VSCodeExtensions = this.vscodeEditor.getExtensions();
+		const vscodeCommands: TEditor.VSCodeCommands = this.vscodeEditor.getCommands();
+		const recommendedExtensions: string[] = ConfigDevTools.recommendedExtensions;
 		const configurationKey: string = "recommendExtensions";
 
 		// Checks if recommended extensions are already installed
@@ -117,35 +113,38 @@ class DevToolsExtension {
 
 		// Checks if recommended extensions suggestion is enabled
 		const recommendExtensions: boolean = vscodeWorkspace.isConfigurationKeyEnabled(
-			CDevTools.extensionName,
+			ConfigDevTools.extensionName,
 			configurationKey
 		);
 
 		if (uninstalledExtensions.length && recommendExtensions) {
 			// Asks the user if he wants to install recommended extensions
 			const userAnswer: string | undefined = await this.showInformationMessage(
-				MEditor.recommendedExtensions,
-				Object.keys(RecommendedExtensionsOptions)
+				MessagesEditor.recommendedExtensions,
+				Object.keys(EnumsExtension.RecommendedExtensionsOptions)
 			);
 
 			// if user clicks on "do not show again" then recommendExtension disabled
-			if (userAnswer && userAnswer.toLowerCase() === RecommendedExtensionsOptions["Do not show again"])
-				vscodeWorkspace.setConfigurationKey(CDevTools.extensionName, configurationKey, false);
+			if (
+				userAnswer &&
+				userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions["Do not show again"]
+			)
+				vscodeWorkspace.setConfigurationKey(ConfigDevTools.extensionName, configurationKey, false);
 			// if user clicks on "install" then installs extensions
-			if (userAnswer && userAnswer.toLowerCase() === RecommendedExtensionsOptions.Install)
+			if (userAnswer && userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions.Install)
 				vscodeCommands.installExtension(uninstalledExtensions);
 		}
 	}
 
 	activateContainers() {
 		console.log("== Activate Containers ==");
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
-		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
+		const vscodeWindow: TEditor.VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeCommands: TEditor.VSCodeCommands = this.vscodeEditor.getCommands();
 
 		if (!this.mcdev.getPackageName()) throw new Error("");
 
-		const statusBarCommand: string = `${CDevTools.extensionName}.openOutputChannel`;
-		const statusBarTitle: string = `$(${StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
+		const statusBarCommand: string = `${ConfigDevTools.extensionName}.openOutputChannel`;
+		const statusBarTitle: string = `$(${EnumsExtension.StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
 		const packageName: string = this.mcdev.getPackageName();
 
 		vscodeCommands.registerCommand({
@@ -157,59 +156,61 @@ class DevToolsExtension {
 		vscodeWindow.displayStatusBarItem(packageName);
 	}
 
-	writeExtensionInformation() {
+	async writeExtensionInformation() {
 		const packageName: string = this.mcdev.getPackageName();
-		const context: VSCodeContext = this.vscodeEditor.getContext();
-		const workspace: VSCodeWorkspace = this.vscodeEditor.getWorkspace();
+		const context: TEditor.VSCodeContext = this.vscodeEditor.getContext();
+		const workspace: TEditor.VSCodeWorkspace = this.vscodeEditor.getWorkspace();
 
-		const projectFsPath: string | undefined = workspace.getWorkspaceFsPath();
-		const [mcdevrcFile]: string[] = CDevTools.requiredFiles;
-		const mcdevrcFilePath: string = projectFsPath && mcdevrcFile ? `${projectFsPath}\\${mcdevrcFile}` : "";
+		const [mcdevrcFile]: string[] = ConfigDevTools.requiredFiles;
+		const mcdevrcFsPath: string[] = await workspace.findWorkspaceFiles(`**/${mcdevrcFile}`);
+		const mcdevrcPathMessage: string[] = mcdevrcFsPath.map(
+			(mcdevrcPath: string) => `${MessagesDevTools.mcdevConfigFile} ${mcdevrcPath}`
+		);
 
 		const messages: string[] = [
 			`Extension name: ${context.getExtensionName()}`,
 			`Extension version: ${context.getExtensionVersion()}`,
-			`${MDevTools.mcdevConfigFile} ${mcdevrcFilePath}`
+			...mcdevrcPathMessage
 		];
-		messages.forEach((message: string) => this.writeLog(packageName, message, LoggerLevel.INFO));
+		messages.forEach((message: string) => this.writeLog(packageName, message, EnumsExtension.LoggerLevel.INFO));
 	}
 
 	updateContainers(containerName: string, fields: { [key in TEditor.StatusBarFields]?: string }) {
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeWindow: TEditor.VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.updateStatusBarItem(containerName, fields);
 	}
 
 	updateMetadataTypesFile() {
-		const workspace: VSCodeWorkspace = this.vscodeEditor.getWorkspace();
+		const workspace: TEditor.VSCodeWorkspace = this.vscodeEditor.getWorkspace();
 		const projectPath: string | undefined = workspace.getWorkspacePath();
 		if (!projectPath) throw new Error("...");
 		this.mcdev.updateMetadataTypes(projectPath);
 	}
 
 	async showInformationMessage(title: string, options: string[]): Promise<string | undefined> {
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeWindow: TEditor.VSCodeWindow = this.vscodeEditor.getWindow();
 		const answer: string | undefined = await vscodeWindow.showInformationMessageWithOptions(title, options);
 		return answer;
 	}
 
-	writeLog(ouputChannel: string, message: string, level: LoggerLevel) {
-		const timestamp: string = getCurrentTime();
+	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel) {
+		const timestamp: string = Lib.getCurrentTime();
 		if (level !== "debug") message = `${timestamp} ${level}: ${message}`;
 		this.logTextOutputChannel(ouputChannel, message);
 	}
 
 	logTextOutputChannel(name: string, text: string) {
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeWindow: TEditor.VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.appendTextToOutputChannel(name, text);
 	}
 
 	showOuputChannel(name: string) {
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeWindow: TEditor.VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.displayOutputChannel(name);
 	}
 
 	getActiveTabFilePath(): string {
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeWindow: TEditor.VSCodeWindow = this.vscodeEditor.getWindow();
 		return vscodeWindow.getEditorOpenedFilePath();
 	}
 
@@ -218,17 +219,17 @@ class DevToolsExtension {
 		cancellable: boolean,
 		progressBarHandler: TEditor.ProgressBarHandler
 	) {
-		const vscodeWindow: VSCodeWindow = this.vscodeEditor.getWindow();
+		const vscodeWindow: TEditor.VSCodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.showProgressBar(title, "Notification", cancellable, progressBarHandler);
 	}
 
 	activateMenuCommands() {
 		console.log("== Activate Menu Commands ==");
-		const vscodeCommands: VSCodeCommands = this.vscodeEditor.getCommands();
+		const vscodeCommands: TEditor.VSCodeCommands = this.vscodeEditor.getCommands();
 
-		CDevTools.menuCommands.forEach((command: string) =>
+		ConfigDevTools.menuCommands.forEach((command: string) =>
 			vscodeCommands.registerCommand({
-				command: `${CDevTools.extensionName}.${command}`,
+				command: `${ConfigDevTools.extensionName}.${command}`,
 				callbackAction: (files: string[]) => {
 					if (!files.length) files = [this.getActiveTabFilePath()];
 					this.executeMenuCommands(command, files);
@@ -242,34 +243,40 @@ class DevToolsExtension {
 		if (files.length > 0) {
 			const packageName: string = this.mcdev.getPackageName();
 			const initialStatusBarColor: string = "";
-			const initialStatusBarTitle: string = `$(${StatusBarIcon[command as keyof typeof StatusBarIcon]}) ${packageName}`;
-			const inProgressBarTitle: string = MEditor.runningCommand;
+			const initialStatusBarTitle: string = `$(${EnumsExtension.StatusBarIcon[command as keyof typeof EnumsExtension.StatusBarIcon]}) ${packageName}`;
+			const inProgressBarTitle: string = MessagesEditor.runningCommand;
 
 			const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
 				const message: string = info || output || error;
-				const loggerLevel = info ? LoggerLevel.INFO : error ? LoggerLevel.ERROR : LoggerLevel.DEBUG;
+				const loggerLevel = info
+					? EnumsExtension.LoggerLevel.INFO
+					: error
+						? EnumsExtension.LoggerLevel.ERROR
+						: EnumsExtension.LoggerLevel.DEBUG;
 				this.writeLog(packageName, message, loggerLevel);
 			};
 
 			const mcdevExecuteOnResult = async (success: boolean) => {
-				const statusBarIcon: string = success ? StatusBarIcon.success : StatusBarIcon.error;
+				const statusBarIcon: string = success
+					? EnumsExtension.StatusBarIcon.success
+					: EnumsExtension.StatusBarIcon.error;
 				const newStatusBarColor = success ? initialStatusBarColor : "error";
 				const newStatusBarTitle = `$(${statusBarIcon}) ${packageName}`;
 
 				this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
 
 				if (!success)
-					executeAfterDelay(
+					Lib.executeAfterDelay(
 						() =>
 							this.updateContainers(packageName, {
-								text: `$(${StatusBarIcon.success}) ${packageName}`,
+								text: `$(${EnumsExtension.StatusBarIcon.success}) ${packageName}`,
 								backgroundColor: initialStatusBarColor
 							}),
-						CDevTools.delayTimeUpdateStatusBar
+						ConfigDevTools.delayTimeUpdateStatusBar
 					);
 
 				const moreDetails: string | undefined = await this.showInformationMessage(
-					success ? MEditor.runningCommandSuccess : MEditor.runningCommandFailure,
+					success ? MessagesEditor.runningCommandSuccess : MessagesEditor.runningCommandFailure,
 					["More Details"]
 				);
 				if (moreDetails) this.showOuputChannel(packageName);

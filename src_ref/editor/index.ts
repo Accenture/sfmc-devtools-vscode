@@ -1,22 +1,17 @@
-import VSCodeContext from "./context";
-import VSCodeWorkspace from "./workspace";
-import VSCodeWindow from "./window";
-import VSCodeCommands from "./commands";
-import VSCodeExtensions from "./extensions";
 import { TEditor } from "@types";
 
 class VSCodeEditor {
-	private vscodeContext: VSCodeContext;
-	private vscodeWorkspace: VSCodeWorkspace;
-	private vscodeWindow: VSCodeWindow;
-	private vscodeCommands: VSCodeCommands;
-	private vscodeExtensions: VSCodeExtensions;
+	private vscodeContext: TEditor.VSCodeContext;
+	private vscodeWorkspace: TEditor.VSCodeWorkspace;
+	private vscodeWindow: TEditor.VSCodeWindow;
+	private vscodeCommands: TEditor.VSCodeCommands;
+	private vscodeExtensions: TEditor.VSCodeExtensions;
 	constructor(context: TEditor.IExtensionContext) {
-		this.vscodeContext = new VSCodeContext(context);
-		this.vscodeWorkspace = new VSCodeWorkspace();
-		this.vscodeWindow = new VSCodeWindow();
-		this.vscodeCommands = new VSCodeCommands();
-		this.vscodeExtensions = new VSCodeExtensions();
+		this.vscodeContext = new TEditor.VSCodeContext(context);
+		this.vscodeWorkspace = new TEditor.VSCodeWorkspace();
+		this.vscodeWindow = new TEditor.VSCodeWindow();
+		this.vscodeCommands = new TEditor.VSCodeCommands();
+		this.vscodeExtensions = new TEditor.VSCodeExtensions();
 	}
 
 	getContext() {

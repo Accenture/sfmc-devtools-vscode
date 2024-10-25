@@ -1,6 +1,6 @@
 import { ChildProcess, spawn, spawnSync, SpawnSyncReturns } from "child_process";
-import { removeLeadingDrivePath } from "./lib";
 import { TUtils } from "@types";
+import { Lib } from "utils";
 
 function executeCommandSync({
 	command,
@@ -41,7 +41,7 @@ function executeTerminalCommand(
 	{ command, commandArgs, commandCwd, commandHandler }: TUtils.ITerminalCommandRunner,
 	sync: boolean
 ): TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult> {
-	if (commandCwd) commandCwd = removeLeadingDrivePath(commandCwd);
+	if (commandCwd) commandCwd = Lib.removeLeadingDrivePath(commandCwd);
 	return sync
 		? executeCommandSync({ command, commandArgs, commandCwd })
 		: executeCommand({ command, commandArgs, commandCwd, commandHandler });
@@ -88,4 +88,4 @@ function installPackage(packageName: string): TUtils.ITerminalCommandResult {
 	}
 }
 
-export const terminal = { executeTerminalCommand, isPackageInstalled, installPackage };
+export { executeTerminalCommand, isPackageInstalled, installPackage };

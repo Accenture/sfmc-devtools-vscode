@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { TDevTools } from "@types";
 import Commands from "./commands";
+import { TDevTools } from "@types";
 
 enum StandardCommandsAlias {
 	retrieve = "r",
