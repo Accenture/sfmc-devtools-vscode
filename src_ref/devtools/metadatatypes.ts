@@ -24,28 +24,24 @@ class MetadataTypes {
 	}
 
 	isValidSupportedAction(action: string): boolean {
-		const supportedActions: string[] = this.getSupportedActions();
+		const supportedActions = this.getSupportedActions();
 		return supportedActions.includes(action);
 	}
 
 	isSupportedMetadataTypeByAction(action: string, metadataType: string): boolean {
-		const supportedActions: TDevTools.MetadataTypesActions[] = MetadataTypesSupportedActions[action];
+		const supportedActions = MetadataTypesSupportedActions[action];
 
 		if (metadataType.startsWith("asset-")) metadataType = "asset";
-		const [metadataTypeMap]: TDevTools.IMetadataTypes[] = this.metadataTypes.filter(
-			({ apiName }: TDevTools.IMetadataTypes) => apiName === metadataType
-		);
+		const [metadataTypeMap] = this.metadataTypes.filter(({ apiName }) => apiName === metadataType);
 
 		if (!metadataTypeMap) throw new Error("...");
-		return (
-			supportedActions.some((action: TDevTools.MetadataTypesActions) => metadataTypeMap.supports[action]) || false
-		);
+		return supportedActions.some(action => metadataTypeMap.supports[action]) || false;
 	}
 
 	handleFileConfiguration(mdt: string, files: string[]): { filename?: string; metadataTypeName?: string } {
 		console.log("== MetadataTypes ExtractFileName ==");
 		if (mdt === "asset") {
-			const [assetName, filename]: string[] = files;
+			const [assetName, filename] = files;
 
 			// configuration for asset mdtype
 			if (files.length === 1) return { metadataTypeName: `asset-${assetName}` };
@@ -55,7 +51,7 @@ class MetadataTypes {
 
 		if (files.length === 1 || mdt === "folder") {
 			// configuration for other mdtypes
-			const filenames: string[] = File.extractFileName(files);
+			const filenames = File.extractFileName(files);
 			if (filenames.length) return { filename: filenames[0] };
 		}
 		return { filename: "" };

@@ -23,8 +23,8 @@ class AdminCommands extends Commands {
 
 	explainTypes(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
 		console.log("== AdminCommands: Explain Types ==");
-		const explainTypesAlias: string = AdminCommandsAlias.explainTypes;
-		const explainTypesConfig: string[][] = parameters.map(({ projectPath }: TDevTools.ICommandParameters) => {
+		const explainTypesAlias = AdminCommandsAlias.explainTypes;
+		const explainTypesConfig = parameters.map(({ projectPath }) => {
 			const commandParameters: TDevTools.ICommandParameters = {
 				credential: "",
 				metadata: [],

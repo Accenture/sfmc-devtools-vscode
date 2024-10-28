@@ -23,10 +23,12 @@ const config = {
 	resolve: {
 		extensions: [".ts", ".js",],
 		alias: {
-			"@types": path.resolve(__dirname, "src_ref/types"),
+			"@enums": path.resolve(__dirname, "src_ref/enums"),
 			"@constants": path.resolve(__dirname, "src_ref/constants"),
 			"@config": path.resolve(__dirname, "src_ref/config"),
-			"@messages": path.resolve(__dirname, "src_ref/messages")
+			"@messages": path.resolve(__dirname, "src_ref/messages"),
+			"@types": path.resolve(__dirname, "src_ref/types"),
+			"utils": path.resolve(__dirname, "src_ref/utils")
 		}
 	},
 	module: {

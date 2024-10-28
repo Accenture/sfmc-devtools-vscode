@@ -7,7 +7,7 @@ import { TDevTools, TUtils } from "@types";
 import { Lib, Terminal } from "utils";
 
 class Mcdev {
-	private packageName: string = "mcdev";
+	private packageName = "mcdev";
 	private metadataTypes: MetadataTypes;
 	private commandsTypes: Commands[] = [new AdminCommands(), new StandardCommands()];
 
@@ -20,26 +20,16 @@ class Mcdev {
 	}
 
 	public isInstalled(): boolean {
-		try {
-			// Checks if mcdev package is installed
-			return Terminal.isPackageInstalled(this.packageName);
-		} catch (error) {
-			// log error
-			return false;
-		}
+		return Terminal.isPackageInstalled(this.packageName);
 	}
 
-	public install() {
+	public install(): { success: boolean; error: string } {
 		console.log("== Mcdev: Install ==");
 		try {
-			const terminalOutcome: TUtils.ITerminalCommandResult = Terminal.installPackage(this.packageName);
-			if (!terminalOutcome.success) {
-				// log error
-			}
-			return { success: terminalOutcome.success };
+			const terminalOutcome = Terminal.installPackage(this.packageName);
+			return { success: terminalOutcome.success, error: terminalOutcome.stdStreams.error };
 		} catch (error) {
-			// log error
-			return { success: false };
+			return { success: false, error: `${(error as Error).message}` };
 		}
 	}
 
@@ -57,7 +47,7 @@ class Mcdev {
 
 		const convertToFileFormat = (path: string): TDevTools.IFileFormat => {
 			// Splits file path by 'retrieve' or 'deploy' folder
-			const [projectPath, topFolder, relativeFilePath]: string[] = path.split(/(\/retrieve\/|\/deploy\/)/g);
+			const [projectPath, topFolder, relativeFilePath] = path.split(/(\/retrieve\/|\/deploy\/)/g);
 
 			// Top Folder Configuration Fields
 			const topFormat: TDevTools.IFileFormat = { level: "top_folder", projectPath, topFolder, path };
@@ -67,10 +57,12 @@ class Mcdev {
 
 			// Else get the folder structure for the file according to mcdev folder structure:
 			// Credentials Name -> Business Unit -> MetadataType -> file or folder (Asset/Folders)
-			const [credentialsName, businessUnit, metadataType, ...fileParts]: string[] = relativeFilePath.split("/");
+			const [credentialsName, businessUnit, metadataType, ...fileParts] = relativeFilePath.split("/");
 			if (fileParts.length) {
-				const { filename, metadataTypeName }: { filename?: string; metadataTypeName?: string } =
-					this.metadataTypes.handleFileConfiguration(metadataType, fileParts);
+				const { filename, metadataTypeName } = this.metadataTypes.handleFileConfiguration(
+					metadataType,
+					fileParts
+				);
 				return {
 					...topFormat,
 					level: "file",
@@ -102,10 +94,10 @@ class Mcdev {
 			[projectPath: string]: { [topFolder: string]: { [credential: string]: TDevTools.IMetadataCommand[] } };
 		};
 		// Appends all selected metadata files mapped by credential name
-		const metadataByCredential = files.reduce((mdtByCred: MetadataByCredential, file: TDevTools.IFileFormat) => {
-			const { projectPath, topFolder }: TDevTools.IFileFormat = file;
-			const credential: string = this.getCredentialByFileLevel(file);
-			const metadata: TDevTools.IMetadataCommand | undefined = this.getMetadataByFileLevel(file);
+		const metadataByCredential = files.reduce((mdtByCred, file) => {
+			const { projectPath, topFolder } = file;
+			const credential = this.getCredentialByFileLevel(file);
+			const metadata = this.getMetadataByFileLevel(file);
 
 			mdtByCred[projectPath] = mdtByCred[projectPath] || {};
 			mdtByCred[projectPath][topFolder] = mdtByCred[projectPath][topFolder] || {};
@@ -161,7 +153,7 @@ class Mcdev {
 	): { files: TDevTools.IFileFormat[]; invalidMetadataTypes: string[] } {
 		console.log("== Mcdev: Validate Files By Metadata Type Action ==");
 
-		const metadataTypes: MetadataTypes = this.metadataTypes;
+		const metadataTypes = this.metadataTypes;
 		const invalidMetadataTypes: string[] = [];
 
 		const filterValidMetadataTypes = ({ level, metadataType }: TDevTools.IFileFormat) => {
@@ -186,22 +178,21 @@ class Mcdev {
 		const mcdevCommand: Commands = this.getCommandBySubCommandName(command);
 
 		// Filters the paths by parent folder to avoid repeating calling MCDEV commands for same files
-		const filteredPathsByParent: string[] = Lib.removeSubPathsByParent(filePaths);
+		const filteredPathsByParent = Lib.removeSubPathsByParent(filePaths);
 
 		// Convert paths to file structure following MCDEV command requirements
-		const selectedFiles: TDevTools.IFileFormat[] = this.convertPathsToFiles(filteredPathsByParent);
+		const selectedFiles = this.convertPathsToFiles(filteredPathsByParent);
 
 		// Removes all the selected files that are not supported for the command execution
-		const { files, invalidMetadataTypes }: { files: TDevTools.IFileFormat[]; invalidMetadataTypes: string[] } =
-			this.validateFilesByMetadataTypeAction(command, selectedFiles);
+		const { files, invalidMetadataTypes } = this.validateFilesByMetadataTypeAction(command, selectedFiles);
 
 		// Convert files to MCDEV Command Parameters
-		const commandParameters: TDevTools.ICommandParameters[] = this.mapToCommandParameters(files);
+		const commandParameters = this.mapToCommandParameters(files);
 
 		const commandResults: boolean[] = [];
 		// Calls the mcdev command to run with the right parameters
 		if (mcdevCommand && commandParameters.length) {
-			const commandConfig: TDevTools.ICommandConfig = mcdevCommand.run(command, commandParameters);
+			const commandConfig = mcdevCommand.run(command, commandParameters);
 			for (const [parameters, projectPath] of commandConfig.config) {
 				const terminalConfig: TUtils.ITerminalCommandRunner = {
 					command: this.getPackageName(),

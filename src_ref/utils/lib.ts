@@ -11,25 +11,23 @@ function existsValueInArrObjects(
 	key: string,
 	value: string | number
 ): boolean {
-	return (
-		array.filter((object: { [key: string]: string | number }) => object[key] !== undefined && object[key] === value)
-			.length > 0
-	);
+	return array.filter(object => object[key] !== undefined && object[key] === value).length > 0;
 }
 
-function extractValueInArrObjects(array: any[], key: string): (string | number)[] {
-	return array.map((object: any) => object[key]).filter(Boolean);
+function extractValueInArrObjects<T extends { [key: string]: string | number | undefined }>(
+	array: T[],
+	key: keyof T
+): (string | number)[] {
+	return array.map(object => object[key]).filter(value => value !== undefined) as (string | number)[];
 }
 
 function removeSubPathsByParent(paths: string[]): string[] {
-	paths.sort((pathA: string, pathB: string) => pathA.localeCompare(pathB));
+	paths.sort((pathA, pathB) => pathA.localeCompare(pathB));
 
-	const selectedParentPaths: Set<string> = new Set<string>();
+	const selectedParentPaths = new Set<string>();
 
 	const removePaths = (currentPath: string) => {
-		const isChild: boolean = [...selectedParentPaths].some((parentPath: string) =>
-			currentPath.startsWith(`${parentPath}`)
-		);
+		const isChild = [...selectedParentPaths].some(parentPath => currentPath.startsWith(`${parentPath}`));
 		if (isChild) return false;
 
 		selectedParentPaths.add(currentPath);

@@ -1,4 +1,4 @@
-import { ChildProcess, spawn, spawnSync, SpawnSyncReturns } from "child_process";
+import { spawn, spawnSync, SpawnSyncReturns } from "child_process";
 import { TUtils } from "@types";
 import { Lib } from "utils";
 
@@ -22,7 +22,7 @@ function executeCommand({
 }: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
 	return new Promise(resolve => {
 		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
-		const proccess: ChildProcess = spawn(command, commandArgs, { shell: true, cwd: commandCwd });
+		const proccess = spawn(command, commandArgs, { shell: true, cwd: commandCwd });
 
 		if (proccess.stdout && commandHandler)
 			proccess.stdout.on("data", (data: Buffer) =>
@@ -33,7 +33,7 @@ function executeCommand({
 				commandHandler({ ...terminalOutput, error: data.toString().trim() })
 			);
 
-		proccess.on("close", (code: number | null) => resolve({ success: code === 0, stdStreams: terminalOutput }));
+		proccess.on("close", code => resolve({ success: code === 0, stdStreams: terminalOutput }));
 	});
 }
 
@@ -53,39 +53,33 @@ function getGlobalInstalledPackages(): string[] {
 		const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
 
 		if (terminal.stdStreams.error)
-			throw new Error(`Error retrieving global packages: ${terminal.stdStreams.error}`);
+			throw new Error(
+				`[terminal_globalInstalledPackages]: Retrieving global packages: ${terminal.stdStreams.error}`
+			);
 		if (!terminal.stdStreams.output.includes('"dependencies"'))
-			throw new Error(`Error retrieving global packages: no "dependencies" found.`);
+			throw new Error(`[terminal_globalInstalledPackages]: Retrieving global packages: no "dependencies" found.`);
 
 		const terminalOutput: { name: string; dependencies: Record<string, unknown> } = JSON.parse(
 			terminal.stdStreams.output
 		);
 		return Object.keys(terminalOutput.dependencies || {});
 	} catch (error) {
-		throw new Error(`Error retrieving global packages: failed to parse JSON output.`);
+		throw error;
 	}
 }
 
 function isPackageInstalled(packageName: string): boolean {
-	try {
-		const installedPackages: string[] = getGlobalInstalledPackages();
-		return installedPackages.includes(packageName);
-	} catch (error) {
-		throw new Error(`[terminal_isPackageInstalled]: ${error}`);
-	}
+	const installedPackages = getGlobalInstalledPackages();
+	return installedPackages.includes(packageName);
 }
 
 function installPackage(packageName: string): TUtils.ITerminalCommandResult {
-	try {
-		const commandArgs: TUtils.ITerminalCommandRunner = {
-			command: "npm",
-			commandArgs: ["install", "-g", packageName]
-		};
-		const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
-		return terminal;
-	} catch (error) {
-		throw new Error(`[terminal_isPackageInstalled]: ${error}`);
-	}
+	const commandArgs: TUtils.ITerminalCommandRunner = {
+		command: "npm",
+		commandArgs: ["install", "-g", packageName]
+	};
+	const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
+	return terminal;
 }
 
 export { executeTerminalCommand, isPackageInstalled, installPackage };

@@ -12,21 +12,21 @@ class VSCodeCommands {
 	registerCommand(register: CommandRegister | CommandRegister[]) {
 		[register].flat().forEach(registry =>
 			this.commands.registerCommand(registry.command, (...files: VSCode.Uri[]) => {
-				const filePaths: string[] = files
+				const filePaths = files
 					.flat()
-					.map((file: VSCode.Uri) => file.path)
-					.filter((path: string) => path !== undefined);
+					.map(file => file.path)
+					.filter(path => path !== undefined);
 				registry.callbackAction(removeDuplicates(filePaths) as string[]);
 			})
 		);
 	}
 
 	executeCommand(command: string | string[], args: (string | boolean | string[])[]) {
-		[command].flat().forEach(async (command: string) => await this.commands.executeCommand(command, ...args));
+		[command].flat().forEach(async command => await this.commands.executeCommand(command, ...args));
 	}
 
 	executeCommandContext(command: string | string[], args: (string | boolean | string[])[]) {
-		[command].flat().forEach((command: string) => this.commands.executeCommand("setContext", command, ...args));
+		[command].flat().forEach(command => this.commands.executeCommand("setContext", command, ...args));
 	}
 
 	installExtension(extensionName: string | string[]) {

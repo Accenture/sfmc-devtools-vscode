@@ -10,7 +10,7 @@ class VSCodeWindow {
 	}
 
 	async showInformationMessageWithOptions(message: string, actions: string[]): Promise<string | undefined> {
-		const response: string | undefined = await this.window.showInformationMessage(message, ...actions);
+		const response = await this.window.showInformationMessage(message, ...actions);
 		return response;
 	}
 
@@ -30,7 +30,7 @@ class VSCodeWindow {
 	}
 
 	createOutputChannel(name: string) {
-		const outputChannel: VSCode.OutputChannel = this.window.createOutputChannel(name);
+		const outputChannel = this.window.createOutputChannel(name);
 		if (!outputChannel) throw new Error(`VSCodeWindow: Failed to create OutputChannel name = ${name}.`);
 		this.outputChannelItems = { ...this.outputChannelItems, [name]: outputChannel };
 	}
@@ -41,20 +41,17 @@ class VSCodeWindow {
 	}
 
 	displayOutputChannel(name: string) {
-		const outputChannel: VSCode.OutputChannel = this.getOutputChannel(name);
+		const outputChannel = this.getOutputChannel(name);
 		outputChannel.show();
 	}
 
 	appendTextToOutputChannel(name: string, text: string) {
-		const outputChannel: VSCode.OutputChannel = this.getOutputChannel(name);
+		const outputChannel = this.getOutputChannel(name);
 		outputChannel.appendLine(text);
 	}
 
 	createStatusBarItem(command: string, title: string, name: string) {
-		const statusBarItem: VSCode.StatusBarItem = this.window.createStatusBarItem(
-			VSCode.StatusBarAlignment.Right,
-			110
-		);
+		const statusBarItem = this.window.createStatusBarItem(VSCode.StatusBarAlignment.Right, 110);
 		statusBarItem.name = name;
 		statusBarItem.command = command;
 		statusBarItem.text = title;
@@ -69,12 +66,12 @@ class VSCodeWindow {
 	}
 
 	displayStatusBarItem(name: string) {
-		const statusBarItem: VSCode.StatusBarItem = this.getStatusBarItem(name);
+		const statusBarItem = this.getStatusBarItem(name);
 		if (statusBarItem) statusBarItem.show();
 	}
 
 	updateStatusBarItem(name: string, fieldsToUpdate: { [key in TEditor.StatusBarFields]?: string }) {
-		const statusBarItem: VSCode.StatusBarItem = this.getStatusBarItem(name);
+		const statusBarItem = this.getStatusBarItem(name);
 		Object.entries(fieldsToUpdate).forEach(([field, value]) => {
 			if (field === "text") statusBarItem[field] = value;
 			else if (field === "backgroundColor")
@@ -83,7 +80,7 @@ class VSCodeWindow {
 	}
 
 	getEditorOpenedFilePath(): string {
-		const activeTextEditor: VSCode.TextEditor | undefined = this.window.activeTextEditor;
+		const activeTextEditor = this.window.activeTextEditor;
 		if (!activeTextEditor) throw new Error("VSCodeWindow: Active text editor is undefined.");
 		return activeTextEditor.document.uri.path;
 	}

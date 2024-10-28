@@ -33,8 +33,8 @@ class StandardCommands extends Commands {
 
 	retrieve(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Retrieve ==");
-		const retrieveAlias: string = StandardCommandsAlias.retrieve;
-		const retrieveConfig: string[][] = parameters.map((parameter: TDevTools.ICommandParameters) => [
+		const retrieveAlias = StandardCommandsAlias.retrieve;
+		const retrieveConfig = parameters.map(parameter => [
 			this.configureParameters(parameter),
 			parameter.projectPath
 		]);
@@ -43,12 +43,12 @@ class StandardCommands extends Commands {
 
 	deploy(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Deploy ==");
-		const deployAlias: string = StandardCommandsAlias.deploy;
+		const deployAlias = StandardCommandsAlias.deploy;
 
 		// Checks if the deploy action is from the retrieve folder
 		parameters = parameters
-			.map((parameter: TDevTools.ICommandParameters) => {
-				const isFromRetrieveFolder: boolean = parameter.topFolder === "/retrieve/";
+			.map(parameter => {
+				const isFromRetrieveFolder = parameter.topFolder === "/retrieve/";
 				if (isFromRetrieveFolder) {
 					// Removes all the multi selected folder that cannot be deployed from retrieve folder
 					parameter.metadata = parameter.metadata.filter(
@@ -59,12 +59,9 @@ class StandardCommands extends Commands {
 				if (isFromRetrieveFolder && !parameter.metadata.length) return undefined;
 				return parameter;
 			})
-			.filter((param: TDevTools.ICommandParameters | undefined) => param !== undefined);
+			.filter(param => param !== undefined) as TDevTools.ICommandParameters[];
 
-		const deployConfig: string[][] = parameters.map((parameter: TDevTools.ICommandParameters) => [
-			this.configureParameters(parameter),
-			parameter.projectPath
-		]);
+		const deployConfig = parameters.map(parameter => [this.configureParameters(parameter), parameter.projectPath]);
 
 		return { alias: deployAlias, config: deployConfig };
 	}

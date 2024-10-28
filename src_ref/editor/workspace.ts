@@ -8,32 +8,30 @@ class VSCodeWorkspace {
 	}
 
 	isConfigurationKeyEnabled(section: string, key: string): boolean {
-		const workpaceConfiguration: VSCode.WorkspaceConfiguration = this.getWorkspaceConfiguration(section);
+		const workpaceConfiguration = this.getWorkspaceConfiguration(section);
 		return Boolean(workpaceConfiguration.get(key, true)) === true;
 	}
 
 	setConfigurationKey(section: string, key: string, value: string | boolean) {
-		const workpaceConfiguration: VSCode.WorkspaceConfiguration = this.getWorkspaceConfiguration(section);
+		const workpaceConfiguration = this.getWorkspaceConfiguration(section);
 		workpaceConfiguration.update(key, value, VSCode.ConfigurationTarget.Global);
 	}
 
 	getWorkspaceURI(): VSCode.Uri | undefined {
 		console.log("=== VSCodeWorkspace: Get URI ===");
-		const workspaceFolders: readonly VSCode.WorkspaceFolder[] | undefined = this.workspace.workspaceFolders;
+		const workspaceFolders = this.workspace.workspaceFolders;
 		if (workspaceFolders && workspaceFolders.length) return workspaceFolders[0].uri;
-		// throw Error
 		return;
 	}
 
 	getWorkspacePath(): string | undefined {
-		const workspaceURI: VSCode.Uri | undefined = this.getWorkspaceURI();
-		if (workspaceURI) return workspaceURI.path;
-		// throw Error
-		return;
+		const workspaceURI = this.getWorkspaceURI();
+		if (!workspaceURI) throw new Error("[editor_workspace] Failed to retrieve workspace URI.");
+		return workspaceURI.path;
 	}
 
 	getWorkspaceFsPath(): string | undefined {
-		const workspaceURI: VSCode.Uri | undefined = this.getWorkspaceURI();
+		const workspaceURI = this.getWorkspaceURI();
 		if (workspaceURI) return workspaceURI.fsPath;
 		// throw Error
 		return;
@@ -41,20 +39,20 @@ class VSCodeWorkspace {
 
 	async getWokspaceFiles(uri: VSCode.Uri): Promise<[string, VSCode.FileType][]> {
 		console.log("=== VSCodeWorkspace: Get Workspace Files ===");
-		const folderFiles: [string, VSCode.FileType][] = await this.workspace.fs.readDirectory(uri);
+		const folderFiles = await this.workspace.fs.readDirectory(uri);
 		return folderFiles;
 	}
 
 	async getWorkspaceSubFolders(): Promise<string[]> {
 		console.log("=== VSCodeWorkspace: Get SubFolders ===");
-		const uri: VSCode.Uri | undefined = this.getWorkspaceURI();
+		const uri = this.getWorkspaceURI();
 		if (uri) {
-			const folderFiles: [string, VSCode.FileType][] = await this.getWokspaceFiles(uri);
+			const folderFiles = await this.getWokspaceFiles(uri);
 			return (
 				folderFiles
 					// eslint-disable-next-line @typescript-eslint/no-unused-vars
-					.filter(([_, type]: [string, VSCode.FileType]) => type === VSCode.FileType.Directory)
-					.map(([name]: [string, VSCode.FileType]) => name)
+					.filter(([_, type]) => type === VSCode.FileType.Directory)
+					.map(([name]) => name)
 			);
 		}
 		// throw Error
@@ -63,13 +61,13 @@ class VSCodeWorkspace {
 
 	async findWorkspaceFiles(file: string): Promise<string[]> {
 		console.log("=== VSCodeWorkspace: findWorkspaceFiles ===");
-		const workspaceFiles: VSCode.Uri[] = await this.workspace.findFiles(file);
+		const workspaceFiles = await this.workspace.findFiles(file);
 		return workspaceFiles.map((file: VSCode.Uri) => file.fsPath);
 	}
 
 	async isFileInWorkspaceFolder(file: string): Promise<boolean> {
 		console.log("=== VSCodeWorkspace: IsFileInFolder ===");
-		const workspaceFiles: string[] = await this.findWorkspaceFiles(file);
+		const workspaceFiles = await this.findWorkspaceFiles(file);
 		return workspaceFiles.length > 0;
 	}
 }

@@ -7,16 +7,12 @@ abstract class Commands {
 
 	protected configureParameters({ credential, metadata, optional }: TDevTools.ICommandParameters): string {
 		console.log("== Commands: configureParameters ==");
-		const defaultParameter: string = "--skipInteraction";
-		const buildMetadataParameter = ({ metadatatype, key }: TDevTools.IMetadataCommand): string =>
+		const defaultParameter = "--skipInteraction";
+		const buildMetadataParameter = ({ metadatatype, key }: TDevTools.IMetadataCommand) =>
 			`-m ${metadatatype}${key && ":" + '"' + key + '"'}`;
 		const buildOptionalParameter = (optionalParam: string) => `${optionalParam && "--" + optionalParam}`;
-		const metadataParameters: string = metadata
-			.map((mdt: TDevTools.IMetadataCommand) => buildMetadataParameter(mdt))
-			.join(" ");
-		const optionalParameters: string = (optional || [])
-			.map((param: string) => buildOptionalParameter(param))
-			.join(" ");
+		const metadataParameters: string = metadata.map(mdt => buildMetadataParameter(mdt)).join(" ");
+		const optionalParameters: string = (optional || []).map(param => buildOptionalParameter(param)).join(" ");
 		return `${credential} ${metadataParameters} ${optionalParameters} ${defaultParameter}`;
 	}
 }
