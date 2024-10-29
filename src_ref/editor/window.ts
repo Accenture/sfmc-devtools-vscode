@@ -14,6 +14,11 @@ class VSCodeWindow {
 		return response;
 	}
 
+	async showErrorMessageWithOptions(message: string, actions: string[]): Promise<string | undefined> {
+		const response = await this.window.showErrorMessage(message, ...actions);
+		return response;
+	}
+
 	async showProgressBar(
 		title: string,
 		local: TEditor.ProgressWindowLocal,
@@ -31,7 +36,8 @@ class VSCodeWindow {
 
 	createOutputChannel(name: string) {
 		const outputChannel = this.window.createOutputChannel(name);
-		if (!outputChannel) throw new Error(`VSCodeWindow: Failed to create OutputChannel name = ${name}.`);
+		if (!outputChannel)
+			throw new Error(`[vscodewindow_createOutputChannel]: Failed to create OutputChannel with name '${name}'.`);
 		this.outputChannelItems = { ...this.outputChannelItems, [name]: outputChannel };
 	}
 
@@ -59,9 +65,8 @@ class VSCodeWindow {
 	}
 
 	getStatusBarItem(name: string): VSCode.StatusBarItem {
-		if (!this.statusBarItems) throw new Error("VSCodeWindow: Status Bar Item is undefined.");
 		if (!this.statusBarItems[name])
-			throw new Error(`VSCodeWindow: Status Bar Item with name = ${name} wasn't found.`);
+			throw new Error(`[vscodewindow_getStatusBarItem]: Status Bar Item with name '${name}' wasn't found.`);
 		return this.statusBarItems[name];
 	}
 
@@ -81,7 +86,8 @@ class VSCodeWindow {
 
 	getEditorOpenedFilePath(): string {
 		const activeTextEditor = this.window.activeTextEditor;
-		if (!activeTextEditor) throw new Error("VSCodeWindow: Active text editor is undefined.");
+		if (!activeTextEditor)
+			throw new Error("[vscodewindow_getEditorOpenedFilePath]: Active text editor is undefined.");
 		return activeTextEditor.document.uri.path;
 	}
 }

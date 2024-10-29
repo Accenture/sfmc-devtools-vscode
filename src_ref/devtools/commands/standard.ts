@@ -25,8 +25,6 @@ class StandardCommands extends Commands {
 			case "deploy":
 				config = this.deploy(parameters);
 				break;
-			default:
-				throw new Error(""); // log error
 		}
 		return config;
 	}

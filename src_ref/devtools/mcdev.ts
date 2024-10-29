@@ -29,14 +29,14 @@ class Mcdev {
 			const terminalOutcome = Terminal.installPackage(this.packageName);
 			return { success: terminalOutcome.success, error: terminalOutcome.stdStreams.error };
 		} catch (error) {
-			return { success: false, error: `${(error as Error).message}` };
+			return { success: false, error: `${error}` };
 		}
 	}
 
 	public async updateMetadataTypes(projectPath: string) {
 		console.log("== Mcdev: Update MetadataType ==");
 		const executeOnResult = ({ output, error }: TUtils.IOutputLogger) => {
-			if (error) throw new Error("....");
+			if (error) throw new Error(`[mcdev_updateMetadataTypes]: ${error}`);
 			if (output) this.metadataTypes.updateMetadataTypes(output);
 		};
 		this.execute("explainTypes", executeOnResult, [projectPath]);
@@ -85,8 +85,7 @@ class Mcdev {
 		const [mcdevCommand]: Commands[] = Object.values(this.commandsTypes).filter((mcdevCommand: Commands) =>
 			mcdevCommand.commandsList().includes(name)
 		);
-		if (mcdevCommand) return mcdevCommand;
-		else throw new Error(""); // log error
+		return mcdevCommand;
 	}
 
 	private mapToCommandParameters(files: TDevTools.IFileFormat[]): TDevTools.ICommandParameters[] {
@@ -215,7 +214,7 @@ class Mcdev {
 			commandResults.push(false);
 			commandHandler({ error: MessagesDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes) });
 		}
-		return { success: commandResults.every((result: boolean) => result === true) };
+		return { success: commandResults.every(result => result === true) };
 	}
 }
 

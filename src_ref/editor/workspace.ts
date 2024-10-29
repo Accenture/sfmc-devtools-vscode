@@ -24,17 +24,16 @@ class VSCodeWorkspace {
 		return;
 	}
 
-	getWorkspacePath(): string | undefined {
+	getWorkspacePath(): string {
 		const workspaceURI = this.getWorkspaceURI();
-		if (!workspaceURI) throw new Error("[editor_workspace] Failed to retrieve workspace URI.");
-		return workspaceURI.path;
+		if (!workspaceURI) throw new Error("[vscodeworkspace_getWorkspacePath] Failed to retrieve workspace URI.");
+		return workspaceURI.path || "";
 	}
 
-	getWorkspaceFsPath(): string | undefined {
+	getWorkspaceFsPath(): string {
 		const workspaceURI = this.getWorkspaceURI();
-		if (workspaceURI) return workspaceURI.fsPath;
-		// throw Error
-		return;
+		if (!workspaceURI) throw new Error("[vscodeworkspace_getWorkspacePath] Failed to retrieve workspace URI.");
+		return workspaceURI.fsPath;
 	}
 
 	async getWokspaceFiles(uri: VSCode.Uri): Promise<[string, VSCode.FileType][]> {

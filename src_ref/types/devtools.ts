@@ -1,4 +1,5 @@
 type FileLevel = "top_folder" | "cred_folder" | "bu_folder" | "mdt_folder" | "file";
+// eslint-disable-next-line no-use-before-define
 type FileLevelMap = { [key in FileLevel]: IFileFormat[] };
 type MetadataTypesActions =
 	| "retrieve"

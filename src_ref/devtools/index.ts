@@ -56,7 +56,7 @@ class DevToolsExtension {
 			}
 		} catch (error) {
 			// log as debug error
-			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.DEBUG);
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
 		}
 	}
 
@@ -65,7 +65,8 @@ class DevToolsExtension {
 		const vscodeCommands = this.vscodeEditor.getCommands();
 
 		// Asks user if he wishes to install mcdev
-		const userAnswer = await this.showInformationMessage(
+		const userAnswer = await this.showModalMessage(
+			"info",
 			MessagesDevTools.noMcdevInstalled,
 			Object.keys(EnumsExtension.Confirmation)
 		);
@@ -74,13 +75,13 @@ class DevToolsExtension {
 			// if mcdev was successfully installed -> reloads vscode editor window
 			// else shows information error message
 			if (success) {
-				const reload = await this.showInformationMessage(MessagesDevTools.mcdevInstallSuccess, [
+				const reload = await this.showModalMessage("info", MessagesDevTools.mcdevInstallSuccess, [
 					"Reload Window"
 				]);
 				if (reload) vscodeCommands.reloadWorkspace();
 			} else {
-				this.showInformationMessage(MessagesDevTools.mcdevInstallError, []);
-				if (error) this.writeLog(this.mcdev.getPackageName(), error, EnumsExtension.LoggerLevel.DEBUG);
+				this.showModalMessage("error", MessagesDevTools.mcdevInstallError, []);
+				if (error) this.writeLog(this.mcdev.getPackageName(), error, EnumsExtension.LoggerLevel.ERROR);
 			}
 		};
 
@@ -128,7 +129,8 @@ class DevToolsExtension {
 
 		if (uninstalledExtensions.length && recommendExtensions) {
 			// Asks the user if he wants to install recommended extensions
-			const userAnswer = await this.showInformationMessage(
+			const userAnswer = await this.showModalMessage(
+				"info",
 				MessagesEditor.recommendedExtensions,
 				Object.keys(EnumsExtension.RecommendedExtensionsOptions)
 			);
@@ -197,40 +199,60 @@ class DevToolsExtension {
 	}
 
 	updateMetadataTypesFile() {
-		const workspace = this.vscodeEditor.getWorkspace();
-		const projectPath = workspace.getWorkspacePath();
-		if (!projectPath) throw new Error("...");
-		this.mcdev.updateMetadataTypes(projectPath);
+		try {
+			const workspace = this.vscodeEditor.getWorkspace();
+			const projectPath = workspace.getWorkspacePath();
+			this.mcdev.updateMetadataTypes(projectPath);
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+		}
 	}
 
-	async showInformationMessage(title: string, options: string[]): Promise<string | undefined> {
+	async showModalMessage(type: "info" | "error", title: string, options: string[]): Promise<string | undefined> {
 		const vscodeWindow = this.vscodeEditor.getWindow();
-		const answer = await vscodeWindow.showInformationMessageWithOptions(title, options);
+		const answer =
+			type === "info"
+				? await vscodeWindow.showInformationMessageWithOptions(title, options)
+				: await vscodeWindow.showErrorMessageWithOptions(title, options);
 		return answer;
 	}
 
 	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel) {
 		const timestamp = Lib.getCurrentTime();
-		if (level !== "debug") {
-			// for output channel message should be in format 'timestamp level: message'
-			message = `${timestamp} ${level}: ${message}`;
-			this.logTextOutputChannel(ouputChannel, message);
-		} else console.error(`${level}: ${message}`);
+		const nonOutputLevel = [EnumsExtension.LoggerLevel.DEBUG, EnumsExtension.LoggerLevel.ERROR];
+		// every logger level except output should be in format 'timestamp level: message'
+		message = level !== EnumsExtension.LoggerLevel.OUTPUT ? `${timestamp} ${level}: ${message}` : message;
+
+		if (!nonOutputLevel.includes(level)) this.logTextOutputChannel(ouputChannel, message);
+		// logs into extension file
 	}
 
 	logTextOutputChannel(name: string, text: string) {
-		const vscodeWindow = this.vscodeEditor.getWindow();
-		vscodeWindow.appendTextToOutputChannel(name, text);
+		try {
+			const vscodeWindow = this.vscodeEditor.getWindow();
+			vscodeWindow.appendTextToOutputChannel(name, text);
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+		}
 	}
 
 	showOuputChannel(name: string) {
-		const vscodeWindow = this.vscodeEditor.getWindow();
-		vscodeWindow.displayOutputChannel(name);
+		try {
+			const vscodeWindow = this.vscodeEditor.getWindow();
+			vscodeWindow.displayOutputChannel(name);
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+		}
 	}
 
-	getActiveTabFilePath(): string {
-		const vscodeWindow = this.vscodeEditor.getWindow();
-		return vscodeWindow.getEditorOpenedFilePath();
+	getActiveTabFilePath(): string | undefined {
+		try {
+			const vscodeWindow = this.vscodeEditor.getWindow();
+			return vscodeWindow.getEditorOpenedFilePath();
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+			return;
+		}
 	}
 
 	activateNotificationProgressBar(
@@ -251,8 +273,9 @@ class DevToolsExtension {
 			vscodeCommands.registerCommand({
 				command: `${ConfigDevTools.extensionName}.${command}`,
 				callbackAction: (files: string[]) => {
+					const activeTabFilePath = this.getActiveTabFilePath();
 					// When the menu command is done from the file tab it requires the active open file path
-					if (!files.length) files = [this.getActiveTabFilePath()];
+					if (!files.length && activeTabFilePath) files = [activeTabFilePath];
 					this.executeMenuCommands(command, files);
 				}
 			})
@@ -272,11 +295,12 @@ class DevToolsExtension {
 
 			const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
 				const message = info || output || error;
-				const loggerLevel = info
-					? EnumsExtension.LoggerLevel.INFO
-					: error
-						? EnumsExtension.LoggerLevel.ERROR
-						: EnumsExtension.LoggerLevel.DEBUG;
+
+				let loggerLevel = EnumsExtension.LoggerLevel.DEBUG;
+				if (info) loggerLevel = EnumsExtension.LoggerLevel.INFO;
+				if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
+				if (error) loggerLevel = EnumsExtension.LoggerLevel.WARN;
+
 				this.writeLog(packageName, message, loggerLevel);
 			};
 
@@ -287,6 +311,13 @@ class DevToolsExtension {
 				// changes the status bar icon and and color according to the execution result of the command
 				const newStatusBarColor = success ? initialStatusBarColor : "error";
 				const newStatusBarTitle = `$(${statusBarIcon}) ${packageName}`;
+
+				// Sets the message to show in the modal depending on the execution result
+				const infoMessage = success
+					? MessagesEditor.runningCommandSuccess
+					: MessagesEditor.runningCommandFailure;
+
+				const infoMessageOptions = ["More Details"];
 
 				this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
 
@@ -301,9 +332,10 @@ class DevToolsExtension {
 						ConfigDevTools.delayTimeUpdateStatusBar
 					);
 
-				const moreDetails = await this.showInformationMessage(
-					success ? MessagesEditor.runningCommandSuccess : MessagesEditor.runningCommandFailure,
-					["More Details"]
+				const moreDetails = await this.showModalMessage(
+					success ? "info" : "error",
+					infoMessage,
+					infoMessageOptions
 				);
 				// if user clicks on 'More Details' button it will open the output channel
 				if (moreDetails) this.showOuputChannel(packageName);

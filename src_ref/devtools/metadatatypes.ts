@@ -15,7 +15,6 @@ class MetadataTypes {
 	}
 
 	updateMetadataTypes(mdtTypes: string) {
-		if (!mdtTypes) throw new Error("");
 		this.metadataTypes = JSON.parse(mdtTypes);
 	}
 

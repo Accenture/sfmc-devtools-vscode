@@ -1,3 +1,8 @@
+interface ITerminalCommandStreams {
+	output: string;
+	error: string;
+}
+
 interface ITerminalCommandRunner {
 	command: string;
 	commandArgs: string[];
@@ -8,11 +13,6 @@ interface ITerminalCommandRunner {
 interface ITerminalCommandResult {
 	success: boolean;
 	stdStreams: ITerminalCommandStreams;
-}
-
-interface ITerminalCommandStreams {
-	output: string;
-	error: string;
 }
 
 interface IOutputLogger {

@@ -21,6 +21,7 @@ enum StatusBarIcon {
 enum LoggerLevel {
 	DEBUG = "debug",
 	INFO = "info",
+	OUTPUT = "output",
 	WARN = "warn",
 	ERROR = "error"
 }
