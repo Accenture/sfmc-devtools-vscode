@@ -1,10 +1,18 @@
-import { ExtensionContext } from "vscode";
+import { TEditor } from "@types";
 
-type EditorContext = { set: (context: ExtensionContext) => void; get: () => ExtensionContext };
+class VSCodeContext {
+	private context: TEditor.IExtensionContext;
+	constructor(context: TEditor.IExtensionContext) {
+		this.context = context;
+	}
 
-let contextInstance: ExtensionContext;
-const editorContext: EditorContext = {
-	set: (context: ExtensionContext) => (contextInstance = context),
-	get: () => contextInstance
-};
-export { ExtensionContext, editorContext };
+	getExtensionName(): string {
+		return this.context.extension.packageJSON.name;
+	}
+
+	getExtensionVersion(): string {
+		return this.context.extension.packageJSON.version;
+	}
+}
+
+export default VSCodeContext;

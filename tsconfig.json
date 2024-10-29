@@ -4,7 +4,7 @@
 		"target": "ES2022",
 		"lib": ["ES2022", "DOM"],
 		"sourceMap": true,
-		"rootDir": "src_ref",
+		"rootDir": "src",
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
@@ -14,13 +14,13 @@
 		"strictNullChecks": true,
 		"forceConsistentCasingInFileNames": true,
 		"paths": {
-			"@types": ["./src_ref/types/index"],
-			"@enums": ["./src_ref/enums/index"],
-			"@config": ["./src_ref/config/index"],
-			"@messages": ["./src_ref/messages/index"],
-			"utils": ["./src_ref/utils/index"]
+			"@types": ["./src/types/index"],
+			"@enums": ["./src/enums/index"],
+			"@config": ["./src/config/index"],
+			"@messages": ["./src/messages/index"],
+			"utils": ["./src/utils/index"]
 		}
 	},
-	"include": ["src_ref/**/*.ts"],
+	"include": ["src/**/*.ts"],
   	"exclude": ["node_modules"]
 }

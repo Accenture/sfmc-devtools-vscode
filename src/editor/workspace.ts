@@ -1,91 +1,74 @@
-import {
-	workspace,
-	Uri,
-	TextDocument,
-	WorkspaceFolder,
-	FileType,
-	FileStat,
-	WorkspaceConfiguration,
-	ConfigurationTarget
-} from "vscode";
-import { editorCommands } from "./commands";
+import { VSCode } from "@types";
 
-type WorkspaceConfigurationTarget = "Global" | "Workspace" | "WorkspaceFolder";
+class VSCodeWorkspace {
+	private workspace: typeof VSCode.workspace = VSCode.workspace;
 
-function getWorkspaceURI(): Uri {
-	const wsFolder: readonly WorkspaceFolder[] | undefined = workspace.workspaceFolders;
-	if (wsFolder) {
-		const [{ uri }] = wsFolder;
-		return uri;
-	} else {
-		throw new Error("Could not get Workspace Folder.");
+	getWorkspaceConfiguration(section: string): VSCode.WorkspaceConfiguration {
+		return this.workspace.getConfiguration(section);
+	}
+
+	isConfigurationKeyEnabled(section: string, key: string): boolean {
+		const workpaceConfiguration = this.getWorkspaceConfiguration(section);
+		return Boolean(workpaceConfiguration.get(key, true)) === true;
+	}
+
+	setConfigurationKey(section: string, key: string, value: string | boolean) {
+		const workpaceConfiguration = this.getWorkspaceConfiguration(section);
+		workpaceConfiguration.update(key, value, VSCode.ConfigurationTarget.Global);
+	}
+
+	getWorkspaceURI(): VSCode.Uri | undefined {
+		console.log("=== VSCodeWorkspace: Get URI ===");
+		const workspaceFolders = this.workspace.workspaceFolders;
+		if (workspaceFolders && workspaceFolders.length) return workspaceFolders[0].uri;
+		return;
+	}
+
+	getWorkspacePath(): string {
+		const workspaceURI = this.getWorkspaceURI();
+		if (!workspaceURI) throw new Error("[vscodeworkspace_getWorkspacePath] Failed to retrieve workspace URI.");
+		return workspaceURI.path || "";
+	}
+
+	getWorkspaceFsPath(): string {
+		const workspaceURI = this.getWorkspaceURI();
+		if (!workspaceURI) throw new Error("[vscodeworkspace_getWorkspacePath] Failed to retrieve workspace URI.");
+		return workspaceURI.fsPath;
+	}
+
+	async getWokspaceFiles(uri: VSCode.Uri): Promise<[string, VSCode.FileType][]> {
+		console.log("=== VSCodeWorkspace: Get Workspace Files ===");
+		const folderFiles = await this.workspace.fs.readDirectory(uri);
+		return folderFiles;
+	}
+
+	async getWorkspaceSubFolders(): Promise<string[]> {
+		console.log("=== VSCodeWorkspace: Get SubFolders ===");
+		const uri = this.getWorkspaceURI();
+		if (uri) {
+			const folderFiles = await this.getWokspaceFiles(uri);
+			return (
+				folderFiles
+					// eslint-disable-next-line @typescript-eslint/no-unused-vars
+					.filter(([_, type]) => type === VSCode.FileType.Directory)
+					.map(([name]) => name)
+			);
+		}
+		// throw Error
+		return [];
+	}
+
+	async findWorkspaceFiles(file: string): Promise<string[]> {
+		console.log("=== VSCodeWorkspace: findWorkspaceFiles ===");
+		const workspaceFiles = await this.workspace.findFiles(file);
+		return workspaceFiles.map((file: VSCode.Uri) => file.fsPath);
+	}
+
+	async isFileInWorkspaceFolder(file: string): Promise<boolean> {
+		console.log("=== VSCodeWorkspace: IsFileInFolder ===");
+		const workspaceFiles = await this.findWorkspaceFiles(file);
+		return workspaceFiles.length > 0;
 	}
 }
-function getWorkspaceURIPath(): string {
-	const wsURI: Uri = getWorkspaceURI();
-	if (wsURI && "path" in wsURI) {
-		return wsURI.path;
-	}
-	throw new Error("Failed to find Worspace Uri PATH.");
-}
 
-async function getWorkspaceSubFolders(): Promise<string[]> {
-	const wsURI: Uri = getWorkspaceURI();
-	const subFolders = await workspace.fs.readDirectory(wsURI);
-	return subFolders.map(([folderName]: [string, FileType]) => folderName);
-}
-
-async function isFileInFolder(filename: string): Promise<boolean> {
-	const fileArray: Uri[] = await workspace.findFiles(filename);
-	return fileArray.length > 0;
-}
-
-async function readFile(path: string): Promise<string> {
-	const document: TextDocument = await workspace.openTextDocument(path);
-	return document.getText();
-}
-
-function reloadWorkspace() {
-	editorCommands.executeCommand("workbench.action.reloadWindow", []);
-}
-
-function getFilesURIPath(files: Uri | Uri[]) {
-	return [files].flat().map((file: Uri) => file.path);
-}
-
-async function isFile(file: string | Uri) {
-	if (typeof file === "string") {
-		file = Uri.file(file);
-	}
-	const { type }: FileStat = await workspace.fs.stat(file);
-	const fileType: string = FileType[type];
-	return fileType.toLowerCase() === "file";
-}
-
-function handleWorkspaceConfiguration(section: string, target: WorkspaceConfigurationTarget) {
-	const workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration(section);
-	if (workspaceConfiguration) {
-		return {
-			get: (key: string, value: string | boolean) => workspaceConfiguration.get(key, value),
-			set: (key: string, value: string | boolean) =>
-				workspaceConfiguration.update(key, value, ConfigurationTarget[target])
-		};
-	}
-	throw new Error("Failed to handle Workspace Configuration.");
-}
-
-function getFileSystemPaths(paths: string | string[]) {
-	return [paths].flat().map((path: string) => Uri.file(path).fsPath);
-}
-
-export const editorWorkspace = {
-	isFileInFolder,
-	readFile,
-	reloadWorkspace,
-	getWorkspaceURIPath,
-	getWorkspaceSubFolders,
-	handleWorkspaceConfiguration,
-	getFilesURIPath,
-	isFile,
-	getFileSystemPaths
-};
+export default VSCodeWorkspace;

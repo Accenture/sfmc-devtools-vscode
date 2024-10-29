@@ -1,24 +1,41 @@
-import { commands, Uri } from "vscode";
+import { VSCode } from "@types";
+import { removeDuplicates } from "../utils/lib";
 
 interface CommandRegister {
 	command: string;
-	callbackAction: (file: Uri, files: Uri[]) => void;
-}
-function registerCommand(register: CommandRegister | CommandRegister[]): void {
-	[register].flat().forEach(registry => commands.registerCommand(registry.command, registry.callbackAction));
+	callbackAction: (files: string[]) => void;
 }
 
-function executeCommand(command: string | string[], args: (string | boolean | string[])[]) {
-	[command].flat().forEach(async (command: string) => await commands.executeCommand(command, ...args));
+class VSCodeCommands {
+	private commands: typeof VSCode.commands = VSCode.commands;
+
+	registerCommand(register: CommandRegister | CommandRegister[]) {
+		[register].flat().forEach(registry =>
+			this.commands.registerCommand(registry.command, (...files: VSCode.Uri[]) => {
+				const filePaths = files
+					.flat()
+					.map(file => file.path)
+					.filter(path => path !== undefined);
+				registry.callbackAction(removeDuplicates(filePaths) as string[]);
+			})
+		);
+	}
+
+	executeCommand(command: string | string[], args: (string | boolean | string[])[]) {
+		[command].flat().forEach(async command => await this.commands.executeCommand(command, ...args));
+	}
+
+	executeCommandContext(command: string | string[], args: (string | boolean | string[])[]) {
+		[command].flat().forEach(command => this.commands.executeCommand("setContext", command, ...args));
+	}
+
+	installExtension(extensionName: string | string[]) {
+		this.executeCommand(["extension.open", "workbench.extensions.installExtension"], [extensionName].flat());
+	}
+
+	reloadWorkspace() {
+		this.executeCommand("workbench.action.reloadWindow", []);
+	}
 }
 
-function setCommandContext(command: string | string[], args: (string | boolean | number)[]) {
-	[command].flat().forEach((command: string) => commands.executeCommand("setContext", command, args));
-}
-
-const editorCommands = {
-	registerCommand,
-	executeCommand,
-	setCommandContext
-};
-export { Uri, editorCommands };
+export default VSCodeCommands;

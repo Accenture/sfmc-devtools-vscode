@@ -7,7 +7,7 @@ const path = require("path");
 /**@type {import('webpack').Configuration}*/
 const config = {
 	target: "node",
-	entry: "./src_ref/extension.ts",
+	entry: "./src/extension.ts",
 	output: {
 		path: path.resolve(__dirname, "dist"),
 		filename: "extension.bundle.js",
@@ -23,12 +23,12 @@ const config = {
 	resolve: {
 		extensions: [".ts", ".js",],
 		alias: {
-			"@enums": path.resolve(__dirname, "src_ref/enums"),
-			"@constants": path.resolve(__dirname, "src_ref/constants"),
-			"@config": path.resolve(__dirname, "src_ref/config"),
-			"@messages": path.resolve(__dirname, "src_ref/messages"),
-			"@types": path.resolve(__dirname, "src_ref/types"),
-			"utils": path.resolve(__dirname, "src_ref/utils")
+			"@enums": path.resolve(__dirname, "src/enums"),
+			"@constants": path.resolve(__dirname, "src/constants"),
+			"@config": path.resolve(__dirname, "src/config"),
+			"@messages": path.resolve(__dirname, "src/messages"),
+			"@types": path.resolve(__dirname, "src/types"),
+			"utils": path.resolve(__dirname, "src/utils")
 		}
 	},
 	module: {

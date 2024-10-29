@@ -29,5 +29,5 @@
       "@typescript-eslint/typedef": "error",
       "@typescript-eslint/no-inferrable-types": "error"
   },
-  "ignorePatterns": ["dist","src_ref/**/*.d.ts"]
+  "ignorePatterns": ["dist","src/**/*.d.ts"]
 }

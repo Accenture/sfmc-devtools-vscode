@@ -317,6 +317,7 @@ class DevToolsExtension {
 					? MessagesEditor.runningCommandSuccess
 					: MessagesEditor.runningCommandFailure;
 
+				// Options to be displayed in the modal message
 				const infoMessageOptions = ["More Details"];
 
 				this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
