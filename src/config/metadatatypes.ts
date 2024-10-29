@@ -1,5 +1,10 @@
 import { TDevTools } from "@types";
 
+/**
+ * Metadata Types default list
+ *
+ * @type {TDevTools.IMetadataTypes[]}
+ */
 const metadataTypesList: TDevTools.IMetadataTypes[] = [
 	{
 		name: "Asset-[Subtype]",
