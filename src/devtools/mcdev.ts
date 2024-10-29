@@ -6,23 +6,70 @@ import { MessagesDevTools } from "@messages";
 import { TDevTools, TUtils } from "@types";
 import { Lib, Terminal } from "utils";
 
+/**
+ * Mcdev class
+ *
+ * @class Mcdev
+ * @typedef {Mcdev}
+ */
 class Mcdev {
+	/**
+	 * DevTools package name
+	 *
+	 * @private
+	 * @type {string}
+	 */
 	private packageName = "mcdev";
+	/**
+	 * MetadataTypes class instance
+	 *
+	 * @private
+	 * @type {MetadataTypes}
+	 */
 	private metadataTypes: MetadataTypes;
+	/**
+	 * List of Commands
+	 *
+	 * @private
+	 * @type {Commands[]}
+	 */
 	private commandsTypes: Commands[] = [new AdminCommands(), new StandardCommands()];
 
+	/**
+	 * Creates an instance of Mcdev.
+	 *
+	 * @constructor
+	 */
 	constructor() {
 		this.metadataTypes = new MetadataTypes();
 	}
 
+	/**
+	 * Gets Mcdev package name
+	 *
+	 * @public
+	 * @returns {string} package name
+	 */
 	public getPackageName(): string {
 		return this.packageName;
 	}
 
+	/**
+	 * Checks if Mcdev package is installed
+	 *
+	 * @public
+	 * @returns {boolean} true if mcdev package is installed else false
+	 */
 	public isInstalled(): boolean {
 		return Terminal.isPackageInstalled(this.packageName);
 	}
 
+	/**
+	 * Installs Mcdev package
+	 *
+	 * @public
+	 * @returns {{ success: boolean; error: string }} returns success or error after installing the package
+	 */
 	public install(): { success: boolean; error: string } {
 		console.log("== Mcdev: Install ==");
 		try {
@@ -33,7 +80,15 @@ class Mcdev {
 		}
 	}
 
-	public async updateMetadataTypes(projectPath: string) {
+	/**
+	 * Executes the Mcdev command "ExplainTypes" to update the Metadata Types file
+	 *
+	 * @public
+	 * @async
+	 * @param {string} projectPath - current project path
+	 * @returns {Promise<void>}
+	 */
+	public async updateMetadataTypes(projectPath: string): Promise<void> {
 		console.log("== Mcdev: Update MetadataType ==");
 		const executeOnResult = ({ output, error }: TUtils.IOutputLogger) => {
 			if (error) throw new Error(`[mcdev_updateMetadataTypes]: ${error}`);
@@ -42,7 +97,14 @@ class Mcdev {
 		this.execute("explainTypes", executeOnResult, [projectPath]);
 	}
 
-	public convertPathsToFiles(paths: string[]): TDevTools.IFileFormat[] {
+	/**
+	 * Convert files paths to DevTools File Format
+	 *
+	 * @private
+	 * @param {string[]} paths - file paths
+	 * @returns {TDevTools.IFileFormat[]} files formatted in DevTool File Format
+	 */
+	private convertPathsToFiles(paths: string[]): TDevTools.IFileFormat[] {
 		console.log("== Mcdev: Convert File Paths ==");
 
 		const convertToFileFormat = (path: string): TDevTools.IFileFormat => {
@@ -80,6 +142,13 @@ class Mcdev {
 		return paths.map(convertToFileFormat);
 	}
 
+	/**
+	 * Retrieves Command by sub command name
+	 *
+	 * @private
+	 * @param {string} name - name of the sub command
+	 * @returns {Commands} Command class instance
+	 */
 	private getCommandBySubCommandName(name: string): Commands {
 		console.log("== Mcdev: Get Command By Sub Command name ==");
 		const [mcdevCommand]: Commands[] = Object.values(this.commandsTypes).filter((mcdevCommand: Commands) =>
@@ -88,6 +157,13 @@ class Mcdev {
 		return mcdevCommand;
 	}
 
+	/**
+	 * Maps DevTools Files Format to Command Parameters
+	 *
+	 * @private
+	 * @param {TDevTools.IFileFormat[]} files - files to be converted
+	 * @returns {TDevTools.ICommandParameters[]} - list of command parameters
+	 */
 	private mapToCommandParameters(files: TDevTools.IFileFormat[]): TDevTools.ICommandParameters[] {
 		type MetadataByCredential = {
 			[projectPath: string]: { [topFolder: string]: { [credential: string]: TDevTools.IMetadataCommand[] } };
@@ -119,6 +195,15 @@ class Mcdev {
 		);
 	}
 
+	/**
+	 * Gets credential naming convention by file level
+	 *
+	 * @private
+	 * @param {TDevTools.IFileFormat} param.level - file level
+	 * @param {TDevTools.IFileFormat} param.credentialsName - credential name
+	 * @param {TDevTools.IFileFormat} param.businessUnit - business unit name
+	 * @returns {string} credentials and business name formatted according the DevTools command execution requirement
+	 */
 	private getCredentialByFileLevel({ level, credentialsName, businessUnit }: TDevTools.IFileFormat): string {
 		switch (level) {
 			case "top_folder":
@@ -130,6 +215,16 @@ class Mcdev {
 		}
 	}
 
+	/**
+	 * Gets Metadata Type Configuration by file level
+	 *
+	 * @private
+	 * @param {TDevTools.IFileFormat} param.level - file level
+	 * @param {TDevTools.IFileFormat} param.path - file path
+	 * @param {TDevTools.IFileFormat} param.metadataType - file metadata type
+	 * @param {TDevTools.IFileFormat} param.filename - file name
+	 * @returns {(TDevTools.IMetadataCommand | undefined)} metadata command configuration according to DevTools command execution requirement
+	 */
 	private getMetadataByFileLevel({
 		level,
 		path,
@@ -146,6 +241,14 @@ class Mcdev {
 		}
 	}
 
+	/**
+	 * Checks if a Metadata Type is supported for a specific execution command action
+	 *
+	 * @private
+	 * @param {string} action - command actions
+	 * @param {TDevTools.IFileFormat[]} files - files to be validated
+	 * @returns {{ files: TDevTools.IFileFormat[]; invalidMetadataTypes: string[] }} all the files that passed validation and a list of invalid metadata types
+	 */
 	private validateFilesByMetadataTypeAction(
 		action: string,
 		files: TDevTools.IFileFormat[]
@@ -157,8 +260,10 @@ class Mcdev {
 
 		const filterValidMetadataTypes = ({ level, metadataType }: TDevTools.IFileFormat) => {
 			if (level !== "mdt_folder" && level !== "file") return true;
+			// Checks if the metadata type is supported for the command action
 			const isValidMetadataType: boolean =
 				metadataType !== undefined && metadataTypes.isSupportedMetadataTypeByAction(action, metadataType);
+			// Adds all the metadata types that are not supported into a list
 			if (!isValidMetadataType && metadataType) invalidMetadataTypes.push(metadataType);
 			return isValidMetadataType;
 		};
@@ -166,11 +271,21 @@ class Mcdev {
 		return { files, invalidMetadataTypes: Lib.removeDuplicates(invalidMetadataTypes) as string[] };
 	}
 
+	/**
+	 * Executes the DevTools Command
+	 *
+	 * @public
+	 * @async
+	 * @param {string} command - command name
+	 * @param {({ info, output, error }: TUtils.IOutputLogger) => void} commandHandler - command handler
+	 * @param {string[]} filePaths - file paths
+	 * @returns {Promise<{ success: boolean }>} success is true if command executed successfully otherwise false
+	 */
 	public async execute(
 		command: string,
 		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void,
 		filePaths: string[]
-	) {
+	): Promise<{ success: boolean }> {
 		console.log("== Mcdev: Execute ==");
 
 		// Gets the MCDEV command class based on the selected command
@@ -193,6 +308,7 @@ class Mcdev {
 		if (mcdevCommand && commandParameters.length) {
 			const commandConfig = mcdevCommand.run(command, commandParameters);
 			for (const [parameters, projectPath] of commandConfig.config) {
+				// Command terminal configuration
 				const terminalConfig: TUtils.ITerminalCommandRunner = {
 					command: this.getPackageName(),
 					commandArgs: [commandConfig.alias, parameters],
@@ -207,13 +323,17 @@ class Mcdev {
 					terminalConfig,
 					false
 				);
+				// Adds the result of the command execution to a list
 				commandResults.push(success);
 			}
 		}
+
+		// if there is invalid metadata type it will return a unsupported metadata type message
 		if (invalidMetadataTypes.length) {
 			commandResults.push(false);
 			commandHandler({ error: MessagesDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes) });
 		}
+		// Returns success as true if every command execution was successfull
 		return { success: commandResults.every(result => result === true) };
 	}
 }

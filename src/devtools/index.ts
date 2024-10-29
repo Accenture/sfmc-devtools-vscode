@@ -5,15 +5,45 @@ import { EnumsExtension } from "@enums";
 import { TEditor, TUtils } from "@types";
 import { Lib } from "utils";
 
+/**
+ * DevTools Extension class
+ *
+ * @class DevToolsExtension
+ * @typedef {DevToolsExtension}
+ */
 class DevToolsExtension {
+	/**
+	 * Vscode Editor class instance
+	 *
+	 * @private
+	 * @type {TEditor.VSCodeEditor}
+	 */
 	private vscodeEditor: TEditor.VSCodeEditor;
+	/**
+	 * Mcdev class instance
+	 *
+	 * @private
+	 * @type {Mcdev}
+	 */
 	private mcdev: Mcdev;
 
+	/**
+	 * Creates an instance of DevToolsExtension.
+	 *
+	 * @constructor
+	 * @param {TEditor.IExtensionContext} context - extension context
+	 */
 	constructor(context: TEditor.IExtensionContext) {
 		this.vscodeEditor = new TEditor.VSCodeEditor(context);
 		this.mcdev = new Mcdev();
 	}
 
+	/**
+	 * Initializes the extension
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
 	async init(): Promise<void> {
 		console.log("== Init ==");
 		// Checks if is there any DevTools Project
@@ -21,6 +51,12 @@ class DevToolsExtension {
 		if (isDevToolsProject) this.loadConfiguration();
 	}
 
+	/**
+	 * Checks if the current VSCode workspace has DevTools projects
+	 *
+	 * @async
+	 * @returns {Promise<boolean>} true if there is a DevTools project else false
+	 */
 	async isDevToolsProject(): Promise<boolean> {
 		console.log("== Is Project ==");
 		const requiredProjectFiles = ConfigDevTools.requiredFiles || [];
@@ -33,7 +69,13 @@ class DevToolsExtension {
 		return filesInFolderResult.every(fileResult => fileResult);
 	}
 
-	async loadConfiguration() {
+	/**
+	 * Initiates the extension configuration methods
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async loadConfiguration(): Promise<void> {
 		console.log("== Load Configuration ==");
 		try {
 			// Check if Mcdev is installed
@@ -60,7 +102,13 @@ class DevToolsExtension {
 		}
 	}
 
-	async mcdevInstall() {
+	/**
+	 * Installs DevTools package 'mcdev'
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async mcdevInstall(): Promise<void> {
 		console.log("== Install Mcdev ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 
@@ -101,14 +149,25 @@ class DevToolsExtension {
 		}
 	}
 
-	activateContextVariables() {
+	/**
+	 * Activates the extension context variables
+	 *
+	 * @returns {void}
+	 */
+	activateContextVariables(): void {
 		console.log("== Activate Context Variables ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 		// Sets vscode environment variable 'isproject' to true
 		vscodeCommands.executeCommandContext(`${ConfigDevTools.extensionName}.config.isproject`, [true]);
 	}
 
-	async activateRecommendedExtensions() {
+	/**
+	 * Activates the extension recommended extensions
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async activateRecommendedExtensions(): Promise<void> {
 		console.log("== Activate Recommended Extensions ==");
 		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
 		const vscodeExtensions = this.vscodeEditor.getExtensions();
@@ -147,7 +206,12 @@ class DevToolsExtension {
 		}
 	}
 
-	activateContainers() {
+	/**
+	 * Activates the extension containers
+	 *
+	 * @returns {void}
+	 */
+	activateContainers(): void {
 		console.log("== Activate Containers ==");
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		const vscodeCommands = this.vscodeEditor.getCommands();
@@ -169,7 +233,13 @@ class DevToolsExtension {
 		vscodeWindow.displayStatusBarItem(packageName);
 	}
 
-	async writeExtensionInformation() {
+	/**
+	 * Writes initial extension information to the output channel
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async writeExtensionInformation(): Promise<void> {
 		const context = this.vscodeEditor.getContext();
 		const workspace = this.vscodeEditor.getWorkspace();
 		const packageName = this.mcdev.getPackageName();
@@ -192,13 +262,25 @@ class DevToolsExtension {
 		messages.forEach(message => this.writeLog(packageName, message, EnumsExtension.LoggerLevel.INFO));
 	}
 
-	updateContainers(containerName: string, fields: { [key in TEditor.StatusBarFields]?: string }) {
+	/**
+	 * Updates extension containers
+	 *
+	 * @param {string} containerName - name of the container
+	 * @param {{ [key in TEditor.StatusBarFields]?: string }} fields - fields and values to update
+	 * @returns {void}
+	 */
+	updateContainers(containerName: string, fields: { [key in TEditor.StatusBarFields]?: string }): void {
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		// Updates the status bar container
 		vscodeWindow.updateStatusBarItem(containerName, fields);
 	}
 
-	updateMetadataTypesFile() {
+	/**
+	 * Updates the Metadata Types file
+	 *
+	 * @returns {void}
+	 */
+	updateMetadataTypesFile(): void {
 		try {
 			const workspace = this.vscodeEditor.getWorkspace();
 			const projectPath = workspace.getWorkspacePath();
@@ -208,6 +290,15 @@ class DevToolsExtension {
 		}
 	}
 
+	/**
+	 * Shows a VScode Modal message
+	 *
+	 * @async
+	 * @param {("info" | "error")} type - modal message type
+	 * @param {string} title - modal message
+	 * @param {string[]} options - options in the modal
+	 * @returns {Promise<string | undefined>} returs the option the user clicked or undefined if no option was selected
+	 */
 	async showModalMessage(type: "info" | "error", title: string, options: string[]): Promise<string | undefined> {
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		const answer =
@@ -217,7 +308,15 @@ class DevToolsExtension {
 		return answer;
 	}
 
-	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel) {
+	/**
+	 * Writes logs to output channel according to Logger Level
+	 *
+	 * @param {string} ouputChannel - ouput channel name
+	 * @param {string} message - message to be displayed
+	 * @param {EnumsExtension.LoggerLevel} level - logger level
+	 * @returns {void}
+	 */
+	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel): void {
 		const timestamp = Lib.getCurrentTime();
 		const nonOutputLevel = [EnumsExtension.LoggerLevel.DEBUG, EnumsExtension.LoggerLevel.ERROR];
 		// every logger level except output should be in format 'timestamp level: message'
@@ -227,7 +326,14 @@ class DevToolsExtension {
 		// logs into extension file
 	}
 
-	logTextOutputChannel(name: string, text: string) {
+	/**
+	 * Logs text to a specific Ouput Channel
+	 *
+	 * @param {string} name - name of the ouput channel
+	 * @param {string} text - text to be displayed in the output channel
+	 * @returns {void}
+	 */
+	logTextOutputChannel(name: string, text: string): void {
 		try {
 			const vscodeWindow = this.vscodeEditor.getWindow();
 			vscodeWindow.appendTextToOutputChannel(name, text);
@@ -236,7 +342,13 @@ class DevToolsExtension {
 		}
 	}
 
-	showOuputChannel(name: string) {
+	/**
+	 * Shows a specific output channel by name
+	 *
+	 * @param {string} name - name of the channel
+	 * @returns {void}
+	 */
+	showOuputChannel(name: string): void {
 		try {
 			const vscodeWindow = this.vscodeEditor.getWindow();
 			vscodeWindow.displayOutputChannel(name);
@@ -245,6 +357,11 @@ class DevToolsExtension {
 		}
 	}
 
+	/**
+	 * Gets the current open tab file path
+	 *
+	 * @returns {(string | undefined)} - opened file path or undefined otherwise
+	 */
 	getActiveTabFilePath(): string | undefined {
 		try {
 			const vscodeWindow = this.vscodeEditor.getWindow();
@@ -255,16 +372,29 @@ class DevToolsExtension {
 		}
 	}
 
+	/**
+	 * Displayes the Vscode In Progress modal
+	 *
+	 * @param {string} title - message to be displayed in the modal
+	 * @param {boolean} cancellable - options to define if the modal is cancellable
+	 * @param {TEditor.ProgressBarHandler} progressBarHandler - handler function when showing the in progress modal
+	 * @returns {void}
+	 */
 	activateNotificationProgressBar(
 		title: string,
 		cancellable: boolean,
 		progressBarHandler: TEditor.ProgressBarHandler
-	) {
+	): void {
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		vscodeWindow.showProgressBar(title, "Notification", cancellable, progressBarHandler);
 	}
 
-	activateMenuCommands() {
+	/**
+	 * Registers the extension menu commands
+	 *
+	 * @returns {void}
+	 */
+	activateMenuCommands(): void {
 		console.log("== Activate Menu Commands ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 
@@ -282,7 +412,14 @@ class DevToolsExtension {
 		);
 	}
 
-	executeMenuCommands(command: string, files: string[]) {
+	/**
+	 * Executes the extension menu commands
+	 *
+	 * @param {string} command - extension command
+	 * @param {string[]} files - file paths detected by selection
+	 * @returns {void}
+	 */
+	executeMenuCommands(command: string, files: string[]): void {
 		console.log("== Execute Menu Commands ==");
 		if (files.length > 0) {
 			const packageName = this.mcdev.getPackageName();
