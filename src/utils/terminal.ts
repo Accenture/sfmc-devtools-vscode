@@ -2,6 +2,14 @@ import { spawn, spawnSync, SpawnSyncReturns } from "child_process";
 import { TUtils } from "@types";
 import { Lib } from "utils";
 
+/**
+ * Executes a terminal command synchronously
+ *
+ * @param {TUtils.ITerminalCommandRunner} param.command - terminal command
+ * @param {TUtils.ITerminalCommandRunner} param.commandArgs - terminal arguments
+ * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
+ * @returns {TUtils.ITerminalCommandResult} object configured with the result of executing the terminal command
+ */
 function executeCommandSync({
 	command,
 	commandArgs,
@@ -14,6 +22,15 @@ function executeCommandSync({
 	};
 }
 
+/**
+ * Executes a terminal command asynchronously
+ *
+ * @param {TUtils.ITerminalCommandRunner} param.command - terminal command
+ * @param {TUtils.ITerminalCommandRunner} param.commandArgs - terminal arguments
+ * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
+ * @param {TUtils.ITerminalCommandRunner} param.commandHandler - terminal handler function
+ * @returns {Promise<TUtils.ITerminalCommandResult>} object configured with the result of executing the terminal command
+ */
 function executeCommand({
 	command,
 	commandArgs,
@@ -37,16 +54,31 @@ function executeCommand({
 	});
 }
 
+/**
+ * Executes terminal command either synchronously or asynchronously
+ *
+ * @param {TUtils.ITerminalCommandRunner} param.command - terminal command
+ * @param {TUtils.ITerminalCommandRunner} param.commandArgs - terminal arguments
+ * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
+ * @param {TUtils.ITerminalCommandRunner} param.commandHandler - terminal handler function
+ * @param {boolean} sync - true if command should run synchronously false otherwise
+ * @returns {(TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult>)} object configured with the result of executing the terminal command in an sync or async way
+ */
 function executeTerminalCommand(
 	{ command, commandArgs, commandCwd, commandHandler }: TUtils.ITerminalCommandRunner,
 	sync: boolean
 ): TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult> {
-	if (commandCwd) commandCwd = Lib.removeLeadingDrivePath(commandCwd);
+	if (commandCwd) commandCwd = Lib.removeLeadingRootDrivePath(commandCwd);
 	return sync
 		? executeCommandSync({ command, commandArgs, commandCwd })
 		: executeCommand({ command, commandArgs, commandCwd, commandHandler });
 }
 
+/**
+ * Gets a list of the globally installed packages
+ *
+ * @returns {string[]} list of the installed packages names
+ */
 function getGlobalInstalledPackages(): string[] {
 	try {
 		const commandArgs: TUtils.ITerminalCommandRunner = { command: "npm", commandArgs: ["list", "-g", "--json"] };
@@ -68,11 +100,23 @@ function getGlobalInstalledPackages(): string[] {
 	}
 }
 
+/**
+ * Checks if a package is installed globally
+ *
+ * @param {string} packageName - name of the package
+ * @returns {boolean} true if package is installed globally false otherwise
+ */
 function isPackageInstalled(packageName: string): boolean {
 	const installedPackages = getGlobalInstalledPackages();
 	return installedPackages.includes(packageName);
 }
 
+/**
+ * Installs a package globally in the computer
+ *
+ * @param {string} packageName - package name
+ * @returns {TUtils.ITerminalCommandResult} object configured with the result of executing the terminal command
+ */
 function installPackage(packageName: string): TUtils.ITerminalCommandResult {
 	const commandArgs: TUtils.ITerminalCommandRunner = {
 		command: "npm",

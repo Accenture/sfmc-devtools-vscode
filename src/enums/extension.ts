@@ -1,14 +1,29 @@
+/**
+ * Confirmation User Options
+ *
+ * @enum {number}
+ */
 enum Confirmation {
 	Yes = "yes",
 	No = "no"
 }
 
+/**
+ * Recommended Extensions User options
+ *
+ * @enum {number}
+ */
 enum RecommendedExtensionsOptions {
 	"Install" = "install",
 	"Not Now" = "not now",
 	"Do not show again" = "do not show again"
 }
 
+/**
+ * Status Bar Icon Options
+ *
+ * @enum {number}
+ */
 enum StatusBarIcon {
 	success = "check-all",
 	retrieve = "cloud-download",
@@ -18,6 +33,11 @@ enum StatusBarIcon {
 	info = "extensions-info-message"
 }
 
+/**
+ * Logger Level Options
+ *
+ * @enum {number}
+ */
 enum LoggerLevel {
 	DEBUG = "debug",
 	INFO = "info",

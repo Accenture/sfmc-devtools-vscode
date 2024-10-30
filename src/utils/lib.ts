@@ -1,26 +1,30 @@
+/**
+ * Removes duplicate values from a string/number array
+ *
+ * @param {(string | number)[]} array - array of string/numbers
+ * @returns {(string | number)[]} array of string/number without repetitions
+ */
 function removeDuplicates(array: (string | number)[]): (string | number)[] {
 	return [...new Set(array)];
 }
 
-function executeAfterDelay(callback: () => void, delay: number) {
+/**
+ * Executes a function after some time
+ *
+ * @param {() => void} callback - action method
+ * @param {number} delay - time in ms
+ * @returns {void}
+ */
+function executeAfterDelay(callback: () => void, delay: number): void {
 	setTimeout(callback, delay);
 }
 
-function existsValueInArrObjects(
-	array: { [key: string]: string | number }[],
-	key: string,
-	value: string | number
-): boolean {
-	return array.filter(object => object[key] !== undefined && object[key] === value).length > 0;
-}
-
-function extractValueInArrObjects<T extends { [key: string]: string | number | undefined }>(
-	array: T[],
-	key: keyof T
-): (string | number)[] {
-	return array.map(object => object[key]).filter(value => value !== undefined) as (string | number)[];
-}
-
+/**
+ * Removes paths if their parent folder path already exists
+ *
+ * @param {string[]} paths
+ * @returns {string[]} array of paths without sub paths
+ */
 function removeSubPathsByParent(paths: string[]): string[] {
 	paths.sort((pathA, pathB) => pathA.localeCompare(pathB));
 
@@ -37,11 +41,22 @@ function removeSubPathsByParent(paths: string[]): string[] {
 	return paths.filter(removePaths);
 }
 
-function removeLeadingDrivePath(path: string): string {
+/**
+ * Removes the leading root drive from a path
+ *
+ * @param {string} path - path
+ * @returns {string} - path with the leading root drive removed
+ */
+function removeLeadingRootDrivePath(path: string): string {
 	return path.replace(/^\/[a-zA-Z]:/i, "");
 }
 
-function getCurrentTime() {
+/**
+ * Gets the current timestamp in format hh:mm:ss
+ *
+ * @returns {string} - timestamp hh:mm:ss
+ */
+function getCurrentTime(): string {
 	const now = new Date();
 	const hours = String(now.getHours()).padStart(2, "0");
 	const minutes = String(now.getMinutes()).padStart(2, "0");
@@ -49,12 +64,4 @@ function getCurrentTime() {
 	return `${hours}:${minutes}:${seconds}`;
 }
 
-export {
-	removeDuplicates,
-	existsValueInArrObjects,
-	extractValueInArrObjects,
-	removeSubPathsByParent,
-	removeLeadingDrivePath,
-	executeAfterDelay,
-	getCurrentTime
-};
+export { removeDuplicates, removeSubPathsByParent, removeLeadingRootDrivePath, executeAfterDelay, getCurrentTime };
