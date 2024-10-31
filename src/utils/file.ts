@@ -22,9 +22,11 @@ function fileExists(path: string | string[]): string[] {
  */
 function extractFileName(files: string | string[]): string[] {
 	return [files].flat().map(file => {
-		const endOfFileNameIndex = file.lastIndexOf(".", file.lastIndexOf(".") - 1);
-		if (endOfFileNameIndex < 0) return file;
-		return file.substring(0, endOfFileNameIndex);
+		const fileName = file.split(/[\/]/).pop() || file;
+		const lastDotIndex = fileName.lastIndexOf(".");
+		const secondLastDotIndex = fileName.lastIndexOf(".", fileName.lastIndexOf(".") - 1);
+		if (secondLastDotIndex < 0) return file.substring(0, lastDotIndex);
+		return fileName.substring(0, secondLastDotIndex);
 	});
 }
 

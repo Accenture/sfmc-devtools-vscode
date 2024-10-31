@@ -3,7 +3,7 @@ import { ConfigDevTools } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsExtension } from "@enums";
 import { TEditor, TUtils } from "@types";
-import { Lib } from "utils";
+import { File, Lib } from "utils";
 
 /**
  * DevTools Extension class
@@ -113,7 +113,7 @@ class DevToolsExtension {
 		const vscodeCommands = this.vscodeEditor.getCommands();
 
 		// Asks user if he wishes to install mcdev
-		const userAnswer = await this.showModalMessage(
+		const userAnswer = await this.showInformationMessage(
 			"info",
 			MessagesDevTools.noMcdevInstalled,
 			Object.keys(EnumsExtension.Confirmation)
@@ -123,12 +123,12 @@ class DevToolsExtension {
 			// if mcdev was successfully installed -> reloads vscode editor window
 			// else shows information error message
 			if (success) {
-				const reload = await this.showModalMessage("info", MessagesDevTools.mcdevInstallSuccess, [
+				const reload = await this.showInformationMessage("info", MessagesDevTools.mcdevInstallSuccess, [
 					"Reload Window"
 				]);
 				if (reload) vscodeCommands.reloadWorkspace();
 			} else {
-				this.showModalMessage("error", MessagesDevTools.mcdevInstallError, []);
+				this.showInformationMessage("error", MessagesDevTools.mcdevInstallError, []);
 				if (error) this.writeLog(this.mcdev.getPackageName(), error, EnumsExtension.LoggerLevel.ERROR);
 			}
 		};
@@ -188,7 +188,7 @@ class DevToolsExtension {
 
 		if (uninstalledExtensions.length && recommendExtensions) {
 			// Asks the user if he wants to install recommended extensions
-			const userAnswer = await this.showModalMessage(
+			const userAnswer = await this.showInformationMessage(
 				"info",
 				MessagesEditor.recommendedExtensions,
 				Object.keys(EnumsExtension.RecommendedExtensionsOptions)
@@ -291,7 +291,7 @@ class DevToolsExtension {
 	}
 
 	/**
-	 * Shows a VScode Modal message
+	 * Shows a VScode Information message
 	 *
 	 * @async
 	 * @param {("info" | "error")} type - modal message type
@@ -299,11 +299,16 @@ class DevToolsExtension {
 	 * @param {string[]} options - options in the modal
 	 * @returns {Promise<string | undefined>} returs the option the user clicked or undefined if no option was selected
 	 */
-	async showModalMessage(type: "info" | "error", title: string, options: string[]): Promise<string | undefined> {
+	async showInformationMessage(
+		type: "info" | "error",
+		title: string,
+		options: string[],
+		isModal?: boolean
+	): Promise<string | undefined> {
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		const answer =
 			type === "info"
-				? await vscodeWindow.showInformationMessageWithOptions(title, options)
+				? await vscodeWindow.showInformationMessageWithOptions(title, options, isModal || false)
 				: await vscodeWindow.showErrorMessageWithOptions(title, options);
 		return answer;
 	}
@@ -406,10 +411,46 @@ class DevToolsExtension {
 					const activeTabFilePath = this.getActiveTabFilePath();
 					// When the menu command is done from the file tab it requires the active open file path
 					if (!files.length && activeTabFilePath) files = [activeTabFilePath];
-					this.executeMenuCommands(command, files);
+					if (files.length) this.executeMenuCommand(command, files);
 				}
 			})
 		);
+	}
+
+	executeMenuCommand(command: string, files: string[]) {
+		const menuCommandsHandlers: { [key: string]: () => void } = {
+			retrieve: () => this.handleRetrieveCommand(files),
+			deploy: () => this.handleDeployCommand(files),
+			delete: () => this.handleDeleteCommand(files)
+		};
+
+		const menuCommandHandler = menuCommandsHandlers[command];
+		if (menuCommandHandler) menuCommandHandler();
+		else
+			this.writeLog(
+				this.mcdev.getPackageName(),
+				`[index_executeMenuCommand]: Invalid Menu Command: ${command}`,
+				EnumsExtension.LoggerLevel.ERROR
+			);
+	}
+
+	handleRetrieveCommand(files: string[]) {
+		this.executeCommand("retrieve", files);
+	}
+
+	handleDeployCommand(files: string[]) {
+		this.executeCommand("deploy", files);
+	}
+
+	async handleDeleteCommand(files: string[]) {
+		const confirmationAnswer = await this.showInformationMessage(
+			"info",
+			MessagesEditor.deleteConfirmation(File.extractFileName(files)),
+			Object.keys(EnumsExtension.Confirmation),
+			true
+		);
+		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
+		this.executeCommand("delete", files);
 	}
 
 	/**
@@ -419,83 +460,77 @@ class DevToolsExtension {
 	 * @param {string[]} files - file paths detected by selection
 	 * @returns {void}
 	 */
-	executeMenuCommands(command: string, files: string[]): void {
+	executeCommand(command: string, files: string[]): void {
 		console.log("== Execute Menu Commands ==");
-		if (files.length > 0) {
-			const packageName = this.mcdev.getPackageName();
-			// inital running command status bar configuration
-			const initialStatusBarColor = "";
-			const initialStatusBarIcon: string =
-				EnumsExtension.StatusBarIcon[command as keyof typeof EnumsExtension.StatusBarIcon];
-			const initialStatusBarTitle = `$(${initialStatusBarIcon}) ${packageName}`;
-			const inProgressBarTitle = MessagesEditor.runningCommand;
+		const packageName = this.mcdev.getPackageName();
+		// inital running command status bar configuration
+		const initialStatusBarColor = "";
+		const initialStatusBarIcon: string =
+			EnumsExtension.StatusBarIcon[command as keyof typeof EnumsExtension.StatusBarIcon];
+		const initialStatusBarTitle = `$(${initialStatusBarIcon}) ${packageName}`;
+		const inProgressBarTitle = MessagesEditor.runningCommand;
 
-			const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
-				const message = info || output || error;
+		const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
+			const message = info || output || error;
 
-				let loggerLevel = EnumsExtension.LoggerLevel.DEBUG;
-				if (info) loggerLevel = EnumsExtension.LoggerLevel.INFO;
-				if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
-				if (error) loggerLevel = EnumsExtension.LoggerLevel.WARN;
+			let loggerLevel = EnumsExtension.LoggerLevel.DEBUG;
+			if (info) loggerLevel = EnumsExtension.LoggerLevel.INFO;
+			if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
+			if (error) loggerLevel = EnumsExtension.LoggerLevel.WARN;
 
-				this.writeLog(packageName, message, loggerLevel);
-			};
+			this.writeLog(packageName, message, loggerLevel);
+		};
 
-			const mcdevExecuteOnResult = async (success: boolean) => {
-				const statusBarIcon = success
-					? EnumsExtension.StatusBarIcon.success
-					: EnumsExtension.StatusBarIcon.error;
-				// changes the status bar icon and and color according to the execution result of the command
-				const newStatusBarColor = success ? initialStatusBarColor : "error";
-				const newStatusBarTitle = `$(${statusBarIcon}) ${packageName}`;
+		const mcdevExecuteOnResult = async (success: boolean) => {
+			const statusBarIcon = success ? EnumsExtension.StatusBarIcon.success : EnumsExtension.StatusBarIcon.error;
+			// changes the status bar icon and and color according to the execution result of the command
+			const newStatusBarColor = success ? initialStatusBarColor : "error";
+			const newStatusBarTitle = `$(${statusBarIcon}) ${packageName}`;
 
-				// Sets the message to show in the modal depending on the execution result
-				const infoMessage = success
-					? MessagesEditor.runningCommandSuccess
-					: MessagesEditor.runningCommandFailure;
+			// Sets the message to show in the modal depending on the execution result
+			const infoMessage = success ? MessagesEditor.runningCommandSuccess : MessagesEditor.runningCommandFailure;
 
-				// Options to be displayed in the modal message
-				const infoMessageOptions = ["More Details"];
+			// Options to be displayed in the modal message
+			const infoMessageOptions = ["More Details"];
 
-				this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
+			this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
 
-				if (!success)
-					// Changes back the status bar icon and backaground color to inital configuration after some time
-					Lib.executeAfterDelay(
-						() =>
-							this.updateContainers(packageName, {
-								text: `$(${EnumsExtension.StatusBarIcon.success}) ${packageName}`,
-								backgroundColor: initialStatusBarColor
-							}),
-						ConfigDevTools.delayTimeUpdateStatusBar
-					);
-
-				const moreDetails = await this.showModalMessage(
-					success ? "info" : "error",
-					infoMessage,
-					infoMessageOptions
+			if (!success)
+				// Changes back the status bar icon and backaground color to inital configuration after some time
+				Lib.executeAfterDelay(
+					() =>
+						this.updateContainers(packageName, {
+							text: `$(${EnumsExtension.StatusBarIcon.success}) ${packageName}`,
+							backgroundColor: initialStatusBarColor
+						}),
+					ConfigDevTools.delayTimeUpdateStatusBar
 				);
-				// if user clicks on 'More Details' button it will open the output channel
-				if (moreDetails) this.showOuputChannel(packageName);
-			};
 
-			this.updateContainers(packageName, { text: initialStatusBarTitle, backgroundColor: initialStatusBarColor });
-			// Execute the commands asynchronously
-			this.activateNotificationProgressBar(
-				inProgressBarTitle,
-				false,
-				() =>
-					new Promise(async resolve => {
-						const { success }: { success: boolean } = await this.mcdev.execute(
-							command,
-							mcdevExecuteOnOutput,
-							files
-						);
-						mcdevExecuteOnResult(success);
-						resolve(success);
-					})
+			const moreDetails = await this.showInformationMessage(
+				success ? "info" : "error",
+				infoMessage,
+				infoMessageOptions
 			);
-		}
+			// if user clicks on 'More Details' button it will open the output channel
+			if (moreDetails) this.showOuputChannel(packageName);
+		};
+
+		this.updateContainers(packageName, { text: initialStatusBarTitle, backgroundColor: initialStatusBarColor });
+		// Execute the commands asynchronously
+		this.activateNotificationProgressBar(
+			inProgressBarTitle,
+			false,
+			() =>
+				new Promise(async resolve => {
+					const { success }: { success: boolean } = await this.mcdev.execute(
+						command,
+						mcdevExecuteOnOutput,
+						files
+					);
+					mcdevExecuteOnResult(success);
+					resolve(success);
+				})
+		);
 	}
 }
 export default DevToolsExtension;

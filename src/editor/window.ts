@@ -46,8 +46,12 @@ class VSCodeWindow {
 	 * @param {string[]} actions - modal action options
 	 * @returns {Promise<string | undefined>} option selected by user or undefined if no selection
 	 */
-	async showInformationMessageWithOptions(message: string, actions: string[]): Promise<string | undefined> {
-		const response = await this.window.showInformationMessage(message, ...actions);
+	async showInformationMessageWithOptions(
+		message: string,
+		actions: string[],
+		modal: boolean
+	): Promise<string | undefined> {
+		const response = await this.window.showInformationMessage(message, { modal }, ...actions);
 		return response;
 	}
 

@@ -9,7 +9,8 @@ import { File } from "utils";
  */
 const MetadataTypesSupportedActions: { [action: string]: TDevTools.MetadataTypesActions[] } = {
 	retrieve: ["retrieve"],
-	deploy: ["create", "update"]
+	deploy: ["create", "update"],
+	delete: ["delete"]
 };
 
 /**
