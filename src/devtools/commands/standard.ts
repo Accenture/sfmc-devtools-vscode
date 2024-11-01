@@ -110,6 +110,12 @@ class StandardCommands extends Commands {
 		return { alias: deployAlias, config: deployConfig };
 	}
 
+	/**
+	 * Standard Command 'delete' execution
+	 *
+	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
+	 * @returns {TDevTools.ICommandConfig} command configuration
+	 */
 	delete(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Delete ==");
 		// command alias

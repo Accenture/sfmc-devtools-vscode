@@ -3,7 +3,7 @@ import { ConfigDevTools } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsExtension } from "@enums";
 import { TEditor, TUtils } from "@types";
-import { File, Lib } from "utils";
+import { Lib } from "utils";
 
 /**
  * DevTools Extension class
@@ -417,7 +417,14 @@ class DevToolsExtension {
 		);
 	}
 
-	executeMenuCommand(command: string, files: string[]) {
+	/**
+	 * Executes the Menu Command by command name
+	 *
+	 * @param {string} command - command name
+	 * @param {string[]} files - selected files paths
+	 * @returns {void}
+	 */
+	executeMenuCommand(command: string, files: string[]): void {
 		const menuCommandsHandlers: { [key: string]: () => void } = {
 			retrieve: () => this.handleRetrieveCommand(files),
 			deploy: () => this.handleDeployCommand(files),
@@ -434,18 +441,40 @@ class DevToolsExtension {
 			);
 	}
 
-	handleRetrieveCommand(files: string[]) {
+	/**
+	 * Handles the Menu Command 'retrieve'
+	 *
+	 * @param {string[]} files - selected files paths
+	 * @returns {void}
+	 */
+	handleRetrieveCommand(files: string[]): void {
 		this.executeCommand("retrieve", files);
 	}
 
-	handleDeployCommand(files: string[]) {
+	/**
+	 * Handles the Menu Command 'deploy'
+	 *
+	 * @param {string[]} files - selected files paths
+	 * @returns {void}
+	 */
+	handleDeployCommand(files: string[]): void {
 		this.executeCommand("deploy", files);
 	}
 
-	async handleDeleteCommand(files: string[]) {
+	/**
+	 * Handles the Menu Command 'delete'
+	 *
+	 * @async
+	 * @param {string[]} files - selected files paths
+	 * @returns {Promise<void>}
+	 */
+	async handleDeleteCommand(files: string[]): Promise<void> {
+		const fileNamesList = this.mcdev
+			.convertPathsToFiles(files)
+			.map(file => `${file.filename} (${file.metadataType})`);
 		const confirmationAnswer = await this.showInformationMessage(
 			"info",
-			MessagesEditor.deleteConfirmation(File.extractFileName(files)),
+			MessagesEditor.deleteConfirmation(fileNamesList),
 			Object.keys(EnumsExtension.Confirmation),
 			true
 		);
