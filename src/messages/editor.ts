@@ -3,5 +3,12 @@ const recommendedExtensions =
 const runningCommand = "Running DevTools command...";
 const runningCommandSuccess = "DevTools command has run successfully!";
 const runningCommandFailure = "Oh no. Something went wrong while running DevTools Command...";
+const deleteConfirmation = (items: string[]) =>
+	`Are you sure you want to delete the selected item${items.length > 1 ? "s" : ""} from the server?\n\n${items
+		.slice(0, 3)
+		.map(item => `Delete: ${item}`)
+		.join(
+			"\n"
+		)}${items.length > 3 ? `\n...and ${items.length - 3} more item${items.length - 3 > 1 ? "s" : ""}.` : ""}`;
 
-export { recommendedExtensions, runningCommand, runningCommandSuccess, runningCommandFailure };
+export { recommendedExtensions, runningCommand, runningCommandSuccess, runningCommandFailure, deleteConfirmation };

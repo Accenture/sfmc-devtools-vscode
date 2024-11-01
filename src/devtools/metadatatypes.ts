@@ -9,7 +9,8 @@ import { File } from "utils";
  */
 const MetadataTypesSupportedActions: { [action: string]: TDevTools.MetadataTypesActions[] } = {
 	retrieve: ["retrieve"],
-	deploy: ["create", "update"]
+	deploy: ["create", "update"],
+	delete: ["delete"]
 };
 
 /**
@@ -99,12 +100,12 @@ class MetadataTypes {
 			// configuration for asset mdtype
 			if (files.length === 1) return { metadataTypeName: `asset-${assetName}` };
 			else if (files.length > 1)
-				return { metadataTypeName: `asset-${assetName}`, filename: File.extractFileName(filename)[0] };
+				return { metadataTypeName: `asset-${assetName}`, filename: File.extractNameFromPath(filename)[0] };
 		}
 
 		if (files.length === 1 || mdt === "folder") {
 			// configuration for other mdtypes
-			const filenames = File.extractFileName(files);
+			const filenames = File.extractNameFromPath(files);
 			if (filenames.length) return { filename: filenames[0] };
 		}
 		return { filename: "" };

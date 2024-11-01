@@ -100,11 +100,11 @@ class Mcdev {
 	/**
 	 * Convert files paths to DevTools File Format
 	 *
-	 * @private
+	 * @public
 	 * @param {string[]} paths - file paths
 	 * @returns {TDevTools.IFileFormat[]} files formatted in DevTool File Format
 	 */
-	private convertPathsToFiles(paths: string[]): TDevTools.IFileFormat[] {
+	public convertPathsToFiles(paths: string[]): TDevTools.IFileFormat[] {
 		console.log("== Mcdev: Convert File Paths ==");
 
 		const convertToFileFormat = (path: string): TDevTools.IFileFormat => {
@@ -319,6 +319,7 @@ class Mcdev {
 				commandHandler({
 					info: `${MessagesDevTools.mcdevRunningCommand} ${this.getPackageName()} ${commandConfig.alias} ${parameters}\n`
 				});
+
 				const { success }: TUtils.ITerminalCommandResult = await Terminal.executeTerminalCommand(
 					terminalConfig,
 					false
