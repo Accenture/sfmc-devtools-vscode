@@ -89,6 +89,8 @@ class DevToolsExtension {
 				this.activateRecommendedExtensions();
 				// activate editor containers
 				this.activateContainers();
+				// activate activity bar
+				this.activateActivityBar();
 				// activate menu commands
 				this.activateMenuCommands();
 				// logs initial extension information into output channel
@@ -231,6 +233,12 @@ class DevToolsExtension {
 		// Creates and displays the Status Bar Item
 		vscodeWindow.createStatusBarItem(statusBarCommand, statusBarTitle, packageName);
 		vscodeWindow.displayStatusBarItem(packageName);
+	}
+
+	activateActivityBar() {
+		console.log("== Activate Activity Bar ==");
+		const view = this.vscodeEditor.getWindow().createTreeView();
+		this.vscodeEditor.getContext().pushSubscriptions(view);
 	}
 
 	/**

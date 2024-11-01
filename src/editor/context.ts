@@ -41,6 +41,11 @@ class VSCodeContext {
 	getExtensionVersion(): string {
 		return this.context.extension.packageJSON.version;
 	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	pushSubscriptions(item: { dispose(): any }) {
+		this.context.subscriptions.push(item);
+	}
 }
 
 export default VSCodeContext;

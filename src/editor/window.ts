@@ -205,6 +205,16 @@ class VSCodeWindow {
 			throw new Error("[vscodewindow_getEditorOpenedFilePath]: Active text editor is undefined.");
 		return activeTextEditor.document.uri.path;
 	}
+
+	createTreeView() {
+		return this.window.createTreeView("sfmc-devtools-vscode-actions", {
+			treeDataProvider: {
+				getTreeItem: () => ({ label: "test1", id: "test_1" }),
+				getChildren: () => ["test1"]
+			},
+			showCollapseAll: true
+		});
+	}
 }
 
 export default VSCodeWindow;
