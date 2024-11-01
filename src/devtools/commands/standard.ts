@@ -8,7 +8,8 @@ import { TDevTools } from "@types";
  */
 enum StandardCommandsAlias {
 	retrieve = "r",
-	deploy = "d"
+	deploy = "d",
+	delete = "del"
 }
 
 /**
@@ -48,6 +49,9 @@ class StandardCommands extends Commands {
 				break;
 			case "deploy":
 				config = this.deploy(parameters);
+				break;
+			case "delete":
+				config = this.delete(parameters);
 				break;
 		}
 		return config;
@@ -104,6 +108,23 @@ class StandardCommands extends Commands {
 		const deployConfig = parameters.map(parameter => [this.configureParameters(parameter), parameter.projectPath]);
 
 		return { alias: deployAlias, config: deployConfig };
+	}
+
+	/**
+	 * Standard Command 'delete' execution
+	 *
+	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
+	 * @returns {TDevTools.ICommandConfig} command configuration
+	 */
+	delete(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
+		console.log("== StandardCommands: Delete ==");
+		// command alias
+		const deleteAlias = StandardCommandsAlias.delete;
+
+		// command parameters configuration
+		const deleteConfig = parameters.map(parameter => [this.configureParameters(parameter), parameter.projectPath]);
+
+		return { alias: deleteAlias, config: deleteConfig };
 	}
 }
 

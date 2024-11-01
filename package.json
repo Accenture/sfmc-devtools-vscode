@@ -56,6 +56,10 @@
          {
             "command": "sfmc-devtools-vscode.build",
             "title": "mcdev: Build"
+         },
+         {
+            "command": "sfmc-devtools-vscode.delete",
+            "title": "mcdev: Delete From Server"
          }
       ],
       "menus": {
@@ -71,6 +75,10 @@
             {
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/"
+            },
+            {
+               "command": "sfmc-devtools-vscode.delete",
+               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\/ && resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/"
             }
          ],
          "editor/context": [
@@ -87,6 +95,11 @@
             {
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.delete",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)",
                "group": "devtools"
             }
          ],
@@ -105,6 +118,11 @@
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.delete",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)",
+               "group": "devtools"
             }
          ],
          "editor/title/context": [
@@ -121,6 +139,11 @@
             {
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.delete",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/ && resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/",
                "group": "devtools"
             }
          ]
