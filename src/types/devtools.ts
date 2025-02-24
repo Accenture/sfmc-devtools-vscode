@@ -1,6 +1,6 @@
 type FileLevel = "top_folder" | "cred_folder" | "bu_folder" | "mdt_folder" | "file";
 // eslint-disable-next-line no-use-before-define
-type FileLevelMap = { [key in FileLevel]: IFileFormat[] };
+type FileLevelMap = { [key in FileLevel]: IExecuteFileDetails[] };
 type MetadataTypesActions =
 	| "retrieve"
 	| "create"
@@ -27,7 +27,7 @@ interface IMetadataTypes {
 	description: string;
 }
 
-interface IFileFormat {
+interface IExecuteFileDetails {
 	level: FileLevel;
 	projectPath: string;
 	topFolder: string;
@@ -36,6 +36,10 @@ interface IFileFormat {
 	businessUnit?: string;
 	metadataType?: string;
 	filename?: string;
+}
+
+interface IExecuteParameters {
+	[parameter: string]: IExecuteFileDetails[] | IExecuteParameters | string | number | boolean;
 }
 
 interface ICredentials {
@@ -50,12 +54,16 @@ interface IMetadataCommand {
 	fromRetrieveFolder?: boolean;
 }
 
-interface ICommandParameters {
+interface ICommandFileParameters {
 	credential: string;
 	projectPath: string;
 	topFolder: string;
 	metadata: IMetadataCommand[];
 	optional?: string[];
+}
+
+interface ICommandParameters {
+	[parameter: string]: ICommandFileParameters[] | ICommandParameters | string | number | boolean;
 }
 
 interface ICredentialsFileMap {
@@ -67,15 +75,39 @@ interface ICommandConfig {
 	config: string[][];
 }
 
+interface IConfigFileCredentials {
+	eid: number;
+	businessUnits: {
+		[bu: string]: number;
+	};
+}
+
+interface IConfigFile {
+	credentials: { [credential: string]: IConfigFileCredentials };
+	markets: { [bu: string]: { [suffix: string]: string } };
+	marketList: { [market: string]: { description: string; [marketDef: string]: string } };
+}
+
+interface IProjectConfig {
+	getAllCredentials: () => string[];
+	getBusinessUnitsByCredential: (credential: string) => string[];
+	getMarkets: () => string[];
+	getMarketsList: () => string[];
+}
+
 export {
 	FileLevelMap,
 	IConfig,
+	IConfigFile,
 	MetadataTypesActions,
 	IMetadataTypes,
-	IFileFormat,
+	IExecuteFileDetails,
+	IExecuteParameters,
 	ICredentials,
+	ICommandFileParameters,
 	ICommandParameters,
 	ICredentialsFileMap,
 	IMetadataCommand,
-	ICommandConfig
+	ICommandConfig,
+	IProjectConfig
 };

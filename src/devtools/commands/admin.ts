@@ -35,7 +35,7 @@ class AdminCommands extends Commands {
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} configuration after running a specific command
 	 */
-	run(name: keyof typeof AdminCommandsAlias, parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
+	run(name: keyof typeof AdminCommandsAlias, parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== AdminCommands: Run ==");
 		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
 		switch (name) {
@@ -51,22 +51,20 @@ class AdminCommands extends Commands {
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
-	explainTypes(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
+	explainTypes(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== AdminCommands: Explain Types ==");
-		// command alias
-		const explainTypesAlias = AdminCommandsAlias.explainTypes;
-		// command parameters configuration
-		const explainTypesConfig = parameters.map(({ projectPath }) => {
-			const commandParameters: TDevTools.ICommandParameters = {
-				credential: "",
-				metadata: [],
-				projectPath,
-				topFolder: "",
-				optional: ["json"]
-			};
-			return [this.configureParameters(commandParameters), projectPath];
-		});
-		return { alias: explainTypesAlias, config: explainTypesConfig };
+
+		if ("projectPath" in parameters) {
+			// command alias
+			const explainTypesAlias = AdminCommandsAlias.explainTypes;
+
+			const projectPath = parameters.projectPath as string;
+
+			// command parameters configuration
+			const explainTypesConfig = [["--json", projectPath]];
+			return { alias: explainTypesAlias, config: explainTypesConfig };
+		}
+		throw new Error(`[admin_explainTypes]: The property 'projectPath' is missing from parameters.`);
 	}
 }
 

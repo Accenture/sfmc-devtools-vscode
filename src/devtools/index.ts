@@ -1,8 +1,8 @@
 import Mcdev from "./mcdev";
-import { ConfigDevTools } from "@config";
+import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsExtension } from "@enums";
-import { TEditor, TUtils } from "@types";
+import { TDevTools, TEditor, TUtils } from "@types";
 import { Lib } from "utils";
 
 /**
@@ -59,7 +59,7 @@ class DevToolsExtension {
 	 */
 	async isDevToolsProject(): Promise<boolean> {
 		console.log("== Is Project ==");
-		const requiredProjectFiles = ConfigDevTools.requiredFiles || [];
+		const requiredProjectFiles = this.mcdev.getRequiredFiles() || [];
 		// Checks if the required DevTools files exist in the folder/folders
 		const filesInFolderResult = await Promise.all(
 			requiredProjectFiles.map(
@@ -89,8 +89,6 @@ class DevToolsExtension {
 				this.activateRecommendedExtensions();
 				// activate editor containers
 				this.activateContainers();
-				// activate activity bar
-				this.activateActivityBar();
 				// activate menu commands
 				this.activateMenuCommands();
 				// logs initial extension information into output channel
@@ -160,7 +158,7 @@ class DevToolsExtension {
 		console.log("== Activate Context Variables ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 		// Sets vscode environment variable 'isproject' to true
-		vscodeCommands.executeCommandContext(`${ConfigDevTools.extensionName}.config.isproject`, [true]);
+		vscodeCommands.executeCommandContext(`${ConfigExtension.extensionName}.config.isproject`, [true]);
 	}
 
 	/**
@@ -174,7 +172,7 @@ class DevToolsExtension {
 		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
 		const vscodeExtensions = this.vscodeEditor.getExtensions();
 		const vscodeCommands = this.vscodeEditor.getCommands();
-		const recommendedExtensions = ConfigDevTools.recommendedExtensions;
+		const recommendedExtensions = ConfigExtension.recommendedExtensions;
 		const configurationKey = "recommendExtensions";
 
 		// Checks if recommended extensions are already installed
@@ -184,7 +182,7 @@ class DevToolsExtension {
 
 		// Checks if recommended extensions suggestion is enabled
 		const recommendExtensions = vscodeWorkspace.isConfigurationKeyEnabled(
-			ConfigDevTools.extensionName,
+			ConfigExtension.extensionName,
 			configurationKey
 		);
 
@@ -201,7 +199,7 @@ class DevToolsExtension {
 				userAnswer &&
 				userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions["Do not show again"]
 			)
-				vscodeWorkspace.setConfigurationKey(ConfigDevTools.extensionName, configurationKey, false);
+				vscodeWorkspace.setConfigurationKey(ConfigExtension.extensionName, configurationKey, false);
 			// if user clicks on "install" then installs extensions
 			if (userAnswer && userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions.Install)
 				vscodeCommands.installExtension(uninstalledExtensions);
@@ -220,7 +218,7 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 
 		// Sets the command when the status bar is clicked
-		const statusBarCommand = `${ConfigDevTools.extensionName}.openOutputChannel`;
+		const statusBarCommand = `${ConfigExtension.extensionName}.openOutputChannel`;
 		// Sets the default status bar icon and name
 		const statusBarTitle = `$(${EnumsExtension.StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
 
@@ -235,12 +233,6 @@ class DevToolsExtension {
 		vscodeWindow.displayStatusBarItem(packageName);
 	}
 
-	activateActivityBar() {
-		console.log("== Activate Activity Bar ==");
-		const view = this.vscodeEditor.getWindow().createTreeView();
-		this.vscodeEditor.getContext().pushSubscriptions(view);
-	}
-
 	/**
 	 * Writes initial extension information to the output channel
 	 *
@@ -253,18 +245,16 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 
 		// Gets the .mcdevrc file name from the required DevTools file list
-		const [mcdevrcFile] = ConfigDevTools.requiredFiles;
+		const configFileName = this.mcdev.getConfigFileName();
 		// For every devtools project folder in the open workspace it retrieves the complete path of the .mcdevrc file
-		const mcdevrcFsPath = await workspace.findWorkspaceFiles(`**/${mcdevrcFile}`);
+		const configFsPath = await workspace.findWorkspaceFiles(`**/${configFileName}`);
 		// Builds the message to be displayed with the .mcdevrc file path
-		const mcdevrcPathMessage = mcdevrcFsPath.map(
-			mcdevrcPath => `${MessagesDevTools.mcdevConfigFile} ${mcdevrcPath}`
-		);
+		const configFilePathMessage = configFsPath.map(path => `${MessagesDevTools.mcdevConfigFile} ${path}`);
 
 		const messages = [
 			`Extension name: ${context.getExtensionName()}`,
 			`Extension version: ${context.getExtensionVersion()}`,
-			...mcdevrcPathMessage
+			...configFilePathMessage
 		];
 		// Prints the messages to the Output channel
 		messages.forEach(message => this.writeLog(packageName, message, EnumsExtension.LoggerLevel.INFO));
@@ -370,6 +360,24 @@ class DevToolsExtension {
 		}
 	}
 
+	async requestInputWithOptions(options: string[], title: string) {
+		const window = this.vscodeEditor.getWindow();
+		const userAnswer = await window.showQuickPickOptions(options, title, false);
+		return userAnswer && userAnswer.label;
+	}
+
+	async openFileInEditor(path: string) {
+		try {
+			const workspace = this.vscodeEditor.getWorkspace();
+			const window = this.vscodeEditor.getWindow();
+
+			const document = await workspace.openDocument(path);
+			window.showDocument(document);
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+		}
+	}
+
 	/**
 	 * Gets the current open tab file path
 	 *
@@ -411,10 +419,10 @@ class DevToolsExtension {
 		console.log("== Activate Menu Commands ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 
-		ConfigDevTools.menuCommands.forEach(command =>
+		ConfigExtension.menuCommands.forEach(command =>
 			// For all the menu commands configured it will register the command and execution action
 			vscodeCommands.registerCommand({
-				command: `${ConfigDevTools.extensionName}.${command}`,
+				command: `${ConfigExtension.extensionName}.${command}`,
 				callbackAction: (files: string[]) => {
 					const activeTabFilePath = this.getActiveTabFilePath();
 					// When the menu command is done from the file tab it requires the active open file path
@@ -433,10 +441,17 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	executeMenuCommand(command: string, files: string[]): void {
+		// Filters the paths by parent folder to avoid repeating calling DevTools commands for same files
+		const filteredPathsByParent = Lib.removeSubPathsByParent(files);
+
+		// Convert paths to file structure defined for DevTools Commands
+		const selectedFiles = this.mcdev.convertPathsToFiles(filteredPathsByParent);
+
 		const menuCommandsHandlers: { [key: string]: () => void } = {
-			retrieve: () => this.handleRetrieveCommand(files),
-			deploy: () => this.handleDeployCommand(files),
-			delete: () => this.handleDeleteCommand(files)
+			retrieve: () => this.handleRetrieveCommand(selectedFiles),
+			deploy: () => this.handleDeployCommand(selectedFiles),
+			delete: () => this.handleDeleteCommand(selectedFiles),
+			build: () => this.handleBuildCommand(selectedFiles)
 		};
 
 		const menuCommandHandler = menuCommandsHandlers[command];
@@ -455,8 +470,8 @@ class DevToolsExtension {
 	 * @param {string[]} files - selected files paths
 	 * @returns {void}
 	 */
-	handleRetrieveCommand(files: string[]): void {
-		this.executeCommand("retrieve", files);
+	handleRetrieveCommand(files: TDevTools.IExecuteFileDetails[]): void {
+		this.executeCommand("retrieve", { filesDetails: files });
 	}
 
 	/**
@@ -465,8 +480,8 @@ class DevToolsExtension {
 	 * @param {string[]} files - selected files paths
 	 * @returns {void}
 	 */
-	handleDeployCommand(files: string[]): void {
-		this.executeCommand("deploy", files);
+	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
+		this.executeCommand("deploy", { filesDetails: files });
 	}
 
 	/**
@@ -476,10 +491,8 @@ class DevToolsExtension {
 	 * @param {string[]} files - selected files paths
 	 * @returns {Promise<void>}
 	 */
-	async handleDeleteCommand(files: string[]): Promise<void> {
-		const fileNamesList = this.mcdev
-			.convertPathsToFiles(files)
-			.map(file => `${file.filename} (${file.metadataType})`);
+	async handleDeleteCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		const fileNamesList = files.map(file => `${file.filename} (${file.metadataType})`);
 		const confirmationAnswer = await this.showInformationMessage(
 			"info",
 			MessagesEditor.deleteConfirmation(fileNamesList),
@@ -487,8 +500,126 @@ class DevToolsExtension {
 			true
 		);
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
-		this.executeCommand("delete", files);
+		this.executeCommand("delete", { filesDetails: files });
 	}
+
+	async handleBuildCommand(files: TDevTools.IExecuteFileDetails[]) {
+		console.log(files);
+		const window = this.vscodeEditor.getWindow();
+		const context = this.vscodeEditor.getContext();
+		window.createPanel(context.getExtensionPath());
+	}
+	// async handleBuildCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+	// 	console.log("build command");
+	// 	console.log(files);
+	// 	const executeParameters: TDevTools.IExecuteParameters = {};
+
+	// 	// Gets the unique project paths for the files selected
+	// 	const projectsPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
+
+	// 	const showMissingConfigFilePropertyErrorMessage = async (title: string, projectPath: string) => {
+	// 		const userOption = await this.showInformationMessage("error", title, ["Open File", "Close"], false);
+	// 		if (userOption === "Open File") this.openFileInEditor(this.mcdev.getConfigFilePath(projectPath));
+	// 	};
+
+	// 	const selectBuildConfigOption = async (
+	// 		optionsList: string[],
+	// 		projectPath: string,
+	// 		titleMessage: string,
+	// 		errorMessage: string
+	// 	): Promise<string | undefined> => {
+	// 		if (!optionsList.length) showMissingConfigFilePropertyErrorMessage(errorMessage, projectPath);
+	// 		else
+	// 			return optionsList.length === 1
+	// 				? optionsList[0]
+	// 				: await this.requestInputWithOptions(optionsList, titleMessage);
+	// 		return;
+	// 	};
+
+	// 	for (const projectPath of projectsPaths) {
+	// 		let buildConfig: TDevTools.IExecuteParameters = {};
+	// 		const { getAllCredentials, getBusinessUnitsByCredential, getMarkets, getMarketsList } =
+	// 			this.mcdev.retrieveProjectCredentialsConfig(projectPath);
+
+	// 		const allCredentials = getAllCredentials();
+	// 		const marketsList = getMarketsList();
+	// 		const markets = getMarkets();
+
+	// 		const marketFromSelected = await selectBuildConfigOption(
+	// 			markets,
+	// 			projectPath,
+	// 			MessagesEditor.buildConfigRequestMessage("markets"),
+	// 			MessagesEditor.buildConfigUndefinedMessage("markets")
+	// 		);
+	// 		if (marketFromSelected)
+	// 			buildConfig = {
+	// 				...buildConfig,
+	// 				marketFrom: marketFromSelected
+	// 			};
+
+	// 		const bulkAnswer = await this.requestInputWithOptions(
+	// 			Object.keys(EnumsExtension.Confirmation),
+	// 			MessagesEditor.buildBulkRequestMessage
+	// 		);
+
+	// 		if (bulkAnswer && bulkAnswer.toLowerCase() === EnumsExtension.Confirmation.Yes) {
+	// 			const marketToSelected = await selectBuildConfigOption(
+	// 				marketsList,
+	// 				projectPath,
+	// 				MessagesEditor.buildConfigRequestMessage("market"),
+	// 				MessagesEditor.buildConfigUndefinedMessage("marketList")
+	// 			);
+	// 			if (marketToSelected) buildConfig = { ...buildConfig, marketTo: marketToSelected, bulk: true };
+	// 		} else {
+	// 			const credentialSelected = await selectBuildConfigOption(
+	// 				allCredentials,
+	// 				projectPath,
+	// 				MessagesEditor.buildConfigRequestMessage("credentials"),
+	// 				MessagesEditor.buildConfigUndefinedMessage("credentials")
+	// 			);
+
+	// 			if (credentialSelected) {
+	// 				const businessUnits = getBusinessUnitsByCredential(credentialSelected);
+	// 				const businessUnitSelected = await selectBuildConfigOption(
+	// 					businessUnits,
+	// 					projectPath,
+	// 					MessagesEditor.buildConfigRequestMessage("business units"),
+	// 					MessagesEditor.buildConfigUndefinedMessage("businessUnits")
+	// 				);
+
+	// 				if (businessUnitSelected) {
+	// 					const marketToSelected = await selectBuildConfigOption(
+	// 						markets,
+	// 						projectPath,
+	// 						MessagesEditor.buildConfigRequestMessage("markets"),
+	// 						MessagesEditor.buildConfigUndefinedMessage("markets")
+	// 					);
+	// 					if (marketToSelected)
+	// 						buildConfig = {
+	// 							...buildConfig,
+	// 							buTo: `${credentialSelected}/${businessUnitSelected}`,
+	// 							marketTo: marketToSelected
+	// 						};
+	// 				}
+	// 			}
+	// 		}
+
+	// 		if (buildConfig.marketTo && (buildConfig.buTo || "bulk" in buildConfig)) {
+	// 			const dependenciesAnswer = await this.requestInputWithOptions(
+	// 				Object.keys(EnumsExtension.Confirmation),
+	// 				MessagesEditor.buildDependenciesRequestMessage
+	// 			);
+	// 			buildConfig = {
+	// 				...buildConfig,
+	// 				dependencies:
+	// 					(dependenciesAnswer && dependenciesAnswer.toLowerCase() === EnumsExtension.Confirmation.Yes) ||
+	// 					false
+	// 			};
+	// 		}
+	// 		executeParameters[projectPath] = buildConfig;
+	// 		console.log(executeParameters);
+	// 	}
+	//}
 
 	/**
 	 * Executes the extension menu commands
@@ -497,7 +628,7 @@ class DevToolsExtension {
 	 * @param {string[]} files - file paths detected by selection
 	 * @returns {void}
 	 */
-	executeCommand(command: string, files: string[]): void {
+	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): void {
 		console.log("== Execute Menu Commands ==");
 		const packageName = this.mcdev.getPackageName();
 		// inital running command status bar configuration
@@ -540,7 +671,7 @@ class DevToolsExtension {
 							text: `$(${EnumsExtension.StatusBarIcon.success}) ${packageName}`,
 							backgroundColor: initialStatusBarColor
 						}),
-					ConfigDevTools.delayTimeUpdateStatusBar
+					ConfigExtension.delayTimeUpdateStatusBar
 				);
 
 			const moreDetails = await this.showInformationMessage(
@@ -562,7 +693,7 @@ class DevToolsExtension {
 					const { success }: { success: boolean } = await this.mcdev.execute(
 						command,
 						mcdevExecuteOnOutput,
-						files
+						executeParameters
 					);
 					mcdevExecuteOnResult(success);
 					resolve(success);

@@ -143,6 +143,11 @@ class VSCodeWorkspace {
 		const workspaceFiles = await this.findWorkspaceFiles(file);
 		return workspaceFiles.length > 0;
 	}
+
+	async openDocument(path: string): Promise<VSCode.TextDocument> {
+		const document = await this.workspace.openTextDocument(path);
+		return document;
+	}
 }
 
 export default VSCodeWorkspace;

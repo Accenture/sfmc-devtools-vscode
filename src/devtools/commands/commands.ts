@@ -23,7 +23,7 @@ abstract class Commands {
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} configuration after running a specific command
 	 */
-	abstract run(name: string, parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig;
+	abstract run(name: string, parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig;
 
 	/**
 	 * Configures the command parameters
@@ -34,7 +34,7 @@ abstract class Commands {
 	 * @param {TDevTools.ICommandParameters} param.optional - command optional values
 	 * @returns {string} command configured
 	 */
-	protected configureParameters({ credential, metadata, optional }: TDevTools.ICommandParameters): string {
+	protected configureParameters({ credential, metadata, optional }: TDevTools.ICommandFileParameters): string {
 		console.log("== Commands: configureParameters ==");
 		// All commands executed have the --skipInteraction flag to avoid user interaction with the terminal
 		const defaultParameter = "--skipInteraction";

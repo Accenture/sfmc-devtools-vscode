@@ -1,4 +1,4 @@
-import { TEditor } from "@types";
+import { VSCode } from "@types";
 
 /**
  * VSCode Context class
@@ -11,16 +11,16 @@ class VSCodeContext {
 	 * Extension context
 	 *
 	 * @private
-	 * @type {TEditor.IExtensionContext}
+	 * @type {VSCode.ExtensionContext}
 	 */
-	private context: TEditor.IExtensionContext;
+	private context: VSCode.ExtensionContext;
 	/**
 	 * Creates an instance of VSCodeContext.
 	 *
 	 * @constructor
-	 * @param {TEditor.IExtensionContext} context
+	 * @param {VSCode.ExtensionContext} context
 	 */
-	constructor(context: TEditor.IExtensionContext) {
+	constructor(context: VSCode.ExtensionContext) {
 		this.context = context;
 	}
 
@@ -42,9 +42,8 @@ class VSCodeContext {
 		return this.context.extension.packageJSON.version;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	pushSubscriptions(item: { dispose(): any }) {
-		this.context.subscriptions.push(item);
+	getExtensionPath(): string {
+		return this.context.extensionPath;
 	}
 }
 

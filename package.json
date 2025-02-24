@@ -46,32 +46,24 @@
    "contributes": {
       "commands": [
          {
-            "command": "sfmc-devtools-vscode.retrieve",
-            "title": "mcdev: Retrieve"
-         },
-         {
-            "command": "sfmc-devtools-vscode.deploy",
-            "title": "mcdev: Deploy"
-         },
-         {
             "command": "sfmc-devtools-vscode.build",
             "title": "mcdev: Build"
          },
          {
             "command": "sfmc-devtools-vscode.delete",
             "title": "mcdev: Delete From Server"
+         },
+         {
+            "command": "sfmc-devtools-vscode.deploy",
+            "title": "mcdev: Deploy"
+         },
+         {
+            "command": "sfmc-devtools-vscode.retrieve",
+            "title": "mcdev: Retrieve"
          }
       ],
       "menus": {
          "commandPalette": [
-            {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\/"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/)))"
-            },
             {
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/"
@@ -79,19 +71,17 @@
             {
                "command": "sfmc-devtools-vscode.delete",
                "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\/ && resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/"
-            }
-         ],
-         "editor/context": [
-            {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
-               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
-               "group": "devtools"
+               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/)))"
             },
+            {
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\/"
+            }
+         ],
+         "editor/context": [
             {
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
@@ -100,21 +90,21 @@
             {
                "command": "sfmc-devtools-vscode.delete",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
                "group": "devtools"
             }
          ],
          "explorer/context": [
             {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
-               "group": "devtools"
-            },
-            {
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
                "group": "devtools"
@@ -123,19 +113,19 @@
                "command": "sfmc-devtools-vscode.delete",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)",
                "group": "devtools"
-            }
-         ],
-         "editor/title/context": [
+            },
+            {
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/ || resourceDirname =~ /asset\\\\[a-zA-Z]*/)))",
+               "group": "devtools"
+            },
             {
                "command": "sfmc-devtools-vscode.retrieve",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
                "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/)))",
-               "group": "devtools"
-            },
+            }
+         ],
+         "editor/title/context": [
             {
                "command": "sfmc-devtools-vscode.build",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\.*\\\\.*/",
@@ -144,6 +134,16 @@
             {
                "command": "sfmc-devtools-vscode.delete",
                "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/ && resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.deploy",
+               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\/ || (resourcePath =~ /\\\\retrieve\\\\/ && (resourceExtname =~ /.(json|html|sql|ssjs|md|amp|txt)/)))",
+               "group": "devtools"
+            },
+            {
+               "command": "sfmc-devtools-vscode.retrieve",
+               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
                "group": "devtools"
             }
          ]
@@ -157,28 +157,6 @@
                "description": "Indicates if recommended extensions popup should be shown to user or not."
             }
          }
-      },
-      "viewsContainers": {
-         "activitybar": [
-            {
-               "id": "sfmc-devtools-vscode",        
-               "title": "SFMC DevTools",
-               "icon": "$(smiley)"               
-            }
-         ]
-      },
-      "views": {
-         "sfmc-devtools-vscode": [
-            {
-               "id": "sfmc-devtools-vscode-actions",    
-               "name": "Actions",
-               "type": "tree"
-            },
-            {
-               "id": "sfmc-devtools-vscode-build-saved-configuration",
-               "name": "mcdev Build Saved Configuration"
-            }
-         ]
       }
    },
    "scripts": {

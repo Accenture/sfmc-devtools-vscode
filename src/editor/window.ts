@@ -1,4 +1,6 @@
 import { TEditor, VSCode } from "@types";
+import path from "path";
+import { File } from "utils";
 
 /**
  * VSCode Window class
@@ -65,6 +67,17 @@ class VSCodeWindow {
 	 */
 	async showErrorMessageWithOptions(message: string, actions: string[]): Promise<string | undefined> {
 		const response = await this.window.showErrorMessage(message, ...actions);
+		return response;
+	}
+
+	async showQuickPickOptions(items: (string | VSCode.QuickPickItem)[], title: string, multiplePicks: boolean) {
+		const quickPickItems: VSCode.QuickPickItem[] = items.map(item =>
+			typeof item === "string" ? { label: item } : item
+		);
+		const response = await this.window.showQuickPick(quickPickItems, {
+			placeHolder: title,
+			canPickMany: multiplePicks
+		});
 		return response;
 	}
 
@@ -210,14 +223,21 @@ class VSCodeWindow {
 		return activeTextEditor.document.uri.path;
 	}
 
-	createTreeView() {
-		return this.window.createTreeView("sfmc-devtools-vscode-actions", {
-			treeDataProvider: {
-				getTreeItem: () => ({ label: "test1", id: "test_1" }),
-				getChildren: () => ["test1"]
-			},
-			showCollapseAll: true
-		});
+	showDocument(document: VSCode.TextDocument) {
+		this.window.showTextDocument(document);
+	}
+
+	createPanel(extensionPath: string) {
+		console.log(path.join(extensionPath, "src", "pages", "html", "build.html"));
+		const htmlPath = path.join(extensionPath, "src", "pages", "html", "build.html");
+		const cssPath = path.join(extensionPath, "src", "pages", "css", "bootstrap.min.css");
+		// eslint-disable-next-line prefer-const
+		let fileContent = File.readFileSync(htmlPath);
+		const panel = this.window.createWebviewPanel("build", "DevTools: mcdev build", VSCode.ViewColumn.Two);
+		const cssUri = panel.webview.asWebviewUri(VSCode.Uri.file(cssPath));
+		fileContent = fileContent.replace("{{cssUri}}", cssUri.toString());
+		console.log(fileContent);
+		panel.webview.html = fileContent;
 	}
 }
 
