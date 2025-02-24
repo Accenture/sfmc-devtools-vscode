@@ -6,9 +6,7 @@ import { TDevTools } from "@types";
  *
  * @enum {number}
  */
-enum TemplatingCommandsAlias {
-	build = "build"
-}
+enum TemplatingCommandsAlias {}
 
 /**
  * Templating Commands class
@@ -40,30 +38,8 @@ class TemplatingCommands extends Commands {
 		parameters: TDevTools.ICommandParameters
 	): TDevTools.ICommandConfig {
 		console.log("== TemplatingCommands: Run ==");
-		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
-		switch (name) {
-			case "build":
-				config = this.build(parameters);
-				break;
-		}
-		return config;
-	}
-
-	/**
-	 * Templating Command 'build' execution
-	 *
-	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
-	 * @returns {TDevTools.ICommandConfig} command configuration
-	 */
-	build(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
-		console.log("== TemplatingCommands: Retrieve ==");
-		console.log(parameters);
-		// command alias
-		const buildAlias = TemplatingCommandsAlias.build;
-
-		// command parameters configuration
-		const buildConfig = [[]];
-		return { alias: buildAlias, config: buildConfig };
+		console.log(name, parameters);
+		return { alias: "", config: [] };
 	}
 }
 

@@ -450,8 +450,7 @@ class DevToolsExtension {
 		const menuCommandsHandlers: { [key: string]: () => void } = {
 			retrieve: () => this.handleRetrieveCommand(selectedFiles),
 			deploy: () => this.handleDeployCommand(selectedFiles),
-			delete: () => this.handleDeleteCommand(selectedFiles),
-			build: () => this.handleBuildCommand(selectedFiles)
+			delete: () => this.handleDeleteCommand(selectedFiles)
 		};
 
 		const menuCommandHandler = menuCommandsHandlers[command];
@@ -502,124 +501,6 @@ class DevToolsExtension {
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
 		this.executeCommand("delete", { filesDetails: files });
 	}
-
-	async handleBuildCommand(files: TDevTools.IExecuteFileDetails[]) {
-		console.log(files);
-		const window = this.vscodeEditor.getWindow();
-		const context = this.vscodeEditor.getContext();
-		window.createPanel(context.getExtensionPath());
-	}
-	// async handleBuildCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
-	// 	console.log("build command");
-	// 	console.log(files);
-	// 	const executeParameters: TDevTools.IExecuteParameters = {};
-
-	// 	// Gets the unique project paths for the files selected
-	// 	const projectsPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
-
-	// 	const showMissingConfigFilePropertyErrorMessage = async (title: string, projectPath: string) => {
-	// 		const userOption = await this.showInformationMessage("error", title, ["Open File", "Close"], false);
-	// 		if (userOption === "Open File") this.openFileInEditor(this.mcdev.getConfigFilePath(projectPath));
-	// 	};
-
-	// 	const selectBuildConfigOption = async (
-	// 		optionsList: string[],
-	// 		projectPath: string,
-	// 		titleMessage: string,
-	// 		errorMessage: string
-	// 	): Promise<string | undefined> => {
-	// 		if (!optionsList.length) showMissingConfigFilePropertyErrorMessage(errorMessage, projectPath);
-	// 		else
-	// 			return optionsList.length === 1
-	// 				? optionsList[0]
-	// 				: await this.requestInputWithOptions(optionsList, titleMessage);
-	// 		return;
-	// 	};
-
-	// 	for (const projectPath of projectsPaths) {
-	// 		let buildConfig: TDevTools.IExecuteParameters = {};
-	// 		const { getAllCredentials, getBusinessUnitsByCredential, getMarkets, getMarketsList } =
-	// 			this.mcdev.retrieveProjectCredentialsConfig(projectPath);
-
-	// 		const allCredentials = getAllCredentials();
-	// 		const marketsList = getMarketsList();
-	// 		const markets = getMarkets();
-
-	// 		const marketFromSelected = await selectBuildConfigOption(
-	// 			markets,
-	// 			projectPath,
-	// 			MessagesEditor.buildConfigRequestMessage("markets"),
-	// 			MessagesEditor.buildConfigUndefinedMessage("markets")
-	// 		);
-	// 		if (marketFromSelected)
-	// 			buildConfig = {
-	// 				...buildConfig,
-	// 				marketFrom: marketFromSelected
-	// 			};
-
-	// 		const bulkAnswer = await this.requestInputWithOptions(
-	// 			Object.keys(EnumsExtension.Confirmation),
-	// 			MessagesEditor.buildBulkRequestMessage
-	// 		);
-
-	// 		if (bulkAnswer && bulkAnswer.toLowerCase() === EnumsExtension.Confirmation.Yes) {
-	// 			const marketToSelected = await selectBuildConfigOption(
-	// 				marketsList,
-	// 				projectPath,
-	// 				MessagesEditor.buildConfigRequestMessage("market"),
-	// 				MessagesEditor.buildConfigUndefinedMessage("marketList")
-	// 			);
-	// 			if (marketToSelected) buildConfig = { ...buildConfig, marketTo: marketToSelected, bulk: true };
-	// 		} else {
-	// 			const credentialSelected = await selectBuildConfigOption(
-	// 				allCredentials,
-	// 				projectPath,
-	// 				MessagesEditor.buildConfigRequestMessage("credentials"),
-	// 				MessagesEditor.buildConfigUndefinedMessage("credentials")
-	// 			);
-
-	// 			if (credentialSelected) {
-	// 				const businessUnits = getBusinessUnitsByCredential(credentialSelected);
-	// 				const businessUnitSelected = await selectBuildConfigOption(
-	// 					businessUnits,
-	// 					projectPath,
-	// 					MessagesEditor.buildConfigRequestMessage("business units"),
-	// 					MessagesEditor.buildConfigUndefinedMessage("businessUnits")
-	// 				);
-
-	// 				if (businessUnitSelected) {
-	// 					const marketToSelected = await selectBuildConfigOption(
-	// 						markets,
-	// 						projectPath,
-	// 						MessagesEditor.buildConfigRequestMessage("markets"),
-	// 						MessagesEditor.buildConfigUndefinedMessage("markets")
-	// 					);
-	// 					if (marketToSelected)
-	// 						buildConfig = {
-	// 							...buildConfig,
-	// 							buTo: `${credentialSelected}/${businessUnitSelected}`,
-	// 							marketTo: marketToSelected
-	// 						};
-	// 				}
-	// 			}
-	// 		}
-
-	// 		if (buildConfig.marketTo && (buildConfig.buTo || "bulk" in buildConfig)) {
-	// 			const dependenciesAnswer = await this.requestInputWithOptions(
-	// 				Object.keys(EnumsExtension.Confirmation),
-	// 				MessagesEditor.buildDependenciesRequestMessage
-	// 			);
-	// 			buildConfig = {
-	// 				...buildConfig,
-	// 				dependencies:
-	// 					(dependenciesAnswer && dependenciesAnswer.toLowerCase() === EnumsExtension.Confirmation.Yes) ||
-	// 					false
-	// 			};
-	// 		}
-	// 		executeParameters[projectPath] = buildConfig;
-	// 		console.log(executeParameters);
-	// 	}
-	//}
 
 	/**
 	 * Executes the extension menu commands

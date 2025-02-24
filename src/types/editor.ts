@@ -19,22 +19,6 @@ interface IWorkspace {
 interface IInstance {
 	workspace: IWorkspace;
 }
-interface IBuildCredentialConfiguration {
-	fromCrendentialName: string;
-	fromParentBusinessUnit: string;
-	fromMarket: string;
-	toCredentialName: string;
-	toParentBusinessUnit: string;
-	toMarket: string;
-	dependencies: boolean;
-}
-
-interface IBuildCommandConfiguration {
-	[projectName: string]: {
-		filesPaths: string[];
-		buildCredentialConfig: IBuildCredentialConfiguration;
-	};
-}
 
 export {
 	ProgressBar,
@@ -42,7 +26,6 @@ export {
 	ProgressBarHandler,
 	ProgressWindowLocal,
 	StatusBarFields,
-	IBuildCommandConfiguration,
 	IExtensionContext,
 	IInstance,
 	IWorkspace,

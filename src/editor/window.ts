@@ -1,6 +1,4 @@
 import { TEditor, VSCode } from "@types";
-import path from "path";
-import { File } from "utils";
 
 /**
  * VSCode Window class
@@ -225,19 +223,6 @@ class VSCodeWindow {
 
 	showDocument(document: VSCode.TextDocument) {
 		this.window.showTextDocument(document);
-	}
-
-	createPanel(extensionPath: string) {
-		console.log(path.join(extensionPath, "src", "pages", "html", "build.html"));
-		const htmlPath = path.join(extensionPath, "src", "pages", "html", "build.html");
-		const cssPath = path.join(extensionPath, "src", "pages", "css", "bootstrap.min.css");
-		// eslint-disable-next-line prefer-const
-		let fileContent = File.readFileSync(htmlPath);
-		const panel = this.window.createWebviewPanel("build", "DevTools: mcdev build", VSCode.ViewColumn.Two);
-		const cssUri = panel.webview.asWebviewUri(VSCode.Uri.file(cssPath));
-		fileContent = fileContent.replace("{{cssUri}}", cssUri.toString());
-		console.log(fileContent);
-		panel.webview.html = fileContent;
 	}
 }
 
