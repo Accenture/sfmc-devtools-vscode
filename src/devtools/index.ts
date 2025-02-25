@@ -1,7 +1,7 @@
 import Mcdev from "./mcdev";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
-import { EnumsExtension } from "@enums";
+import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils } from "@types";
 import { Lib } from "utils";
 
@@ -448,9 +448,10 @@ class DevToolsExtension {
 		const selectedFiles = this.mcdev.convertPathsToFiles(filteredPathsByParent);
 
 		const menuCommandsHandlers: { [key: string]: () => void } = {
-			retrieve: () => this.handleRetrieveCommand(selectedFiles),
+			copytobu: () => this.handleCopyToBuCommand(selectedFiles),
+			delete: () => this.handleDeleteCommand(selectedFiles),
 			deploy: () => this.handleDeployCommand(selectedFiles),
-			delete: () => this.handleDeleteCommand(selectedFiles)
+			retrieve: () => this.handleRetrieveCommand(selectedFiles)
 		};
 
 		const menuCommandHandler = menuCommandsHandlers[command];
@@ -463,24 +464,24 @@ class DevToolsExtension {
 			);
 	}
 
-	/**
-	 * Handles the Menu Command 'retrieve'
-	 *
-	 * @param {string[]} files - selected files paths
-	 * @returns {void}
-	 */
-	handleRetrieveCommand(files: TDevTools.IExecuteFileDetails[]): void {
-		this.executeCommand("retrieve", { filesDetails: files });
-	}
+	async handleCopyToBuCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		const userCopyToBUAnswer = await this.requestInputWithOptions(
+			Object.keys(EnumsDevTools.CopyToBUOptions),
+			MessagesEditor.copyToBuPrompt
+		);
 
-	/**
-	 * Handles the Menu Command 'deploy'
-	 *
-	 * @param {string[]} files - selected files paths
-	 * @returns {void}
-	 */
-	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
-		this.executeCommand("deploy", { filesDetails: files });
+		if (userCopyToBUAnswer) {
+			console.log(files);
+			const userTargetBUAnswer = await this.requestInputWithOptions(
+				["Business Unit 1", "Business Unit 2", "Business Unit 3"],
+				"Please select the target Business Unit"
+			);
+			console.log(userTargetBUAnswer);
+			// if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions.Copy)
+			// 	this.executeCommand("clone", { filesDetails: files });
+			// else if (userAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"])
+			// 	["clone", "deploy"].forEach(command => this.executeCommand(command, { filesDetails: files }));
+		} else return;
 	}
 
 	/**
@@ -500,6 +501,26 @@ class DevToolsExtension {
 		);
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
 		this.executeCommand("delete", { filesDetails: files });
+	}
+
+	/**
+	 * Handles the Menu Command 'deploy'
+	 *
+	 * @param {string[]} files - selected files paths
+	 * @returns {void}
+	 */
+	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
+		this.executeCommand("deploy", { filesDetails: files });
+	}
+
+	/**
+	 * Handles the Menu Command 'retrieve'
+	 *
+	 * @param {string[]} files - selected files paths
+	 * @returns {void}
+	 */
+	handleRetrieveCommand(files: TDevTools.IExecuteFileDetails[]): void {
+		this.executeCommand("retrieve", { filesDetails: files });
 	}
 
 	/**

@@ -6,7 +6,9 @@ import { TDevTools } from "@types";
  *
  * @enum {number}
  */
-enum TemplatingCommandsAlias {}
+enum TemplatingCommandsAlias {
+	clone = "clone"
+}
 
 /**
  * Templating Commands class
@@ -38,8 +40,38 @@ class TemplatingCommands extends Commands {
 		parameters: TDevTools.ICommandParameters
 	): TDevTools.ICommandConfig {
 		console.log("== TemplatingCommands: Run ==");
-		console.log(name, parameters);
-		return { alias: "", config: [] };
+		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
+		switch (name) {
+			case "clone":
+				config = this.clone(parameters);
+				break;
+		}
+		return config;
+	}
+
+	/**
+	 * Templating Command 'clone' execution
+	 *
+	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
+	 * @returns {TDevTools.ICommandConfig} command configuration
+	 */
+	clone(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		console.log("== Templating Commands: Clone ==");
+
+		console.log(parameters);
+		if ("files" in parameters) {
+			// command alias
+			const cloneAlias = TemplatingCommandsAlias.clone;
+
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			// command parameters configuration
+			const cloneConfig = fileParameters.map(parameter => [
+				this.configureParameters(parameter),
+				parameter.projectPath
+			]);
+			return { alias: cloneAlias, config: cloneConfig };
+		}
+		throw new Error(`[templating_clone]: The property 'files' is missing from parameters.`);
 	}
 }
 

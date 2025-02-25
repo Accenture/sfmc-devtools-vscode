@@ -31,7 +31,8 @@ enum StatusBarIcon {
 	error = "warning",
 	copytobu = "file-symlink-directory",
 	info = "extensions-info-message",
-	delete = "trash"
+	delete = "trash",
+	clone = "copy"
 }
 
 /**
