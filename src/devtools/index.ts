@@ -469,19 +469,8 @@ class DevToolsExtension {
 			Object.keys(EnumsDevTools.CopyToBUOptions),
 			MessagesEditor.copyToBuPrompt
 		);
-
-		if (userCopyToBUAnswer) {
-			console.log(files);
-			const userTargetBUAnswer = await this.requestInputWithOptions(
-				["Business Unit 1", "Business Unit 2", "Business Unit 3"],
-				"Please select the target Business Unit"
-			);
-			console.log(userTargetBUAnswer);
-			// if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions.Copy)
-			// 	this.executeCommand("clone", { filesDetails: files });
-			// else if (userAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"])
-			// 	["clone", "deploy"].forEach(command => this.executeCommand(command, { filesDetails: files }));
-		} else return;
+		console.log(files);
+		console.log("userCopyToBUAnswer", userCopyToBUAnswer);
 	}
 
 	/**
