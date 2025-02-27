@@ -360,10 +360,16 @@ class DevToolsExtension {
 		}
 	}
 
-	async requestInputWithOptions(options: string[], title: string) {
+	async requestInputWithOptions(
+		options: string[],
+		title: string,
+		multipleOptions: boolean
+	): Promise<string | string[] | undefined> {
 		const window = this.vscodeEditor.getWindow();
-		const userAnswer = await window.showQuickPickOptions(options, title, false);
-		return userAnswer && userAnswer.label;
+		const userAnswer = await window.showQuickPickOptions(options, title, multipleOptions);
+		if (!userAnswer) return;
+		if (Array.isArray(userAnswer)) return userAnswer.map(answer => answer.label);
+		return userAnswer.label;
 	}
 
 	async openFileInEditor(path: string) {
@@ -467,10 +473,16 @@ class DevToolsExtension {
 	async handleCopyToBuCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		const userCopyToBUAnswer = await this.requestInputWithOptions(
 			Object.keys(EnumsDevTools.CopyToBUOptions),
-			MessagesEditor.copyToBuPrompt
+			MessagesEditor.copyToBuPrompt,
+			false
 		);
 		console.log(files);
 		console.log("userCopyToBUAnswer", userCopyToBUAnswer);
+		if (userCopyToBUAnswer) {
+			const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
+			const selectedBUs = await this.selectBusinessUnits(selectedProjectPaths[0], { multiBUs: false });
+			console.log("selectedBUs", selectedBUs);
+		} else return;
 	}
 
 	/**
@@ -510,6 +522,53 @@ class DevToolsExtension {
 	 */
 	handleRetrieveCommand(files: TDevTools.IExecuteFileDetails[]): void {
 		this.executeCommand("retrieve", { filesDetails: files });
+	}
+
+	async selectBusinessUnits(projectPath: string, { multiBUs }: { multiBUs: boolean }): Promise<string[]> {
+		const projectCredsConfig = this.mcdev.retrieveProjectCredentialsConfig(projectPath);
+		const credentials = projectCredsConfig.getAllCredentials();
+		let selectedCred: string | undefined;
+		let selectedBUs: string[] | undefined;
+
+		// Skip user selection if only one credential is found
+		if (credentials.length === 1) selectedCred = credentials[0];
+		else if (credentials.length > 1)
+			// Request user to select a credential
+			selectedCred = (await this.requestInputWithOptions(credentials, MessagesEditor.credentialPrompt, false)) as
+				| string
+				| undefined;
+		else {
+			// Show error message if no credentials are found in the mcdevrc file
+			this.showInformationMessage("error", "No Credentials found", []);
+			this.writeLog(this.mcdev.getPackageName(), "No Credentials found", EnumsExtension.LoggerLevel.ERROR);
+		}
+
+		// If a credential is selected, request user to select a business unit
+		if (selectedCred) {
+			// Get the business units associated with the selected credential
+			const businessUnits = projectCredsConfig.getBusinessUnitsByCredential(selectedCred);
+			// Skip user selection if only one business unit is found
+			if (businessUnits.length === 1) selectedBUs = [businessUnits[0]];
+			else if (businessUnits.length > 1) {
+				// Request user to select a business unit
+				selectedBUs = (await this.requestInputWithOptions(
+					businessUnits,
+					MessagesEditor.businessUnitsPrompt,
+					multiBUs
+				)) as string[] | undefined;
+			} else {
+				// Show error message if no business units are found in the mcdevrc file
+				this.showInformationMessage("error", "No business units were found", []);
+				this.writeLog(
+					this.mcdev.getPackageName(),
+					"No business units were found",
+					EnumsExtension.LoggerLevel.ERROR
+				);
+			}
+		}
+
+		if (selectedCred && selectedBUs) return selectedBUs.map(bu => `${selectedCred}/${bu}`);
+		return [];
 	}
 
 	/**

@@ -68,7 +68,11 @@ class VSCodeWindow {
 		return response;
 	}
 
-	async showQuickPickOptions(items: (string | VSCode.QuickPickItem)[], title: string, multiplePicks: boolean) {
+	async showQuickPickOptions(
+		items: (string | VSCode.QuickPickItem)[],
+		title: string,
+		multiplePicks: boolean
+	): Promise<VSCode.QuickPickItem | VSCode.QuickPickItem[] | undefined> {
 		const quickPickItems: VSCode.QuickPickItem[] = items.map(item =>
 			typeof item === "string" ? { label: item } : item
 		);

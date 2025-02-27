@@ -3,6 +3,8 @@ const recommendedExtensions =
 const runningCommand = "Running DevTools command...";
 const runningCommandSuccess = "DevTools command has run successfully!";
 const runningCommandFailure = "Oh no. Something went wrong while running DevTools Command...";
+const credentialPrompt = "Please select the credential you would like to use:";
+const businessUnitsPrompt = "Please select the business Unit you would like to use:";
 const copyToBuPrompt = "Please select the action you would like to perform:";
 const deleteConfirmation = (items: string[]) =>
 	`Are you sure you want to delete the selected item${items.length > 1 ? "s" : ""} from the server?\n\n${items
@@ -17,6 +19,8 @@ export {
 	runningCommand,
 	runningCommandSuccess,
 	runningCommandFailure,
+	credentialPrompt,
+	businessUnitsPrompt,
 	copyToBuPrompt,
 	deleteConfirmation
 };
