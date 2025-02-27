@@ -482,6 +482,7 @@ class DevToolsExtension {
 			const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
 			const selectedBUs = await this.selectBusinessUnits(selectedProjectPaths[0], { multiBUs: false });
 			console.log("selectedBUs", selectedBUs);
+			this.executeCommand("clone", { filesDetails: files, targetBusinessUnit: selectedBUs[0] });
 		} else return;
 	}
 
@@ -567,7 +568,7 @@ class DevToolsExtension {
 			}
 		}
 
-		if (selectedCred && selectedBUs) return selectedBUs.map(bu => `${selectedCred}/${bu}`);
+		if (selectedCred && selectedBUs) return [selectedBUs].flat().map(bu => `${selectedCred}/${bu}`);
 		return [];
 	}
 

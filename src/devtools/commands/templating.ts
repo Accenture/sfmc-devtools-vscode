@@ -10,6 +10,11 @@ enum TemplatingCommandsAlias {
 	clone = "clone"
 }
 
+enum TemplatingCommandsFlags {
+	buFrom = "--bf",
+	buTarget = "--bt"
+}
+
 /**
  * Templating Commands class
  *
@@ -57,13 +62,20 @@ class TemplatingCommands extends Commands {
 	 */
 	clone(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== Templating Commands: Clone ==");
-
+		const buFromFlag = TemplatingCommandsFlags.buFrom;
+		const buTargetFlag = TemplatingCommandsFlags.buTarget;
 		console.log(parameters);
 		if ("files" in parameters) {
 			// command alias
 			const cloneAlias = TemplatingCommandsAlias.clone;
 
-			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const fileParameters = (parameters.files as TDevTools.ICommandFileParameters[]).map(file => {
+				const credential = `${buFromFlag} ${file.credential} ${buTargetFlag} ${parameters.targetBusinessUnit}`;
+				return { ...file, credential, optional: ["no-purge"] };
+			});
+
+			console.log(fileParameters);
+
 			// command parameters configuration
 			const cloneConfig = fileParameters.map(parameter => [
 				this.configureParameters(parameter),
