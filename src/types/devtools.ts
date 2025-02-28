@@ -39,7 +39,7 @@ interface IExecuteFileDetails {
 }
 
 interface IExecuteParameters {
-	[parameter: string]: IExecuteFileDetails[] | IExecuteParameters | string | number | boolean;
+	[parameter: string]: IExecuteFileDetails[] | IExecuteParameters | string | string[] | number | boolean;
 }
 
 interface ICredentials {

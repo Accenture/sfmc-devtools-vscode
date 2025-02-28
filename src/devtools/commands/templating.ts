@@ -74,8 +74,6 @@ class TemplatingCommands extends Commands {
 				return { ...file, credential, optional: ["no-purge"] };
 			});
 
-			console.log(fileParameters);
-
 			// command parameters configuration
 			const cloneConfig = fileParameters.map(parameter => [
 				this.configureParameters(parameter),

@@ -471,6 +471,7 @@ class DevToolsExtension {
 	}
 
 	async handleCopyToBuCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		const actions = ["clone"];
 		const userCopyToBUAnswer = await this.requestInputWithOptions(
 			Object.keys(EnumsDevTools.CopyToBUOptions),
 			MessagesEditor.copyToBuPrompt,
@@ -482,7 +483,11 @@ class DevToolsExtension {
 			const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
 			const selectedBUs = await this.selectBusinessUnits(selectedProjectPaths[0], { multiBUs: false });
 			console.log("selectedBUs", selectedBUs);
-			this.executeCommand("clone", { filesDetails: files, targetBusinessUnit: selectedBUs[0] });
+
+			if (userCopyToBUAnswer === EnumsDevTools.CopyToBUOptions["Copy And Deploy"]) actions.push("deploy");
+			actions.forEach(action =>
+				this.executeCommand(action, { filesDetails: files, targetBusinessUnit: selectedBUs })
+			);
 		} else return;
 	}
 
