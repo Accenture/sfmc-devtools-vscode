@@ -37,7 +37,7 @@ abstract class Commands {
 	protected configureParameters({ credential, metadata, optional }: TDevTools.ICommandFileParameters): string {
 		console.log("== Commands: configureParameters ==");
 		// All commands executed have the --skipInteraction flag to avoid user interaction with the terminal
-		const defaultParameter = "--skipInteraction";
+		const defaultParameter = "--skipInteraction --noLogColors";
 
 		const buildMetadataParameter = ({ metadatatype, key }: TDevTools.IMetadataCommand) =>
 			`-m ${metadatatype}${key && ":" + '"' + key + '"'}`;
