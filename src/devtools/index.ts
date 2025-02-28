@@ -477,19 +477,17 @@ class DevToolsExtension {
 			MessagesEditor.copyToBuPrompt,
 			false
 		)) as string | undefined;
-		console.log(files);
-		console.log("userCopyToBUAnswer", userCopyToBUAnswer);
-		if (userCopyToBUAnswer) {
-			const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
-			const selectedBUs = await this.selectBusinessUnits(selectedProjectPaths[0], { multiBUs: false });
-			console.log("selectedBUs", selectedBUs);
 
-			if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"])
-				actions.push("deploy");
-			for (const action of actions) {
-				await this.executeCommand(action, { filesDetails: files, targetBusinessUnit: selectedBUs });
-			}
-		} else return;
+		if (!userCopyToBUAnswer) return;
+		const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
+		const selectedBUs = await this.selectBusinessUnits(selectedProjectPaths[0], { multiBUs: false });
+		console.log("selectedBUs", selectedBUs);
+
+		if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"])
+			actions.push("deploy");
+		for (const action of actions) {
+			await this.executeCommand(action, { filesDetails: files, targetBusinessUnit: selectedBUs });
+		}
 	}
 
 	/**
@@ -578,6 +576,15 @@ class DevToolsExtension {
 		return [];
 	}
 
+	getStatusBarTitle(iconName: string, name: string): string {
+		const statusBarIcon = EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon];
+		return `$(${statusBarIcon}) ${name}`;
+	}
+
+	updateStatusBar(name: string, title: string, color: string): void {
+		this.updateContainers(name, { text: title, backgroundColor: color });
+	}
+
 	/**
 	 * Executes the extension menu commands
 	 *
@@ -585,18 +592,13 @@ class DevToolsExtension {
 	 * @param {string[]} files - file paths detected by selection
 	 * @returns {void}
 	 */
-	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): void {
+	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): Promise<boolean> {
 		console.log("== Execute Menu Commands ==> " + command);
 		const packageName = this.mcdev.getPackageName();
-		// inital running command status bar configuration
-		const initialStatusBarColor = "";
-		const initialStatusBarIcon: string =
-			EnumsExtension.StatusBarIcon[command as keyof typeof EnumsExtension.StatusBarIcon];
-		const initialStatusBarTitle = `$(${initialStatusBarIcon}) ${packageName}`;
+		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
 		const inProgressBarTitle = MessagesEditor.runningCommand;
 
-		const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
-			console.log("== Execute Menu Commands Output ==> " + command);
+		const executeOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
 			const message = info || output || error;
 
 			let loggerLevel = EnumsExtension.LoggerLevel.DEBUG;
@@ -607,31 +609,27 @@ class DevToolsExtension {
 			this.writeLog(packageName, message, loggerLevel);
 		};
 
-		const mcdevExecuteOnResult = async (success: boolean) => {
-			console.log("== Execute Menu Commands Result ==> " + command);
-			const statusBarIcon = success ? EnumsExtension.StatusBarIcon.success : EnumsExtension.StatusBarIcon.error;
+		const executeOnResult = async (success: boolean, resolveCommand: (value: boolean) => void) => {
+			const statusBarIcon = success ? "success" : "error";
 			// changes the status bar icon and and color according to the execution result of the command
-			const newStatusBarColor = success ? initialStatusBarColor : "error";
-			const newStatusBarTitle = `$(${statusBarIcon}) ${packageName}`;
+			const newStatusBarColor = success ? "" : "error";
+			const newStatusBarTitle = this.getStatusBarTitle(statusBarIcon, packageName);
 
 			// Sets the message to show in the modal depending on the execution result
 			const infoMessage = success ? MessagesEditor.runningCommandSuccess : MessagesEditor.runningCommandFailure;
 
 			// Options to be displayed in the modal message
 			const infoMessageOptions = ["More Details"];
-
-			this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
+			this.updateStatusBar(packageName, newStatusBarTitle, newStatusBarColor);
 
 			if (!success)
 				// Changes back the status bar icon and backaground color to inital configuration after some time
 				Lib.executeAfterDelay(
-					() =>
-						this.updateContainers(packageName, {
-							text: `$(${EnumsExtension.StatusBarIcon.success}) ${packageName}`,
-							backgroundColor: initialStatusBarColor
-						}),
+					() => this.updateStatusBar(packageName, this.getStatusBarTitle("success", packageName), ""),
 					ConfigExtension.delayTimeUpdateStatusBar
 				);
+
+			resolveCommand(success);
 
 			const moreDetails = await this.showInformationMessage(
 				success ? "info" : "error",
@@ -642,23 +640,25 @@ class DevToolsExtension {
 			if (moreDetails) this.showOuputChannel(packageName);
 		};
 
-		this.updateContainers(packageName, { text: initialStatusBarTitle, backgroundColor: initialStatusBarColor });
+		this.updateStatusBar(packageName, initialStatusBarTitle, "");
 
 		// Execute the commands asynchronously
-		this.activateNotificationProgressBar(
-			inProgressBarTitle,
-			false,
-			() =>
-				new Promise(async resolve => {
-					const { success }: { success: boolean } = await this.mcdev.execute(
-						command,
-						mcdevExecuteOnOutput,
-						executeParameters
-					);
-					mcdevExecuteOnResult(success);
-					resolve(success);
-				})
-		);
+		return new Promise(async resolveCommand => {
+			this.activateNotificationProgressBar(
+				inProgressBarTitle,
+				false,
+				() =>
+					new Promise(async resolveExecute => {
+						const { success }: { success: boolean } = await this.mcdev.execute(
+							command,
+							executeOnOutput,
+							executeParameters
+						);
+						executeOnResult(success, resolveCommand);
+						resolveExecute(success);
+					})
+			);
+		});
 	}
 }
 export default DevToolsExtension;
