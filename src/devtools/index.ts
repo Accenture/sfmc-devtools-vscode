@@ -472,11 +472,11 @@ class DevToolsExtension {
 
 	async handleCopyToBuCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		const actions = ["clone"];
-		const userCopyToBUAnswer = await this.requestInputWithOptions(
+		const userCopyToBUAnswer = (await this.requestInputWithOptions(
 			Object.keys(EnumsDevTools.CopyToBUOptions),
 			MessagesEditor.copyToBuPrompt,
 			false
-		);
+		)) as string | undefined;
 		console.log(files);
 		console.log("userCopyToBUAnswer", userCopyToBUAnswer);
 		if (userCopyToBUAnswer) {
@@ -484,10 +484,11 @@ class DevToolsExtension {
 			const selectedBUs = await this.selectBusinessUnits(selectedProjectPaths[0], { multiBUs: false });
 			console.log("selectedBUs", selectedBUs);
 
-			if (userCopyToBUAnswer === EnumsDevTools.CopyToBUOptions["Copy And Deploy"]) actions.push("deploy");
-			actions.forEach(action =>
-				this.executeCommand(action, { filesDetails: files, targetBusinessUnit: selectedBUs })
-			);
+			if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"])
+				actions.push("deploy");
+			for (const action of actions) {
+				await this.executeCommand(action, { filesDetails: files, targetBusinessUnit: selectedBUs });
+			}
 		} else return;
 	}
 
@@ -585,7 +586,7 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): void {
-		console.log("== Execute Menu Commands ==");
+		console.log("== Execute Menu Commands ==> " + command);
 		const packageName = this.mcdev.getPackageName();
 		// inital running command status bar configuration
 		const initialStatusBarColor = "";
@@ -595,6 +596,7 @@ class DevToolsExtension {
 		const inProgressBarTitle = MessagesEditor.runningCommand;
 
 		const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
+			console.log("== Execute Menu Commands Output ==> " + command);
 			const message = info || output || error;
 
 			let loggerLevel = EnumsExtension.LoggerLevel.DEBUG;
@@ -606,6 +608,7 @@ class DevToolsExtension {
 		};
 
 		const mcdevExecuteOnResult = async (success: boolean) => {
+			console.log("== Execute Menu Commands Result ==> " + command);
 			const statusBarIcon = success ? EnumsExtension.StatusBarIcon.success : EnumsExtension.StatusBarIcon.error;
 			// changes the status bar icon and and color according to the execution result of the command
 			const newStatusBarColor = success ? initialStatusBarColor : "error";
@@ -640,6 +643,7 @@ class DevToolsExtension {
 		};
 
 		this.updateContainers(packageName, { text: initialStatusBarTitle, backgroundColor: initialStatusBarColor });
+
 		// Execute the commands asynchronously
 		this.activateNotificationProgressBar(
 			inProgressBarTitle,
