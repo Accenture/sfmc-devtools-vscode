@@ -1,0 +1,33 @@
+{
+  "root": true,
+  "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module"
+  },
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+    "plugin:prettier/recommended",
+    "plugin:import/typescript"
+  ],
+  "overrides": [],
+  "parser": "@typescript-eslint/parser",
+  "plugins": [ "@typescript-eslint", "prettier"],
+  "rules": {
+      "no-use-before-define": "error",
+      "import/prefer-default-export": "off",
+      "react/prop-types":"off",
+      "no-console": "off",
+      "no-var": "error",
+      "no-eval": "error",
+      "prefer-const": "error",
+      "comma-spacing": "error",
+      "no-trailing-spaces": "error",
+      "arrow-spacing": "error",
+      "prefer-arrow-callback": "error",
+      "no-path-concat": "error",
+      "@typescript-eslint/typedef": "error",
+      "@typescript-eslint/no-inferrable-types": "error"
+  },
+  "ignorePatterns": ["dist","src/**/*.d.ts"]
+}
