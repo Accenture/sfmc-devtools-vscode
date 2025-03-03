@@ -100,7 +100,7 @@ class MetadataTypes {
 			// configuration for asset mdtype
 			if (files.length === 1) return { metadataTypeName: `asset-${assetName}` };
 			else if (files.length > 1)
-				return { metadataTypeName: `asset-${assetName}`, filename: File.extractFileNameFromPath(filename) };
+				return { metadataTypeName: `asset`, filename: File.extractFileNameFromPath(filename) };
 		}
 
 		if (files.length === 1 || mdt === "folder") {
