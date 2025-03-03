@@ -143,6 +143,17 @@ class VSCodeWorkspace {
 		const workspaceFiles = await this.findWorkspaceFiles(file);
 		return workspaceFiles.length > 0;
 	}
+
+	/**
+	 * Opens a text document from the specified file path.
+	 *
+	 * @param path - The file path of the document to open.
+	 * @returns A promise that resolves to the opened text document.
+	 */
+	async openDocument(path: string): Promise<VSCode.TextDocument> {
+		const document = await this.workspace.openTextDocument(path);
+		return document;
+	}
 }
 
 export default VSCodeWorkspace;

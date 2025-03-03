@@ -1,4 +1,4 @@
-import { TEditor } from "@types";
+import { TEditor, VSCode } from "@types";
 
 /**
  * VSCode Editor class
@@ -46,9 +46,9 @@ class VSCodeEditor {
 	 * Creates an instance of VSCodeEditor.
 	 *
 	 * @constructor
-	 * @param {TEditor.IExtensionContext} context
+	 * @param {VSCode.ExtensionContext} context
 	 */
-	constructor(context: TEditor.IExtensionContext) {
+	constructor(context: VSCode.ExtensionContext) {
 		this.vscodeContext = new TEditor.VSCodeContext(context);
 		this.vscodeWorkspace = new TEditor.VSCodeWorkspace();
 		this.vscodeWindow = new TEditor.VSCodeWindow();

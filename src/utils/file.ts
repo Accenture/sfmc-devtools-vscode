@@ -14,26 +14,28 @@ function fileExists(path: string | string[]): string[] {
 	}
 }
 
+function readFileSync(path: string): string {
+	return fs.readFileSync(path, "utf-8");
+}
+
 /**
  * Extracts the file name from a file path
  *
- * @param {(string | string[])} files - file paths
- * @returns {string[]} list of extracted file names
+ * @param {string} filePath - file path
+ * @returns {string} extracted file name
  */
-function extractNameFromPath(files: string | string[]): string[] {
-	return [files].flat().map(file => {
-		// splits path
-		const fileName = file.split(/[\/]/).pop() || file;
+function extractFileNameFromPath(filePath: string): string {
+	// splits path
+	const fileName = filePath.split(/[\/]/).pop() || filePath;
 
-		// returns folder name
-		if (!fileName.includes(".")) return fileName;
+	// returns folder name
+	if (!fileName.includes(".")) return fileName;
 
-		// if it's a file in format filename.asset-asset-meta.ext
-		const lastDotIndex = fileName.lastIndexOf(".");
-		const secondLastDotIndex = fileName.lastIndexOf(".", fileName.lastIndexOf(".") - 1);
-		if (secondLastDotIndex < 0) return file.substring(0, lastDotIndex);
-		return fileName.substring(0, secondLastDotIndex);
-	});
+	// if it's a file in format filename.asset-asset-meta.ext
+	const lastDotIndex = fileName.lastIndexOf(".");
+	const secondLastDotIndex = fileName.lastIndexOf(".", fileName.lastIndexOf(".") - 1);
+	if (secondLastDotIndex < 0) return filePath.substring(0, lastDotIndex);
+	return fileName.substring(0, secondLastDotIndex);
 }
 
-export { fileExists, extractNameFromPath };
+export { fileExists, readFileSync, extractFileNameFromPath };

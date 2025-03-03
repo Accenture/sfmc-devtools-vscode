@@ -37,10 +37,7 @@ class StandardCommands extends Commands {
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} configuration after running a specific command
 	 */
-	run(
-		name: keyof typeof StandardCommandsAlias,
-		parameters: TDevTools.ICommandParameters[]
-	): TDevTools.ICommandConfig {
+	run(name: keyof typeof StandardCommandsAlias, parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Run ==");
 		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
 		switch (name) {
@@ -63,17 +60,22 @@ class StandardCommands extends Commands {
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
-	retrieve(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
+	retrieve(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Retrieve ==");
-		// command alias
-		const retrieveAlias = StandardCommandsAlias.retrieve;
 
-		// command parameters configuration
-		const retrieveConfig = parameters.map(parameter => [
-			this.configureParameters(parameter),
-			parameter.projectPath
-		]);
-		return { alias: retrieveAlias, config: retrieveConfig };
+		if ("files" in parameters) {
+			// command alias
+			const retrieveAlias = StandardCommandsAlias.retrieve;
+
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			// command parameters configuration
+			const retrieveConfig = fileParameters.map(parameter => [
+				this.configureParameters(parameter),
+				parameter.projectPath
+			]);
+			return { alias: retrieveAlias, config: retrieveConfig };
+		}
+		throw new Error(`[standard_retrieve]: The property 'files' is missing from parameters.`);
 	}
 
 	/**
@@ -82,32 +84,41 @@ class StandardCommands extends Commands {
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
-	deploy(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
+	deploy(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Deploy ==");
-		// command alias
-		const deployAlias = StandardCommandsAlias.deploy;
 
-		// Checks if the deploy action is from the retrieve folder
-		parameters = parameters
-			.map(parameter => {
-				// Checks if the deploy action was triggered from the Retrieve folder
-				const isFromRetrieveFolder = parameter.topFolder === "/retrieve/";
-				if (isFromRetrieveFolder) {
-					// Removes all the multi selected folder that cannot be deployed from retrieve folder
-					parameter.metadata = parameter.metadata.filter(
-						({ key }: TDevTools.IMetadataCommand) => key && key !== ""
-					);
-					parameter.optional = ["fromRetrieve"];
-				}
-				if (isFromRetrieveFolder && !parameter.metadata.length) return undefined;
-				return parameter;
-			})
-			.filter(param => param !== undefined) as TDevTools.ICommandParameters[];
+		if ("files" in parameters) {
+			// command alias
+			const deployAlias = StandardCommandsAlias.deploy;
 
-		// command parameters configuration
-		const deployConfig = parameters.map(parameter => [this.configureParameters(parameter), parameter.projectPath]);
+			let fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
 
-		return { alias: deployAlias, config: deployConfig };
+			// Checks if the deploy action is from the retrieve folder
+			fileParameters = fileParameters
+				.map(parameter => {
+					// Checks if the deploy action was triggered from the Retrieve folder
+					const isFromRetrieveFolder = parameter.topFolder === "/retrieve/";
+					if (isFromRetrieveFolder) {
+						// Removes all the multi selected folder that cannot be deployed from retrieve folder
+						parameter.metadata = parameter.metadata.filter(
+							({ key }: TDevTools.IMetadataCommand) => key && key !== ""
+						);
+						parameter.optional = ["fromRetrieve"];
+					}
+					if (isFromRetrieveFolder && !parameter.metadata.length) return undefined;
+					return parameter;
+				})
+				.filter(param => param !== undefined) as TDevTools.ICommandFileParameters[];
+
+			// command parameters configuration
+			const deployConfig = fileParameters.map(parameter => [
+				this.configureParameters(parameter),
+				parameter.projectPath
+			]);
+
+			return { alias: deployAlias, config: deployConfig };
+		}
+		throw new Error(`[standard_deploy]: The property 'files' is missing from parameters.`);
 	}
 
 	/**
@@ -116,15 +127,24 @@ class StandardCommands extends Commands {
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
-	delete(parameters: TDevTools.ICommandParameters[]): TDevTools.ICommandConfig {
+	delete(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Delete ==");
-		// command alias
-		const deleteAlias = StandardCommandsAlias.delete;
 
-		// command parameters configuration
-		const deleteConfig = parameters.map(parameter => [this.configureParameters(parameter), parameter.projectPath]);
+		if ("files" in parameters) {
+			// command alias
+			const deleteAlias = StandardCommandsAlias.delete;
 
-		return { alias: deleteAlias, config: deleteConfig };
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+
+			// command parameters configuration
+			const deleteConfig = fileParameters.map(parameter => [
+				this.configureParameters(parameter),
+				parameter.projectPath
+			]);
+
+			return { alias: deleteAlias, config: deleteConfig };
+		}
+		throw new Error(`[standard_delete]: The property 'files' is missing from parameters.`);
 	}
 }
 

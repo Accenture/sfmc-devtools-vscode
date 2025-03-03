@@ -1,4 +1,4 @@
-import { TEditor } from "@types";
+import { VSCode } from "@types";
 
 /**
  * VSCode Context class
@@ -11,16 +11,16 @@ class VSCodeContext {
 	 * Extension context
 	 *
 	 * @private
-	 * @type {TEditor.IExtensionContext}
+	 * @type {VSCode.ExtensionContext}
 	 */
-	private context: TEditor.IExtensionContext;
+	private context: VSCode.ExtensionContext;
 	/**
 	 * Creates an instance of VSCodeContext.
 	 *
 	 * @constructor
-	 * @param {TEditor.IExtensionContext} context
+	 * @param {VSCode.ExtensionContext} context
 	 */
-	constructor(context: TEditor.IExtensionContext) {
+	constructor(context: VSCode.ExtensionContext) {
 		this.context = context;
 	}
 
@@ -40,6 +40,15 @@ class VSCodeContext {
 	 */
 	getExtensionVersion(): string {
 		return this.context.extension.packageJSON.version;
+	}
+
+	/**
+	 * Retrieves the extension path from the context.
+	 *
+	 * @returns {string} The path of the extension.
+	 */
+	getExtensionPath(): string {
+		return this.context.extensionPath;
 	}
 }
 

@@ -1,8 +1,8 @@
 import Mcdev from "./mcdev";
-import { ConfigDevTools } from "@config";
+import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
-import { EnumsExtension } from "@enums";
-import { TEditor, TUtils } from "@types";
+import { EnumsDevTools, EnumsExtension } from "@enums";
+import { TDevTools, TEditor, TUtils } from "@types";
 import { Lib } from "utils";
 
 /**
@@ -59,7 +59,7 @@ class DevToolsExtension {
 	 */
 	async isDevToolsProject(): Promise<boolean> {
 		console.log("== Is Project ==");
-		const requiredProjectFiles = ConfigDevTools.requiredFiles || [];
+		const requiredProjectFiles = this.mcdev.getRequiredFiles() || [];
 		// Checks if the required DevTools files exist in the folder/folders
 		const filesInFolderResult = await Promise.all(
 			requiredProjectFiles.map(
@@ -158,7 +158,7 @@ class DevToolsExtension {
 		console.log("== Activate Context Variables ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 		// Sets vscode environment variable 'isproject' to true
-		vscodeCommands.executeCommandContext(`${ConfigDevTools.extensionName}.config.isproject`, [true]);
+		vscodeCommands.executeCommandContext(`${ConfigExtension.extensionName}.config.isproject`, [true]);
 	}
 
 	/**
@@ -172,7 +172,7 @@ class DevToolsExtension {
 		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
 		const vscodeExtensions = this.vscodeEditor.getExtensions();
 		const vscodeCommands = this.vscodeEditor.getCommands();
-		const recommendedExtensions = ConfigDevTools.recommendedExtensions;
+		const recommendedExtensions = ConfigExtension.recommendedExtensions;
 		const configurationKey = "recommendExtensions";
 
 		// Checks if recommended extensions are already installed
@@ -182,7 +182,7 @@ class DevToolsExtension {
 
 		// Checks if recommended extensions suggestion is enabled
 		const recommendExtensions = vscodeWorkspace.isConfigurationKeyEnabled(
-			ConfigDevTools.extensionName,
+			ConfigExtension.extensionName,
 			configurationKey
 		);
 
@@ -199,7 +199,7 @@ class DevToolsExtension {
 				userAnswer &&
 				userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions["Do not show again"]
 			)
-				vscodeWorkspace.setConfigurationKey(ConfigDevTools.extensionName, configurationKey, false);
+				vscodeWorkspace.setConfigurationKey(ConfigExtension.extensionName, configurationKey, false);
 			// if user clicks on "install" then installs extensions
 			if (userAnswer && userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions.Install)
 				vscodeCommands.installExtension(uninstalledExtensions);
@@ -218,7 +218,7 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 
 		// Sets the command when the status bar is clicked
-		const statusBarCommand = `${ConfigDevTools.extensionName}.openOutputChannel`;
+		const statusBarCommand = `${ConfigExtension.extensionName}.openOutputChannel`;
 		// Sets the default status bar icon and name
 		const statusBarTitle = `$(${EnumsExtension.StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
 
@@ -245,18 +245,16 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 
 		// Gets the .mcdevrc file name from the required DevTools file list
-		const [mcdevrcFile] = ConfigDevTools.requiredFiles;
+		const configFileName = this.mcdev.getConfigFileName();
 		// For every devtools project folder in the open workspace it retrieves the complete path of the .mcdevrc file
-		const mcdevrcFsPath = await workspace.findWorkspaceFiles(`**/${mcdevrcFile}`);
+		const configFsPath = await workspace.findWorkspaceFiles(`**/${configFileName}`);
 		// Builds the message to be displayed with the .mcdevrc file path
-		const mcdevrcPathMessage = mcdevrcFsPath.map(
-			mcdevrcPath => `${MessagesDevTools.mcdevConfigFile} ${mcdevrcPath}`
-		);
+		const configFilePathMessage = configFsPath.map(path => `${MessagesDevTools.mcdevConfigFile} ${path}`);
 
 		const messages = [
 			`Extension name: ${context.getExtensionName()}`,
 			`Extension version: ${context.getExtensionVersion()}`,
-			...mcdevrcPathMessage
+			...configFilePathMessage
 		];
 		// Prints the messages to the Output channel
 		messages.forEach(message => this.writeLog(packageName, message, EnumsExtension.LoggerLevel.INFO));
@@ -306,6 +304,7 @@ class DevToolsExtension {
 		isModal?: boolean
 	): Promise<string | undefined> {
 		const vscodeWindow = this.vscodeEditor.getWindow();
+		// Shows the modal message with the title and options
 		const answer =
 			type === "info"
 				? await vscodeWindow.showInformationMessageWithOptions(title, options, isModal || false)
@@ -329,6 +328,7 @@ class DevToolsExtension {
 
 		if (!nonOutputLevel.includes(level)) this.logTextOutputChannel(ouputChannel, message);
 		// logs into extension file
+		console.log(message); // TODO: remove console.log and add to log file
 	}
 
 	/**
@@ -357,6 +357,52 @@ class DevToolsExtension {
 		try {
 			const vscodeWindow = this.vscodeEditor.getWindow();
 			vscodeWindow.displayOutputChannel(name);
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+		}
+	}
+
+	/**
+	 * Prompts the user with a selection of options and returns their choice.
+	 *
+	 * @param options - An array of strings representing the options to present to the user.
+	 * @param title - The title of the prompt window.
+	 * @param multipleOptions - A boolean indicating whether multiple options can be selected.
+	 * @returns A promise that resolves to the user's selection. If `multipleOptions` is true,
+	 *          it returns an array of selected options. If `multipleOptions` is false, it
+	 *          returns a single selected option. If the user cancels the prompt, it returns `undefined`.
+	 */
+	async requestInputWithOptions(
+		options: string[],
+		title: string,
+		multipleOptions: boolean
+	): Promise<string | string[] | undefined> {
+		const window = this.vscodeEditor.getWindow();
+		const userAnswer = await window.showQuickPickOptions(options, title, multipleOptions);
+		// Returns the user's selection or undefined if the user cancels the prompt
+		if (!userAnswer) return;
+		// Returns the selected options as an array if multiple options can be selected
+		if (Array.isArray(userAnswer)) return userAnswer.map(answer => answer.label);
+		// Returns the selected option as a string if only one option can be selected
+		return userAnswer.label;
+	}
+
+	/**
+	 * Opens a file in the editor given its path.
+	 *
+	 * @param path - The path of the file to open.
+	 * @returns A promise that resolves when the file is opened in the editor.
+	 *
+	 * @throws Will log an error if the file cannot be opened.
+	 */
+	async openFileInEditor(path: string): Promise<void> {
+		try {
+			const workspace = this.vscodeEditor.getWorkspace();
+			const window = this.vscodeEditor.getWindow();
+
+			// Opens the file in the editor
+			const document = await workspace.openDocument(path);
+			window.showDocument(document);
 		} catch (error) {
 			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
 		}
@@ -403,10 +449,10 @@ class DevToolsExtension {
 		console.log("== Activate Menu Commands ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 
-		ConfigDevTools.menuCommands.forEach(command =>
+		ConfigExtension.menuCommands.forEach(command =>
 			// For all the menu commands configured it will register the command and execution action
 			vscodeCommands.registerCommand({
-				command: `${ConfigDevTools.extensionName}.${command}`,
+				command: `${ConfigExtension.extensionName}.${command}`,
 				callbackAction: (files: string[]) => {
 					const activeTabFilePath = this.getActiveTabFilePath();
 					// When the menu command is done from the file tab it requires the active open file path
@@ -425,13 +471,22 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	executeMenuCommand(command: string, files: string[]): void {
+		// Filters the paths by parent folder to avoid repeating calling DevTools commands for same files
+		const filteredPathsByParent = Lib.removeSubPathsByParent(files);
+
+		// Convert paths to file structure defined for DevTools Commands
+		const selectedFiles = this.mcdev.convertPathsToFiles(filteredPathsByParent);
+
+		// menu commands handlers
 		const menuCommandsHandlers: { [key: string]: () => void } = {
-			retrieve: () => this.handleRetrieveCommand(files),
-			deploy: () => this.handleDeployCommand(files),
-			delete: () => this.handleDeleteCommand(files)
+			copytobu: () => this.handleCopyToBUCommand(selectedFiles),
+			delete: () => this.handleDeleteCommand(selectedFiles),
+			deploy: () => this.handleDeployCommand(selectedFiles),
+			retrieve: () => this.handleRetrieveCommand(selectedFiles)
 		};
 
 		const menuCommandHandler = menuCommandsHandlers[command];
+		// Executes the menu command handler
 		if (menuCommandHandler) menuCommandHandler();
 		else
 			this.writeLog(
@@ -442,23 +497,67 @@ class DevToolsExtension {
 	}
 
 	/**
-	 * Handles the Menu Command 'retrieve'
+	 * Handles the "Copy to BU" command by requesting user input for the action to perform,
+	 * selecting the target business units, and executing the appropriate commands.
 	 *
-	 * @param {string[]} files - selected files paths
-	 * @returns {void}
+	 * @param files - An array of file details to be processed.
+	 * @returns A promise that resolves when the command execution is complete.
+	 * @throws Will log and handle any errors that occur during the execution.
 	 */
-	handleRetrieveCommand(files: string[]): void {
-		this.executeCommand("retrieve", files);
-	}
+	async handleCopyToBUCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		try {
+			// Request user to select the action to perform
+			const userCopyToBUAnswer = (await this.requestInputWithOptions(
+				Object.keys(EnumsDevTools.CopyToBUOptions),
+				MessagesEditor.copyToBuPrompt,
+				false
+			)) as string | undefined;
 
-	/**
-	 * Handles the Menu Command 'deploy'
-	 *
-	 * @param {string[]} files - selected files paths
-	 * @returns {void}
-	 */
-	handleDeployCommand(files: string[]): void {
-		this.executeCommand("deploy", files);
+			// If no action is selected, return
+			if (!userCopyToBUAnswer) return;
+			// Get the selected project paths without deplicates
+			const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
+
+			// For each selected project path
+			selectedProjectPaths.forEach(async selectedProjectPath => {
+				// Filter the files by the selected project path
+				const filesByProject = files.filter(file => file.projectPath === selectedProjectPath);
+
+				// Select the business units for the selected project path
+				const selectedBUs = (await this.selectBusinessUnits(selectedProjectPath, {
+					multiBUs: false
+				})) as string[];
+
+				// Execute the 'clone' command with the selected files and business units
+				await this.executeCommand("clone", {
+					filesDetails: filesByProject,
+					targetBusinessUnit: selectedBUs
+				});
+
+				// If the user selected the 'Copy And Deploy' option, deploy the copied files to the selected business units
+				if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"]) {
+					const targetBUsFiles = selectedBUs.flatMap(selectedBU =>
+						filesByProject.map(file =>
+							file.path.replace(
+								`/retrieve/${file.credentialsName}/${file.businessUnit}`,
+								`/deploy/${selectedBU}`
+							)
+						)
+					);
+					// Execute the 'deploy' command with the selected files and target business units
+					this.executeMenuCommand("deploy", targetBUsFiles);
+				}
+			});
+		} catch (error) {
+			// Show error message if no credentials are found in the mcdevrc file
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+			// Update the status bar with the error message
+			this.updateStatusBar(
+				this.mcdev.getPackageName(),
+				this.getStatusBarTitle("error", this.mcdev.getPackageName()),
+				"error"
+			);
+		}
 	}
 
 	/**
@@ -468,40 +567,157 @@ class DevToolsExtension {
 	 * @param {string[]} files - selected files paths
 	 * @returns {Promise<void>}
 	 */
-	async handleDeleteCommand(files: string[]): Promise<void> {
-		const fileNamesList = this.mcdev
-			.convertPathsToFiles(files)
-			.map(file => `${file.filename} (${file.metadataType})`);
+	async handleDeleteCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		// Get the file names and metadata types to display in the confirmation message
+		const fileNamesList = files.map(file => `${file.filename} (${file.metadataType})`);
+		// Request user confirmation to delete the selected files
 		const confirmationAnswer = await this.showInformationMessage(
 			"info",
 			MessagesEditor.deleteConfirmation(fileNamesList),
 			Object.keys(EnumsExtension.Confirmation),
 			true
 		);
+		// If the user cancels the confirmation, return
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
-		this.executeCommand("delete", files);
+		// Execute the 'delete' command
+		this.executeCommand("delete", { filesDetails: files });
 	}
 
 	/**
-	 * Executes the extension menu commands
+	 * Handles the Menu Command 'deploy'
 	 *
-	 * @param {string} command - extension command
-	 * @param {string[]} files - file paths detected by selection
+	 * @param {string[]} files - selected files paths
 	 * @returns {void}
 	 */
-	executeCommand(command: string, files: string[]): void {
-		console.log("== Execute Menu Commands ==");
+	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
+		this.executeCommand("deploy", { filesDetails: files });
+	}
+
+	/**
+	 * Handles the Menu Command 'retrieve'
+	 *
+	 * @param {string[]} files - selected files paths
+	 * @returns {void}
+	 */
+	handleRetrieveCommand(files: TDevTools.IExecuteFileDetails[]): void {
+		this.executeCommand("retrieve", { filesDetails: files });
+	}
+
+	/**
+	 * Selects business units based on the provided project path and options.
+	 *
+	 * @param {string} projectPath - The path to the project.
+	 * @param {Object} options - The options for selecting business units.
+	 * @param {boolean} options.multiBUs - Indicates if multiple business units can be selected.
+	 * @returns {Promise<string[] | undefined>} A promise that resolves to an array of selected business units or undefined.
+	 * @throws {Error} If no credentials or business units are found.
+	 */
+	async selectBusinessUnits(projectPath: string, { multiBUs }: { multiBUs: boolean }): Promise<string[] | undefined> {
+		// Get the credentials and business units from the mcdevrc file
+		const projectCredsConfig = this.mcdev.retrieveProjectCredentialsConfig(projectPath);
+		// Get the credentials from the mcdevrc file
+		const credentials = projectCredsConfig.getAllCredentials();
+		let selectedCred: string | undefined;
+		let selectedBUs: string[] | undefined;
+		let errorMessage = "";
+
+		// Skip user selection if only one credential is found
+		if (credentials.length === 1) selectedCred = credentials[0];
+		else if (credentials.length > 1)
+			// Request user to select a credential
+			selectedCred = (await this.requestInputWithOptions(credentials, MessagesEditor.credentialPrompt, false)) as
+				| string
+				| undefined;
+		else {
+			// Show error message if no credentials are found in the mcdevrc file
+			errorMessage = MessagesEditor.noCredentialFound;
+		}
+
+		// If a credential is selected, request user to select a business unit
+		if (selectedCred) {
+			// Get the business units associated with the selected credential
+			const businessUnits = projectCredsConfig.getBusinessUnitsByCredential(selectedCred);
+			// Skip user selection if only one business unit is found
+			if (businessUnits.length === 1) selectedBUs = [businessUnits[0]];
+			else if (businessUnits.length > 1) {
+				// Request user to select a business unit
+				selectedBUs = (await this.requestInputWithOptions(
+					businessUnits,
+					MessagesEditor.businessUnitsPrompt,
+					multiBUs
+				)) as string[] | undefined;
+			} else {
+				// Show error message if no business units are found for the selected credential
+				errorMessage = MessagesEditor.noBusinessUnitsFound(selectedCred);
+			}
+		}
+
+		// Return the selected business units
+		if (selectedCred && selectedBUs) return [selectedBUs].flat().map(bu => `${selectedCred}/${bu}`);
+		// Show error message if no credential or business units are found
+		if (errorMessage) {
+			this.writeLog(this.mcdev.getPackageName(), errorMessage, EnumsExtension.LoggerLevel.WARN);
+			const openConfigFile = await this.showInformationMessage("error", errorMessage, ["Open config file"]);
+			// Open the mcdevrc file in the editor
+			if (openConfigFile) this.openFileInEditor(`${this.mcdev.getConfigFilePath(projectPath)}`);
+			throw new Error(errorMessage);
+		}
+		return [];
+	}
+
+	/**
+	 * Generates a status bar title string with an icon and name.
+	 *
+	 * @param iconName - The name of the icon to be displayed in the status bar.
+	 * @param name - The name to be displayed next to the icon in the status bar.
+	 * @returns The formatted status bar title string.
+	 */
+	getStatusBarTitle(iconName: string, name: string): string {
+		// Get the status bar icon based on the icon name
+		const statusBarIcon = EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon];
+		return `$(${statusBarIcon}) ${name}`;
+	}
+
+	/**
+	 * Updates the status bar with the specified name, title, and color.
+	 *
+	 * @param name - The name of the status bar item to update.
+	 * @param title - The text to display in the status bar.
+	 * @param color - The background color of the status bar item.
+	 * @returns void
+	 */
+	updateStatusBar(name: string, title: string, color: string): void {
+		this.updateContainers(name, { text: title, backgroundColor: color });
+	}
+
+	/**
+	 * Executes a given command with specified parameters and updates the status bar and logs accordingly.
+	 *
+	 * @param {string} command - The command to be executed.
+	 * @param {TDevTools.IExecuteParameters} executeParameters - The parameters required for command execution.
+	 * @returns {Promise<boolean>} - A promise that resolves to a boolean indicating the success of the command execution.
+	 *
+	 */
+	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): Promise<boolean> {
+		console.log("== Execute Menu Commands == ");
+		// Gets the package name from the mcdev instance
 		const packageName = this.mcdev.getPackageName();
-		// inital running command status bar configuration
-		const initialStatusBarColor = "";
-		const initialStatusBarIcon: string =
-			EnumsExtension.StatusBarIcon[command as keyof typeof EnumsExtension.StatusBarIcon];
-		const initialStatusBarTitle = `$(${initialStatusBarIcon}) ${packageName}`;
+		// Sets the status bar title and icon based on the command execution
+		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
 		const inProgressBarTitle = MessagesEditor.runningCommand;
 
-		const mcdevExecuteOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
+		/**
+		 * Executes logging based on the provided output information.
+		 *
+		 * @param {Object} param - The output logger object.
+		 * @param {string} [param.info=""] - Informational message to log.
+		 * @param {string} [param.output=""] - Output message to log.
+		 * @param {string} [param.error=""] - Error message to log.
+		 *
+		 */
+		const executeOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
 			const message = info || output || error;
-
+			// Sets the logger level according to the output received
 			let loggerLevel = EnumsExtension.LoggerLevel.DEBUG;
 			if (info) loggerLevel = EnumsExtension.LoggerLevel.INFO;
 			if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
@@ -510,31 +726,38 @@ class DevToolsExtension {
 			this.writeLog(packageName, message, loggerLevel);
 		};
 
-		const mcdevExecuteOnResult = async (success: boolean) => {
-			const statusBarIcon = success ? EnumsExtension.StatusBarIcon.success : EnumsExtension.StatusBarIcon.error;
+		/**
+		 * Executes actions based on the result of a command.
+		 *
+		 * @param success - A boolean indicating whether the command was successful.
+		 * @param resolveCommand - A function to resolve the command with a boolean value.
+		 *
+		 * @returns A promise that resolves when the actions are completed.
+		 *
+		 */
+		const executeOnResult = async (success: boolean, resolveCommand: (value: boolean) => void) => {
+			const statusBarIcon = success ? "success" : "error";
 			// changes the status bar icon and and color according to the execution result of the command
-			const newStatusBarColor = success ? initialStatusBarColor : "error";
-			const newStatusBarTitle = `$(${statusBarIcon}) ${packageName}`;
+			const newStatusBarColor = success ? "" : "error";
+			const newStatusBarTitle = this.getStatusBarTitle(statusBarIcon, packageName);
 
 			// Sets the message to show in the modal depending on the execution result
 			const infoMessage = success ? MessagesEditor.runningCommandSuccess : MessagesEditor.runningCommandFailure;
 
 			// Options to be displayed in the modal message
 			const infoMessageOptions = ["More Details"];
-
-			this.updateContainers(packageName, { text: newStatusBarTitle, backgroundColor: newStatusBarColor });
+			this.updateStatusBar(packageName, newStatusBarTitle, newStatusBarColor);
 
 			if (!success)
 				// Changes back the status bar icon and backaground color to inital configuration after some time
 				Lib.executeAfterDelay(
-					() =>
-						this.updateContainers(packageName, {
-							text: `$(${EnumsExtension.StatusBarIcon.success}) ${packageName}`,
-							backgroundColor: initialStatusBarColor
-						}),
-					ConfigDevTools.delayTimeUpdateStatusBar
+					() => this.updateStatusBar(packageName, this.getStatusBarTitle("success", packageName), ""),
+					ConfigExtension.delayTimeUpdateStatusBar
 				);
 
+			resolveCommand(success);
+
+			// Shows the modal message with the result of the command execution
 			const moreDetails = await this.showInformationMessage(
 				success ? "info" : "error",
 				infoMessage,
@@ -544,22 +767,26 @@ class DevToolsExtension {
 			if (moreDetails) this.showOuputChannel(packageName);
 		};
 
-		this.updateContainers(packageName, { text: initialStatusBarTitle, backgroundColor: initialStatusBarColor });
+		// Updates the status bar with the initial configuration
+		this.updateStatusBar(packageName, initialStatusBarTitle, "");
+
 		// Execute the commands asynchronously
-		this.activateNotificationProgressBar(
-			inProgressBarTitle,
-			false,
-			() =>
-				new Promise(async resolve => {
-					const { success }: { success: boolean } = await this.mcdev.execute(
-						command,
-						mcdevExecuteOnOutput,
-						files
-					);
-					mcdevExecuteOnResult(success);
-					resolve(success);
-				})
-		);
+		return new Promise(async resolveCommand => {
+			this.activateNotificationProgressBar(
+				inProgressBarTitle,
+				false,
+				() =>
+					new Promise(async resolveExecute => {
+						const { success }: { success: boolean } = await this.mcdev.execute(
+							command,
+							executeOnOutput,
+							executeParameters
+						);
+						executeOnResult(success, resolveCommand);
+						resolveExecute(success);
+					})
+			);
+		});
 	}
 }
 export default DevToolsExtension;
