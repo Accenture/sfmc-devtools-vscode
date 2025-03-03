@@ -2,14 +2,19 @@ import Commands from "./commands";
 import { TDevTools } from "@types";
 
 /**
- * Templating Commands Alias
+ * Enum representing the alias for templating commands.
  *
- * @enum {number}
+ * @enum {string}
  */
 enum TemplatingCommandsAlias {
 	clone = "clone"
 }
 
+/**
+ * Enum representing the flags for templating commands.
+ *
+ * @enum {string}
+ */
 enum TemplatingCommandsFlags {
 	buFrom = "--bf",
 	buTarget = "--bt"
@@ -64,11 +69,13 @@ class TemplatingCommands extends Commands {
 		console.log("== Templating Commands: Clone ==");
 		const buFromFlag = TemplatingCommandsFlags.buFrom;
 		const buTargetFlag = TemplatingCommandsFlags.buTarget;
-		console.log(parameters);
-		if ("files" in parameters) {
+
+		// Check if the parameters object contains the 'files' and 'targetBusinessUnit' properties
+		if ("files" in parameters && "targetBusinessUnit" in parameters) {
 			// command alias
 			const cloneAlias = TemplatingCommandsAlias.clone;
 
+			// file parameters configuration
 			const fileParameters = (parameters.files as TDevTools.ICommandFileParameters[]).map(file => {
 				const credential = `${buFromFlag} ${file.credential} ${buTargetFlag} ${parameters.targetBusinessUnit}`;
 				return { ...file, credential, optional: ["no-purge"] };

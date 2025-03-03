@@ -304,6 +304,7 @@ class DevToolsExtension {
 		isModal?: boolean
 	): Promise<string | undefined> {
 		const vscodeWindow = this.vscodeEditor.getWindow();
+		// Shows the modal message with the title and options
 		const answer =
 			type === "info"
 				? await vscodeWindow.showInformationMessageWithOptions(title, options, isModal || false)
@@ -478,7 +479,7 @@ class DevToolsExtension {
 
 		// menu commands handlers
 		const menuCommandsHandlers: { [key: string]: () => void } = {
-			copytobu: () => this.handleCopyToBuCommand(selectedFiles),
+			copytobu: () => this.handleCopyToBUCommand(selectedFiles),
 			delete: () => this.handleDeleteCommand(selectedFiles),
 			deploy: () => this.handleDeployCommand(selectedFiles),
 			retrieve: () => this.handleRetrieveCommand(selectedFiles)
@@ -503,10 +504,8 @@ class DevToolsExtension {
 	 * @returns A promise that resolves when the command execution is complete.
 	 * @throws Will log and handle any errors that occur during the execution.
 	 */
-	async handleCopyToBuCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+	async handleCopyToBUCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		try {
-			// Default Copy To BU action
-			const actions = ["clone"];
 			// Request user to select the action to perform
 			const userCopyToBUAnswer = (await this.requestInputWithOptions(
 				Object.keys(EnumsDevTools.CopyToBUOptions),
@@ -518,17 +517,38 @@ class DevToolsExtension {
 			if (!userCopyToBUAnswer) return;
 			// Get the selected project paths without deplicates
 			const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
-			const selectedBUs = (await this.selectBusinessUnits(selectedProjectPaths[0], {
-				multiBUs: false
-			})) as string[];
 
-			if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"])
-				actions.push("deploy");
-			for (const action of actions) {
-				await this.executeCommand(action, { filesDetails: files, targetBusinessUnit: selectedBUs });
-			}
+			// For each selected project path
+			selectedProjectPaths.forEach(async selectedProjectPath => {
+				// Filter the files by the selected project path
+				const filesByProject = files.filter(file => file.projectPath === selectedProjectPath);
+
+				// Select the business units for the selected project path
+				const selectedBUs = (await this.selectBusinessUnits(selectedProjectPath, {
+					multiBUs: false
+				})) as string[];
+
+				// Execute the 'clone' command with the selected files and business units
+				await this.executeCommand("clone", {
+					filesDetails: filesByProject,
+					targetBusinessUnit: selectedBUs
+				});
+
+				// If the user selected the 'Copy And Deploy' option, deploy the copied files to the selected business units
+				if (userCopyToBUAnswer.toLowerCase() === EnumsDevTools.CopyToBUOptions["Copy And Deploy"]) {
+					const targetBUsFiles = selectedBUs.flatMap(selectedBU =>
+						filesByProject.map(file =>
+							file.path.replace(
+								`/retrieve/${file.credentialsName}/${file.businessUnit}`,
+								`/deploy/${selectedBU}`
+							)
+						)
+					);
+					// Execute the 'deploy' command with the selected files and target business units
+					this.executeMenuCommand("deploy", targetBUsFiles);
+				}
+			});
 		} catch (error) {
-			console.log(error);
 			// Show error message if no credentials are found in the mcdevrc file
 			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
 			// Update the status bar with the error message
@@ -653,6 +673,7 @@ class DevToolsExtension {
 	 * @returns The formatted status bar title string.
 	 */
 	getStatusBarTitle(iconName: string, name: string): string {
+		// Get the status bar icon based on the icon name
 		const statusBarIcon = EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon];
 		return `$(${statusBarIcon}) ${name}`;
 	}
@@ -679,7 +700,9 @@ class DevToolsExtension {
 	 */
 	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): Promise<boolean> {
 		console.log("== Execute Menu Commands == ");
+		// Gets the package name from the mcdev instance
 		const packageName = this.mcdev.getPackageName();
+		// Sets the status bar title and icon based on the command execution
 		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
 		const inProgressBarTitle = MessagesEditor.runningCommand;
 

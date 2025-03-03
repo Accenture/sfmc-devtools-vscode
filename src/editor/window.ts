@@ -68,14 +68,24 @@ class VSCodeWindow {
 		return response;
 	}
 
+	/**
+	 * Displays a quick pick menu with the given options.
+	 *
+	 * @param items - An array of strings or VSCode.QuickPickItem objects to display in the quick pick menu.
+	 * @param title - The placeholder text to display in the quick pick menu.
+	 * @param multiplePicks - A boolean indicating whether multiple items can be selected.
+	 * @returns A promise that resolves to the selected item(s) or undefined if no item was selected.
+	 */
 	async showQuickPickOptions(
 		items: (string | VSCode.QuickPickItem)[],
 		title: string,
 		multiplePicks: boolean
 	): Promise<VSCode.QuickPickItem | VSCode.QuickPickItem[] | undefined> {
+		// Convert string items to QuickPickItem objects
 		const quickPickItems: VSCode.QuickPickItem[] = items.map(item =>
 			typeof item === "string" ? { label: item } : item
 		);
+		// Show the quick pick menu
 		const response = await this.window.showQuickPick(quickPickItems, {
 			placeHolder: title,
 			canPickMany: multiplePicks
@@ -225,6 +235,11 @@ class VSCodeWindow {
 		return activeTextEditor.document.uri.path;
 	}
 
+	/**
+	 * Displays the given text document in the editor window.
+	 *
+	 * @param document - The text document to be displayed.
+	 */
 	showDocument(document: VSCode.TextDocument) {
 		this.window.showTextDocument(document);
 	}

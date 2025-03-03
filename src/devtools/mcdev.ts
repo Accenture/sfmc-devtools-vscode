@@ -59,14 +59,30 @@ class Mcdev {
 		return this.packageName;
 	}
 
+	/**
+	 * Retrieves the name of the configuration file.
+	 *
+	 * @returns {string} The name of the configuration file.
+	 */
 	public getConfigFileName(): string {
 		return this.configFileName;
 	}
 
+	/**
+	 * Retrieves the list of required files.
+	 *
+	 * @returns {string[]} An array of strings representing the required files.
+	 */
 	public getRequiredFiles(): string[] {
 		return this.requiredFiles;
 	}
 
+	/**
+	 * Retrieves the full path to the configuration file for a given project.
+	 *
+	 * @param projectPath - The root path of the project.
+	 * @returns The full path to the configuration file.
+	 */
 	public getConfigFilePath(projectPath: string): string {
 		return `${projectPath}/${this.getConfigFileName()}`;
 	}
@@ -114,6 +130,16 @@ class Mcdev {
 		this.execute("explainTypes", executeOnResult, { projectPath });
 	}
 
+	/**
+	 * Retrieves the project credentials configuration from the specified project path.
+	 *
+	 * @param projectPath - The path to the project directory.
+	 * @returns An object containing methods to access project credentials and market configurations.
+	 * @returns getAllCredentials - A method that returns an array of all credential keys.
+	 * @returns getBusinessUnitsByCredential - A method that returns an array of business unit keys for a given credential.
+	 * @returns getMarkets - A method that returns an array of all market keys.
+	 * @returns getMarketsList - A method that returns an array of all market list keys.
+	 */
 	public retrieveProjectCredentialsConfig(projectPath: string): TDevTools.IProjectConfig {
 		const configProjectFilePath = Lib.removeLeadingRootDrivePath(this.getConfigFilePath(projectPath));
 		const configProjectFile = File.readFileSync(Lib.removeLeadingRootDrivePath(configProjectFilePath));
@@ -351,6 +377,15 @@ class Mcdev {
 		return { success: commandResults.every(result => result === true) };
 	}
 
+	/**
+	 * Executes a given mcdev command with specified parameters and handles the output.
+	 *
+	 * @param mcdevCommand - The mcdev command to be executed.
+	 * @param command - The command string to be run.
+	 * @param commandParameters - The parameters for the command.
+	 * @param commandHandler - A handler function to process the command output.
+	 * @returns A promise that resolves to an array of boolean values indicating the success of each command execution.
+	 */
 	private async runCommand(
 		mcdevCommand: Commands,
 		command: string,
@@ -370,10 +405,12 @@ class Mcdev {
 				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler({ output, error })
 			};
 
+			// Logs the command that is being executed
 			commandHandler({
 				info: `${MessagesDevTools.mcdevRunningCommand} ${this.getPackageName()} ${commandConfig.alias} ${parameters}\n`
 			});
 
+			// Executes the command in the terminal
 			const { success }: TUtils.ITerminalCommandResult = await Terminal.executeTerminalCommand(
 				terminalConfig,
 				false

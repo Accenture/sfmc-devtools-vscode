@@ -42,6 +42,11 @@ class VSCodeContext {
 		return this.context.extension.packageJSON.version;
 	}
 
+	/**
+	 * Retrieves the extension path from the context.
+	 *
+	 * @returns {string} The path of the extension.
+	 */
 	getExtensionPath(): string {
 		return this.context.extensionPath;
 	}
