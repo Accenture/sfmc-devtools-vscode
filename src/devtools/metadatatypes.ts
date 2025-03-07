@@ -1,4 +1,3 @@
-import { TDevTools } from "@types";
 import { File } from "utils";
 
 /**
@@ -8,14 +7,6 @@ import { File } from "utils";
  * @typedef {MetadataTypes}
  */
 class MetadataTypes {
-	/**
-	 * Stores all the Metatadata Types
-	 *
-	 * @private
-	 * @type {TDevTools.IMetadataTypes[]}
-	 */
-	private metadataTypes: TDevTools.IMetadataTypes[] = [];
-
 	/**
 	 * Creates an instance of MetadataTypes.
 	 *

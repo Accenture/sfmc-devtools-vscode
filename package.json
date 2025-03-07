@@ -66,73 +66,89 @@
          "commandPalette": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%"
+               "when": "%command.when.copytobu%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%"
+               "when": "%command.when.delete%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%"
+               "when": "%command.when.deploy%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%"
+               "when": "%command.when.retrieve%",
+               "group": "devtools"
             }
          ],
          "editor/context": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%"
+               "when": "%command.when.copytobu%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%"
+               "when": "%command.when.delete%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%"
+               "when": "%command.when.deploy%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%"
+               "when": "%command.when.retrieve%",
+               "group": "devtools"
             }
          ],
          "explorer/context": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%"
+               "when": "%command.when.copytobu%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%"
+               "when": "%command.when.delete%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%"
+               "when": "%command.when.deploy%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%"
+               "when": "%command.when.retrieve%",
+               "group": "devtools"
             }
          ],
          "editor/title/context": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%"
+               "when": "%command.when.copytobu%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%"
+               "when": "%command.when.delete%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%"
+               "when": "%command.when.deploy%",
+               "group": "devtools"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%"
+               "when": "%command.when.retrieve%",
+               "group": "devtools"
             }
          ]
       },
