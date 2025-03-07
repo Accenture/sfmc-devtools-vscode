@@ -93,8 +93,6 @@ class DevToolsExtension {
 				this.activateMenuCommands();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
-				// Updates the metadata types file with latest changes
-				this.updateMetadataTypesFile();
 			}
 		} catch (error) {
 			// log as debug error
@@ -271,21 +269,6 @@ class DevToolsExtension {
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		// Updates the status bar container
 		vscodeWindow.updateStatusBarItem(containerName, fields);
-	}
-
-	/**
-	 * Updates the Metadata Types file
-	 *
-	 * @returns {void}
-	 */
-	updateMetadataTypesFile(): void {
-		try {
-			const workspace = this.vscodeEditor.getWorkspace();
-			const projectPath = workspace.getWorkspacePath();
-			this.mcdev.updateMetadataTypes(projectPath);
-		} catch (error) {
-			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
-		}
 	}
 
 	/**

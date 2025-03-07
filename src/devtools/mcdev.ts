@@ -114,23 +114,6 @@ class Mcdev {
 	}
 
 	/**
-	 * Executes the Mcdev command "ExplainTypes" to update the Metadata Types file
-	 *
-	 * @public
-	 * @async
-	 * @param {string} projectPath - current project path
-	 * @returns {Promise<void>}
-	 */
-	public async updateMetadataTypes(projectPath: string): Promise<void> {
-		console.log("== Mcdev: Update MetadataType ==");
-		const executeOnResult = ({ output, error }: TUtils.IOutputLogger) => {
-			if (error) throw new Error(`[mcdev_updateMetadataTypes]: ${error}`);
-			if (output) this.metadataTypes.updateMetadataTypes(output);
-		};
-		this.execute("explainTypes", executeOnResult, { projectPath });
-	}
-
-	/**
 	 * Retrieves the project credentials configuration from the specified project path.
 	 *
 	 * @param projectPath - The path to the project directory.
@@ -298,36 +281,6 @@ class Mcdev {
 	}
 
 	/**
-	 * Checks if a Metadata Type is supported for a specific execution command action
-	 *
-	 * @private
-	 * @param {string} action - command actions
-	 * @param {TDevTools.IExecuteFileDetails[]} files - files to be validated
-	 * @returns {{ files: TDevTools.IExecuteFileDetails[]; invalidMetadataTypes: string[] }} all the files that passed validation and a list of invalid metadata types
-	 */
-	private validateFilesByMetadataTypeAction(
-		action: string,
-		files: TDevTools.IExecuteFileDetails[]
-	): { files: TDevTools.IExecuteFileDetails[]; invalidMetadataTypes: string[] } {
-		console.log("== Mcdev: Validate Files By Metadata Type Action ==");
-
-		const metadataTypes = this.metadataTypes;
-		const invalidMetadataTypes: string[] = [];
-
-		const filterValidMetadataTypes = ({ level, metadataType }: TDevTools.IExecuteFileDetails) => {
-			if (level !== "mdt_folder" && level !== "file") return true;
-			// Checks if the metadata type is supported for the command action
-			const isValidMetadataType: boolean =
-				metadataType !== undefined && metadataTypes.isSupportedMetadataTypeByAction(action, metadataType);
-			// Adds all the metadata types that are not supported into a list
-			if (!isValidMetadataType && metadataType) invalidMetadataTypes.push(metadataType);
-			return isValidMetadataType;
-		};
-		if (metadataTypes.isValidSupportedAction(action)) files = files.filter(filterValidMetadataTypes);
-		return { files, invalidMetadataTypes: Lib.removeDuplicates(invalidMetadataTypes) as string[] };
-	}
-
-	/**
 	 * Executes the DevTools Command
 	 *
 	 * @public
@@ -344,7 +297,6 @@ class Mcdev {
 	): Promise<{ success: boolean }> {
 		console.log("== Mcdev: Execute ==");
 
-		const invalidMetadataTypes: string[] = [];
 		let commandParameters: TDevTools.ICommandParameters = { ...(parameters as TDevTools.ICommandParameters) };
 
 		// Gets the MCDEV command class based on the selected command
@@ -355,24 +307,15 @@ class Mcdev {
 		if ("filesDetails" in parameters) {
 			const filesDetails = parameters.filesDetails as TDevTools.IExecuteFileDetails[];
 
-			// Removes all the selected files that are not supported for the command execution
-			const validationResult = this.validateFilesByMetadataTypeAction(command, filesDetails);
-
 			// Convert files to MCDEV Command Parameters
-			const filesCommandParameters = this.mapToCommandFileParameters(validationResult.files);
+			const filesCommandParameters = this.mapToCommandFileParameters(filesDetails);
 
-			invalidMetadataTypes.push(...validationResult.invalidMetadataTypes);
 			commandParameters = { ...commandParameters, files: filesCommandParameters };
 		}
 
 		// Calls the mcdev command to run with the right parameters
 		const commandResults = await this.runCommand(mcdevCommand, command, commandParameters, commandHandler);
 
-		// if there is invalid metadata type it will return a unsupported metadata type message
-		if (invalidMetadataTypes.length) {
-			commandResults.push(false);
-			commandHandler({ error: MessagesDevTools.mcdevUnsupportedMetadataTypes(command, invalidMetadataTypes) });
-		}
 		// Returns success as true if every command execution was successfull
 		return { success: commandResults.every(result => result === true) };
 	}
