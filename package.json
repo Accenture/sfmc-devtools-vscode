@@ -47,104 +47,92 @@
       "commands": [
          {
             "command": "sfmc-devtools-vscode.copytobu",
-            "title": "mcdev: Copy to Business Unit..."
+            "title": "%command.title.copytobu%"
          },
          {
             "command": "sfmc-devtools-vscode.delete",
-            "title": "mcdev: Delete From Server"
+            "title": "%command.title.delete%"
          },
          {
             "command": "sfmc-devtools-vscode.deploy",
-            "title": "mcdev: Deploy"
+            "title": "%command.title.deploy%"
          },
          {
             "command": "sfmc-devtools-vscode.retrieve",
-            "title": "mcdev: Retrieve"
+            "title": "%command.title.retrieve%"
          }
       ],
       "menus": {
          "commandPalette": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/"
+               "when": "%command.when.copytobu%"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtensionField|dataExtract|domainVerification|emailSend|event|fileTransfer|importFile|journey|list|mobileKeyword|mobileMessage|query|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/"
+               "when": "%command.when.delete%"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\/ || (resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/))"
+               "when": "%command.when.deploy%"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && editorIsOpen && resourcePath =~ /\\\\retrieve\\\\/"
+               "when": "%command.when.retrieve%"
             }
          ],
          "editor/context": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/",
-               "group": "devtools"
+               "when": "%command.when.copytobu%"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtensionField|dataExtract|domainVerification|emailSend|event|fileTransfer|importFile|journey|list|mobileKeyword|mobileMessage|query|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/",
-               "group": "devtools"
+               "when": "%command.when.delete%"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\/ || (resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/))",
-               "group": "devtools"
+               "when": "%command.when.deploy%"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
-               "group": "devtools"
+               "when": "%command.when.retrieve%"
             }
          ],
          "explorer/context": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/",
-               "group": "devtools"
+               "when": "%command.when.copytobu%"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtensionField|dataExtract|domainVerification|emailSend|event|fileTransfer|importFile|journey|list|mobileKeyword|mobileMessage|query|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/",
-               "group": "devtools"
+               "when": "%command.when.delete%"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\/ || (resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/))",
-               "group": "devtools"
+               "when": "%command.when.deploy%"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
-               "group": "devtools"
+               "when": "%command.when.retrieve%"
             }
          ],
          "editor/title/context": [
             {
                "command": "sfmc-devtools-vscode.copytobu",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/",
-               "group": "devtools"
+               "when": "%command.when.copytobu%"
             },
             {
                "command": "sfmc-devtools-vscode.delete",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtensionField|dataExtract|domainVerification|emailSend|event|fileTransfer|importFile|journey|list|mobileKeyword|mobileMessage|query|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/",
-               "group": "devtools"
+               "when": "%command.when.delete%"
             },
             {
                "command": "sfmc-devtools-vscode.deploy",
-               "when": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /\\\\deploy\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\/ || (resourcePath =~ /\\\\retrieve\\\\[^\\\\]+\\\\[^\\\\]+\\\\(asset|automation|dataExtension|dataExtract|domainVerification|emailSend|event|fileTransfer|folder|importFile|journey|mobileKeyword|mobileMessage|query|role|script|sendClassification|senderProfile|transactionalEmail|transactionalPush|transactionalSMS|triggeredSend|user|verification)\\\\([^\\\\]+.(json|html|sql|ssjs|md|amp|txt)|(asset|block|message|other|template)\\\\)/))",
-               "group": "devtools"
+               "when": "%command.when.deploy%"
             },
             {
                "command": "sfmc-devtools-vscode.retrieve",
-               "when": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /\\\\retrieve\\\\/",
-               "group": "devtools"
+               "when": "%command.when.retrieve%"
             }
          ]
       },
