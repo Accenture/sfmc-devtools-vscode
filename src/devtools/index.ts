@@ -511,6 +511,8 @@ class DevToolsExtension {
 					multiBUs: false
 				})) as string[];
 
+				if (!selectedBUs.length) return;
+
 				// Execute the 'clone' command with the selected files and business units
 				await this.executeCommand("clone", {
 					filesDetails: filesByProject,
@@ -583,7 +585,37 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	handleRetrieveCommand(files: TDevTools.IExecuteFileDetails[]): void {
-		this.executeCommand("retrieve", { filesDetails: files });
+		// Get the selected project paths without deplicates
+		const selectedProjectPaths = Lib.removeDuplicates(files.map(file => file.projectPath)) as string[];
+		selectedProjectPaths.forEach(async selectedProjectPath => {
+			// Filter the files by the selected project path and if exists any credential folder
+			const filesByProject = files.filter(file => file.projectPath === selectedProjectPath);
+			// Filter the files by the selected project path and if exists any credential folder
+			const credentialFolders = filesByProject.filter(file => file.level === "cred_folder");
+			// Filter the files by the selected project path and if exists any business unit folder
+			const buFolders = filesByProject.filter(file => file.level === "bu_folder");
+
+			if (credentialFolders.length) {
+				for (const credential of credentialFolders) {
+					const selectedBU = (await this.selectBusinessUnits(selectedProjectPath, {
+						multiBUs: false,
+						credential: credential.credentialsName
+					})) as string[];
+
+					if (!selectedBU.length) continue;
+
+					const businessUnit = selectedBU[0].split("/")[1];
+					files = [{ ...credential, level: "bu_folder", businessUnit }];
+				}
+			} else if (buFolders.length) {
+				const selectedMDTypes = (await this.selectMetaDataTypes("retrieve")) as string[];
+				if (!selectedMDTypes.length) return;
+
+				console.log("bufolders ", buFolders);
+				console.log("selectedMDTypes ", selectedMDTypes);
+			}
+			// this.executeCommand("retrieve", { filesDetails: files });
+		});
 	}
 
 	/**
@@ -595,7 +627,10 @@ class DevToolsExtension {
 	 * @returns {Promise<string[] | undefined>} A promise that resolves to an array of selected business units or undefined.
 	 * @throws {Error} If no credentials or business units are found.
 	 */
-	async selectBusinessUnits(projectPath: string, { multiBUs }: { multiBUs: boolean }): Promise<string[] | undefined> {
+	async selectBusinessUnits(
+		projectPath: string,
+		{ multiBUs, credential }: { multiBUs: boolean; credential?: string }
+	): Promise<string[] | undefined> {
 		// Get the credentials and business units from the mcdevrc file
 		const projectCredsConfig = this.mcdev.retrieveProjectCredentialsConfig(projectPath);
 		// Get the credentials from the mcdevrc file
@@ -604,8 +639,11 @@ class DevToolsExtension {
 		let selectedBUs: string[] | undefined;
 		let errorMessage = "";
 
+		// Skip credential selection if a credential is provided
+		if (credential && credentials.includes(credential)) selectedCred = credential;
 		// Skip user selection if only one credential is found
-		if (credentials.length === 1) selectedCred = credentials[0];
+		else if (credentials.length === 1) selectedCred = credentials[0];
+		// Request user to select a credential if multiple credentials are found
 		else if (credentials.length > 1)
 			// Request user to select a credential
 			selectedCred = (await this.requestInputWithOptions(credentials, MessagesEditor.credentialPrompt, false)) as
@@ -646,6 +684,26 @@ class DevToolsExtension {
 			throw new Error(errorMessage);
 		}
 		return [];
+	}
+
+	async selectMetaDataTypes(action: string) {
+		try {
+			const metadataTypes = this.mcdev.retrieveSupportedMetadataDataTypes(action);
+			const metadataTypesNames = metadataTypes.map(mdTypes => mdTypes.name).sort();
+			const selectedMDTypes = (await this.requestInputWithOptions(
+				metadataTypesNames,
+				MessagesEditor.metaDataTypePrompt,
+				true
+			)) as string | undefined;
+			if (selectedMDTypes)
+				return metadataTypes
+					.filter(mdType => selectedMDTypes.includes(mdType.name))
+					.map(mdType => mdType.apiName);
+			return [];
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.WARN);
+			return;
+		}
 	}
 
 	/**

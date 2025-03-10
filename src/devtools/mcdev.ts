@@ -15,15 +15,9 @@ import { Lib, File, Terminal } from "utils";
  * @typedef {Mcdev}
  */
 class Mcdev {
-	/**
-	 * DevTools package name
-	 *
-	 * @private
-	 * @type {string}
-	 */
-	private packageName = ConfigDevTools.mcdevPackageName;
-	private configFileName = ConfigDevTools.mcdevConfigurationFile;
-	private requiredFiles = ConfigDevTools.mcdevRequiredFiles;
+	private packageName: string = ConfigDevTools.mcdevPackageName;
+	private configFileName: string = ConfigDevTools.mcdevConfigurationFile;
+	private requiredFiles: string[] = ConfigDevTools.mcdevRequiredFiles;
 
 	/**
 	 * MetadataTypes class instance
@@ -134,6 +128,14 @@ class Mcdev {
 			getMarkets: () => (markets ? Object.keys(markets) : []),
 			getMarketsList: () => (marketList ? Object.keys(marketList) : [])
 		};
+	}
+
+	public retrieveSupportedMetadataDataTypes(action: string) {
+		if (!this.metadataTypes.isValidSupportedAction(action))
+			throw new Error(
+				`[mcdev_retrieveSupportedMetadataDataTypes]: Invalid Metadata Type supported action '${action}'.`
+			);
+		return this.metadataTypes.getMetaDataTypesSupportedByAction(action);
 	}
 
 	/**
