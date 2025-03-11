@@ -130,7 +130,14 @@ class Mcdev {
 		};
 	}
 
-	public retrieveSupportedMetadataDataTypes(action: string) {
+	/**
+	 * Retrieves the metadata types supported by a given action.
+	 *
+	 * @param {string} action - The action for which to retrieve supported metadata types.
+	 * @returns {TDevTools.IMetadataTypes[]} An array of metadata types supported by the specified action.
+	 * @throws {Error} Throws an error if the provided action is not valid.
+	 */
+	public retrieveSupportedMetadataDataTypes(action: string): TDevTools.IMetadataTypes[] {
 		if (!this.metadataTypes.isValidSupportedAction(action))
 			throw new Error(
 				`[mcdev_retrieveSupportedMetadataDataTypes]: Invalid Metadata Type supported action '${action}'.`

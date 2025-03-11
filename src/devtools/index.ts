@@ -454,11 +454,8 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	executeMenuCommand(command: string, files: string[]): void {
-		// Filters the paths by parent folder to avoid repeating calling DevTools commands for same files
-		const filteredPathsByParent = Lib.removeSubPathsByParent(files);
-
 		// Convert paths to file structure defined for DevTools Commands
-		const selectedFiles = this.mcdev.convertPathsToFiles(filteredPathsByParent);
+		const selectedFiles = this.mcdev.convertPathsToFiles(files);
 
 		// menu commands handlers
 		const menuCommandsHandlers: { [key: string]: () => void } = {
@@ -596,7 +593,9 @@ class DevToolsExtension {
 			const buFolders = filesByProject.filter(file => file.level === "bu_folder");
 
 			if (credentialFolders.length) {
+				const newFiles: TDevTools.IExecuteFileDetails[] = [];
 				for (const credential of credentialFolders) {
+					// Requests user to select a business unit to retrieve
 					const selectedBU = (await this.selectBusinessUnits(selectedProjectPath, {
 						multiBUs: false,
 						credential: credential.credentialsName
@@ -604,17 +603,25 @@ class DevToolsExtension {
 
 					if (!selectedBU.length) continue;
 
+					// gets only the business unit name
 					const businessUnit = selectedBU[0].split("/")[1];
-					files = [{ ...credential, level: "bu_folder", businessUnit }];
+					// sets the business unit path
+					const businessUnitPath = `${credential.path}/${businessUnit}`;
+					newFiles.push(...this.mcdev.convertPathsToFiles([businessUnitPath]));
 				}
+				files = newFiles;
 			} else if (buFolders.length) {
+				// Requests yser to select the metadata types to retrieve
 				const selectedMDTypes = (await this.selectMetaDataTypes("retrieve")) as string[];
 				if (!selectedMDTypes.length) return;
 
-				console.log("bufolders ", buFolders);
-				console.log("selectedMDTypes ", selectedMDTypes);
+				// creates an array of paths for each business unit folder and metadata types selected
+				const mdTypesPaths = selectedMDTypes.flatMap(mdType =>
+					buFolders.map(buFolder => `${buFolder.path}/${mdType}`)
+				);
+				files = this.mcdev.convertPathsToFiles(mdTypesPaths);
 			}
-			// this.executeCommand("retrieve", { filesDetails: files });
+			this.executeCommand("retrieve", { filesDetails: files });
 		});
 	}
 

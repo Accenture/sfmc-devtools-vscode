@@ -58,11 +58,22 @@ class MetadataTypes {
 		return supportedActions.includes(action);
 	}
 
-	getAllMetaDataTypes() {
+	/**
+	 * Gets all metadata types.
+	 *
+	 * @returns {TDevTools.IMetadataTypes[]} list of all metadata types
+	 */
+	getAllMetaDataTypes(): TDevTools.IMetadataTypes[] {
 		return this.metadataTypes;
 	}
 
-	getMetaDataTypesSupportedByAction(action: string) {
+	/**
+	 * Retrieves the metadata types that are supported by a specific action.
+	 *
+	 * @param action - The action for which to retrieve the supported metadata types.
+	 * @returns {TDevTools.IMetadataTypes[]} An array of metadata types that support the specified action.
+	 */
+	getMetaDataTypesSupportedByAction(action: string): TDevTools.IMetadataTypes[] {
 		const metaDataTypeAction = MetadataTypesSupportedActions[action];
 		return this.getAllMetaDataTypes().filter(mdType =>
 			metaDataTypeAction.some(mdTypeAction => mdType.supports[mdTypeAction])
