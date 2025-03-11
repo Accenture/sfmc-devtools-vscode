@@ -603,11 +603,10 @@ class DevToolsExtension {
 
 					if (!selectedBU.length) continue;
 
-					// gets only the business unit name
-					const businessUnit = selectedBU[0].split("/")[1];
-					// sets the business unit path
-					const businessUnitPath = `${credential.path}/${businessUnit}`;
-					newFiles.push(...this.mcdev.convertPathsToFiles([businessUnitPath]));
+					const businessUnitsPaths = selectedBU.map(
+						businessUnit => `${credential.path}/${businessUnit.split("/")[1]}`
+					);
+					newFiles.push(...this.mcdev.convertPathsToFiles(businessUnitsPaths));
 				}
 				files = newFiles;
 			} else if (buFolders.length) {
