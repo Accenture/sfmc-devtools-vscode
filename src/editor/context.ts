@@ -1,10 +1,55 @@
-import { ExtensionContext } from "vscode";
+import { VSCode } from "@types";
 
-type EditorContext = { set: (context: ExtensionContext) => void; get: () => ExtensionContext };
+/**
+ * VSCode Context class
+ *
+ * @class VSCodeContext
+ * @typedef {VSCodeContext}
+ */
+class VSCodeContext {
+	/**
+	 * Extension context
+	 *
+	 * @private
+	 * @type {VSCode.ExtensionContext}
+	 */
+	private context: VSCode.ExtensionContext;
+	/**
+	 * Creates an instance of VSCodeContext.
+	 *
+	 * @constructor
+	 * @param {VSCode.ExtensionContext} context
+	 */
+	constructor(context: VSCode.ExtensionContext) {
+		this.context = context;
+	}
 
-let contextInstance: ExtensionContext;
-const editorContext: EditorContext = {
-	set: (context: ExtensionContext) => (contextInstance = context),
-	get: () => contextInstance
-};
-export { ExtensionContext, editorContext };
+	/**
+	 * Gets the extension name
+	 *
+	 * @returns {string} extension name
+	 */
+	getExtensionName(): string {
+		return this.context.extension.packageJSON.name;
+	}
+
+	/**
+	 * Gets the extension version
+	 *
+	 * @returns {string} extension version
+	 */
+	getExtensionVersion(): string {
+		return this.context.extension.packageJSON.version;
+	}
+
+	/**
+	 * Retrieves the extension path from the context.
+	 *
+	 * @returns {string} The path of the extension.
+	 */
+	getExtensionPath(): string {
+		return this.context.extensionPath;
+	}
+}
+
+export default VSCodeContext;
