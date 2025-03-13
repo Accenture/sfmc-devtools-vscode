@@ -15,15 +15,9 @@ import { Lib, File, Terminal } from "utils";
  * @typedef {Mcdev}
  */
 class Mcdev {
-	/**
-	 * DevTools package name
-	 *
-	 * @private
-	 * @type {string}
-	 */
-	private packageName = ConfigDevTools.mcdevPackageName;
-	private configFileName = ConfigDevTools.mcdevConfigurationFile;
-	private requiredFiles = ConfigDevTools.mcdevRequiredFiles;
+	private packageName: string = ConfigDevTools.mcdevPackageName;
+	private configFileName: string = ConfigDevTools.mcdevConfigurationFile;
+	private requiredFiles: string[] = ConfigDevTools.mcdevRequiredFiles;
 
 	/**
 	 * MetadataTypes class instance
@@ -134,6 +128,21 @@ class Mcdev {
 			getMarkets: () => (markets ? Object.keys(markets) : []),
 			getMarketsList: () => (marketList ? Object.keys(marketList) : [])
 		};
+	}
+
+	/**
+	 * Retrieves the metadata types supported by a given action.
+	 *
+	 * @param {string} action - The action for which to retrieve supported metadata types.
+	 * @returns {TDevTools.IMetadataTypes[]} An array of metadata types supported by the specified action.
+	 * @throws {Error} Throws an error if the provided action is not valid.
+	 */
+	public retrieveSupportedMetadataDataTypes(action: string): TDevTools.IMetadataTypes[] {
+		if (!this.metadataTypes.isValidSupportedAction(action))
+			throw new Error(
+				`[mcdev_retrieveSupportedMetadataDataTypes]: Invalid Metadata Type supported action '${action}'.`
+			);
+		return this.metadataTypes.getMetaDataTypesSupportedByAction(action);
 	}
 
 	/**

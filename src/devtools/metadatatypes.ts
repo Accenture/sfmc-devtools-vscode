@@ -1,4 +1,17 @@
 import { File } from "utils";
+import { ConfigMetadataTypes } from "@config";
+import { TDevTools } from "@types";
+
+/**
+ * Supported Metadata Types Actions
+ *
+ * @type {{ [action: string]: TDevTools.MetadataTypesActions[] }}
+ */
+const MetadataTypesSupportedActions: { [action: string]: TDevTools.MetadataTypesActions[] } = {
+	retrieve: ["retrieve"],
+	deploy: ["create", "update"],
+	delete: ["delete"]
+};
 
 /**
  * MetadataTypes class
@@ -8,11 +21,64 @@ import { File } from "utils";
  */
 class MetadataTypes {
 	/**
+	 * Stores all the Metatadata Types
+	 *
+	 * @private
+	 * @type {TDevTools.IMetadataTypes[]}
+	 */
+	private metadataTypes: TDevTools.IMetadataTypes[] = [];
+
+	/**
 	 * Creates an instance of MetadataTypes.
 	 *
 	 * @constructor
 	 */
-	constructor() {}
+	constructor() {
+		// initializes the metadata types with the default metadata types file
+		this.metadataTypes = ConfigMetadataTypes.metadataTypesList;
+	}
+
+	/**
+	 * Gets the list of Metatdata Types supported actions
+	 *
+	 * @returns {string[]} list of supported actions
+	 */
+	getSupportedActions(): string[] {
+		return Object.keys(MetadataTypesSupportedActions);
+	}
+
+	/**
+	 * Checks if a metadata type action is valid
+	 *
+	 * @param {string} action - metadata type action
+	 * @returns {boolean} true if metadata type action is valid else false
+	 */
+	isValidSupportedAction(action: string): boolean {
+		const supportedActions = this.getSupportedActions();
+		return supportedActions.includes(action);
+	}
+
+	/**
+	 * Gets all metadata types.
+	 *
+	 * @returns {TDevTools.IMetadataTypes[]} list of all metadata types
+	 */
+	getAllMetaDataTypes(): TDevTools.IMetadataTypes[] {
+		return this.metadataTypes;
+	}
+
+	/**
+	 * Retrieves the metadata types that are supported by a specific action.
+	 *
+	 * @param action - The action for which to retrieve the supported metadata types.
+	 * @returns {TDevTools.IMetadataTypes[]} An array of metadata types that support the specified action.
+	 */
+	getMetaDataTypesSupportedByAction(action: string): TDevTools.IMetadataTypes[] {
+		const metaDataTypeAction = MetadataTypesSupportedActions[action];
+		return this.getAllMetaDataTypes().filter(mdType =>
+			metaDataTypeAction.some(mdTypeAction => mdType.supports[mdTypeAction])
+		);
+	}
 
 	/**
 	 * Handles Metadata Type name configuration for specific cases
