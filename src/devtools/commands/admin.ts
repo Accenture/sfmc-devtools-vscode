@@ -7,6 +7,7 @@ import { TDevTools } from "@types";
  * @enum {number}
  */
 enum AdminCommandsAlias {
+	upgrade = "up",
 	explainTypes = "et"
 }
 
@@ -39,10 +40,30 @@ class AdminCommands extends Commands {
 		console.log("== AdminCommands: Run ==");
 		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
 		switch (name) {
+			case "upgrade":
+				config = this.upgrade(parameters);
+				break;
 			case "explainTypes":
 				config = this.explainTypes(parameters);
+				break;
 		}
 		return config;
+	}
+
+	upgrade(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		console.log("== AdminCommands: Upgrade ==");
+
+		if ("projectPath" in parameters) {
+			// command alias
+			const upgradeAlias = AdminCommandsAlias.upgrade;
+
+			const projectPath = parameters.projectPath as string;
+
+			// command parameters configuration
+			const upgradeConfig = [["--y", projectPath]];
+			return { alias: upgradeAlias, config: upgradeConfig };
+		}
+		throw new Error(`[admin_upgrade]: The property 'projectPath' is missing from parameters.`);
 	}
 
 	/**

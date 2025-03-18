@@ -48,7 +48,7 @@ class DevToolsExtension {
 		console.log("== Init ==");
 		// Checks if is there any DevTools Project
 		const isDevToolsProject = await this.isDevToolsProject();
-		if (isDevToolsProject) this.loadConfiguration();
+		if (isDevToolsProject) this.checkStatus();
 	}
 
 	/**
@@ -59,14 +59,92 @@ class DevToolsExtension {
 	 */
 	async isDevToolsProject(): Promise<boolean> {
 		console.log("== Is Project ==");
+
+		// Get workspace
+		const workspace = this.vscodeEditor.getWorkspace();
+		// Get workspace contents
+		const workspaceContents = await workspace.getWorkspaceContents();
+		// Get all files in the workspace
+		const workspaceAllFiles = workspaceContents.all();
+		// Get all folders in the workspace
+		const workspaceFolders = workspaceContents.subfolders();
+		// Get required project files
 		const requiredProjectFiles = this.mcdev.getRequiredFiles() || [];
-		// Checks if the required DevTools files exist in the folder/folders
-		const filesInFolderResult = await Promise.all(
-			requiredProjectFiles.map(
-				async file => await this.vscodeEditor.getWorkspace().isFileInWorkspaceFolder(`**/${file}`)
-			)
-		);
-		return filesInFolderResult.every(fileResult => fileResult);
+
+		// Check if the root project has all the required files
+		const isRootDevToolsProject = requiredProjectFiles.every(file => workspaceAllFiles.includes(file));
+		if (isRootDevToolsProject) return true;
+
+		// Check if any subfolder has all the required files
+		const isMultiDevToolsProject = await Promise.all(
+			workspaceFolders.map(async folder => {
+				const isFolderADevToolsProject = await Promise.all(
+					requiredProjectFiles.map(file => workspace.isFileInWorkspaceFolder(`${folder}/${file}`))
+				);
+				return isFolderADevToolsProject.every(Boolean);
+			})
+		).then(devToolsProject => devToolsProject.some(Boolean));
+
+		return isMultiDevToolsProject;
+	}
+
+	async checkStatus() {
+		console.log("== Check Status ==");
+
+		// Checks if mcdev is installed or outdated
+		const mcdevInstalled = this.mcdev.isInstalled();
+		const mcdevOutdated = this.mcdev.isOutdated();
+		const mcdevProjectConfigOutdated = await this.mcdevProjectConfigFilesOutdated();
+
+		let mcdevStatusPrompt = "";
+
+		// Sets prompt message according to mcdev status
+		if (!mcdevInstalled) mcdevStatusPrompt = MessagesDevTools.mcdevNotInstalledPrompt;
+		else if (mcdevOutdated) mcdevStatusPrompt = MessagesDevTools.mcdevOutdatedPrompt;
+		else if (mcdevProjectConfigOutdated.length) mcdevStatusPrompt = MessagesDevTools.mcdevProjectOutdatedPrompt;
+
+		// If mcdev is not installed or outdated, prompts the user to install or update it
+		if (mcdevStatusPrompt) {
+			const userAnswer = await this.showInformationMessage(
+				"info",
+				mcdevStatusPrompt,
+				Object.keys(EnumsExtension.Confirmation)
+			);
+			// if user clicks on "yes" then installs or updates mcdev
+			if (userAnswer && userAnswer.toLowerCase() === EnumsExtension.Confirmation.Yes) {
+				if (!mcdevInstalled || mcdevOutdated) await this.mcdevInstall();
+				else if (mcdevProjectConfigOutdated.length)
+					await this.updateProjectConfigVersion(mcdevProjectConfigOutdated);
+				this.loadConfiguration();
+			}
+		} else {
+			this.loadConfiguration();
+		}
+	}
+
+	async mcdevProjectConfigFilesOutdated(): Promise<string[]> {
+		console.log("== Check Config File Outdated ==");
+		const workspace = this.vscodeEditor.getWorkspace();
+
+		// Gets the .mcdevrc file name from the required DevTools file list
+		const configFileName = this.mcdev.getConfigFileName();
+		// For every devtools project folder in the open workspace it retrieves the complete path of the .mcdevrc file
+		const configFsPath = await workspace.findWorkspaceFiles(`**/${configFileName}`);
+		console.log(configFsPath);
+		// Gets the project paths from the .mcdevrc file paths
+		const projectPaths = configFsPath.map(path => path.replace(`\\${configFileName}`, ""));
+
+		// Gets the current mcdev version
+		const currentVersion = this.mcdev.version();
+		// Gets the project path where the version is outdated
+		return projectPaths
+			.map(projectPath => {
+				const projectConfig = this.mcdev.retrieveConfigFileData(projectPath);
+				const projectVersion = projectConfig.getVersion();
+				if (currentVersion !== projectVersion) return projectPath;
+				return;
+			})
+			.filter(Boolean) as string[];
 	}
 
 	/**
@@ -78,22 +156,16 @@ class DevToolsExtension {
 	async loadConfiguration(): Promise<void> {
 		console.log("== Load Configuration ==");
 		try {
-			// Check if Mcdev is installed
-			const mcdevInstalled = this.mcdev.isInstalled();
-			// request user to install mcdev
-			if (!mcdevInstalled) await this.mcdevInstall();
-			else {
-				// activate extension context variables
-				this.activateContextVariables();
-				// activate recommended extensions
-				this.activateRecommendedExtensions();
-				// activate editor containers
-				this.activateContainers();
-				// activate menu commands
-				this.activateMenuCommands();
-				// logs initial extension information into output channel
-				this.writeExtensionInformation();
-			}
+			// activate extension context variables
+			this.activateContextVariables();
+			// activate recommended extensions
+			this.activateRecommendedExtensions();
+			// activate editor containers
+			this.activateContainers();
+			// activate menu commands
+			this.activateMenuCommands();
+			// write extension information
+			this.writeExtensionInformation();
 		} catch (error) {
 			// log as debug error
 			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
@@ -110,13 +182,6 @@ class DevToolsExtension {
 		console.log("== Install Mcdev ==");
 		const vscodeCommands = this.vscodeEditor.getCommands();
 
-		// Asks user if he wishes to install mcdev
-		const userAnswer = await this.showInformationMessage(
-			"info",
-			MessagesDevTools.noMcdevInstalled,
-			Object.keys(EnumsExtension.Confirmation)
-		);
-
 		const handleInstallResult = async (success: boolean, error: string): Promise<void> => {
 			// if mcdev was successfully installed -> reloads vscode editor window
 			// else shows information error message
@@ -131,20 +196,33 @@ class DevToolsExtension {
 			}
 		};
 
-		if (userAnswer && userAnswer.toLowerCase() === EnumsExtension.Confirmation.Yes) {
-			// Shows loading notification
-			this.activateNotificationProgressBar(
-				MessagesDevTools.mcdevInstallLoading,
-				false,
-				() =>
-					new Promise(resolve => {
-						// Installs DevTools package 'mcdev'
-						const { success, error }: { success: boolean; error: string } = this.mcdev.install();
-						handleInstallResult(success, error);
-						resolve(success);
-					})
+		// Shows loading notification
+		this.activateNotificationProgressBar(
+			MessagesDevTools.mcdevInstallLoading,
+			false,
+			() =>
+				new Promise(resolve => {
+					// Installs DevTools package 'mcdev'
+					const { success, error }: { success: boolean; error: string } = this.mcdev.install();
+					handleInstallResult(success, error);
+					resolve(success);
+				})
+		);
+	}
+
+	async updateProjectConfigVersion(projectPaths: string[]) {
+		console.log("== Update Project Config Version ==");
+		// Gets the .mcdevrc file name from the required DevTools file list
+		const configFileName = this.mcdev.getConfigFileName();
+
+		projectPaths.forEach(async projectPath => {
+			this.writeLog(
+				this.mcdev.getPackageName(),
+				`${MessagesDevTools.mcdevUpdateProjectConfig} ${projectPath}\\${configFileName}`,
+				EnumsExtension.LoggerLevel.INFO
 			);
-		}
+			this.mcdev.updateConfigFile(projectPath);
+		});
 	}
 
 	/**
@@ -638,7 +716,7 @@ class DevToolsExtension {
 		{ multiBUs, credential }: { multiBUs: boolean; credential?: string }
 	): Promise<string[] | undefined> {
 		// Get the credentials and business units from the mcdevrc file
-		const projectCredsConfig = this.mcdev.retrieveProjectCredentialsConfig(projectPath);
+		const projectCredsConfig = this.mcdev.retrieveConfigFileData(projectPath);
 		// Get the credentials from the mcdevrc file
 		const credentials = projectCredsConfig.getAllCredentials();
 		let selectedCred: string | undefined;

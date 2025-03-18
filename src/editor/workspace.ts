@@ -98,24 +98,23 @@ class VSCodeWorkspace {
 	}
 
 	/**
-	 * Gets all the workspace sub folders
+	 * Gets all the workspace contents
 	 *
 	 * @async
-	 * @returns {Promise<string[]>} folders names in the workspace
+	 * @returns {Promise<string[]>} files and folders names in the workspace
 	 */
-	async getWorkspaceSubFolders(): Promise<string[]> {
+	async getWorkspaceContents(): Promise<{ all: () => string[]; subfolders: () => string[] }> {
 		console.log("=== VSCodeWorkspace: Get SubFolders ===");
 		const workspaceURI = this.getWorkspaceURI();
 		if (!workspaceURI)
 			throw new Error("[vscodeworkspace_getWorkspaceSubFolders] Failed to retrieve workspace URI.");
 
 		const folderFiles = await this.getWokspaceFiles(workspaceURI);
-		return (
-			folderFiles
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-				.filter(([_, type]) => type === VSCode.FileType.Directory)
-				.map(([name]) => name)
-		);
+		return {
+			all: () => folderFiles.map(([name]) => name),
+			subfolders: () =>
+				folderFiles.filter(([_, type]) => type === VSCode.FileType.Directory).map(([name]) => name)
+		};
 	}
 
 	/**
@@ -127,7 +126,7 @@ class VSCodeWorkspace {
 	 */
 	async findWorkspaceFiles(file: string): Promise<string[]> {
 		console.log("=== VSCodeWorkspace: findWorkspaceFiles ===");
-		const workspaceFiles = await this.workspace.findFiles(file);
+		const workspaceFiles = await this.workspace.findFiles(file, "**​/node_modules/**");
 		return workspaceFiles.map((file: VSCode.Uri) => file.fsPath);
 	}
 

@@ -79,7 +79,7 @@ function executeTerminalCommand(
  *
  * @returns {string[]} list of the installed packages names
  */
-function getGlobalInstalledPackages(): string[] {
+function getGlobalInstalledPackages(): Record<string, string> {
 	try {
 		const commandArgs: TUtils.ITerminalCommandRunner = { command: "npm", commandArgs: ["list", "-g", "--json"] };
 		const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
@@ -91,15 +91,42 @@ function getGlobalInstalledPackages(): string[] {
 		if (!terminal.stdStreams.output.includes('"dependencies"'))
 			throw new Error(`[terminal_globalInstalledPackages]: Retrieving global packages: no "dependencies" found.`);
 
-		const terminalOutput: { name: string; dependencies: Record<string, unknown> } = JSON.parse(
+		const terminalOutput: { dependencies: Record<string, Record<"version", string>> } = JSON.parse(
 			terminal.stdStreams.output
 		);
-		return Object.keys(terminalOutput.dependencies || {});
+		const dependenciesVersionMap = Object.keys(terminalOutput.dependencies).reduce(
+			(prev, dep) => ({ ...prev, [dep]: terminalOutput.dependencies[dep].version }),
+			{}
+		);
+		return dependenciesVersionMap;
 	} catch (error) {
 		throw error;
 	}
 }
 
+function getGlobalOutdatedPackages(): string[] {
+	try {
+		const commandArgs: TUtils.ITerminalCommandRunner = {
+			command: "npm",
+			commandArgs: ["outdated", "-g", "--json"]
+		};
+		const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
+
+		if (terminal.stdStreams.error)
+			throw new Error(
+				`[terminal_getGlobalOutdatedPackages]: Retrieving global outdated packages: ${terminal.stdStreams.error}`
+			);
+		const terminalOutput: Record<string, unknown> = JSON.parse(terminal.stdStreams.output);
+		return Object.keys(terminalOutput || {});
+	} catch (error) {
+		throw error;
+	}
+}
+
+function getPackageVersion(packageName: string): string {
+	const installedPackages = getGlobalInstalledPackages();
+	return installedPackages[packageName];
+}
 /**
  * Checks if a package is installed globally
  *
@@ -108,7 +135,12 @@ function getGlobalInstalledPackages(): string[] {
  */
 function isPackageInstalled(packageName: string): boolean {
 	const installedPackages = getGlobalInstalledPackages();
-	return installedPackages.includes(packageName);
+	return Object.keys(installedPackages).includes(packageName);
+}
+
+function isPackageOutdated(packageName: string): boolean {
+	const outdatedPackages = getGlobalOutdatedPackages();
+	return outdatedPackages.includes(packageName);
 }
 
 /**
@@ -126,4 +158,4 @@ function installPackage(packageName: string): TUtils.ITerminalCommandResult {
 	return terminal;
 }
 
-export { executeTerminalCommand, isPackageInstalled, installPackage };
+export { executeTerminalCommand, isPackageInstalled, isPackageOutdated, installPackage, getPackageVersion };

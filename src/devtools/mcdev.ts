@@ -53,6 +53,10 @@ class Mcdev {
 		return this.packageName;
 	}
 
+	public version(): string {
+		return Terminal.getPackageVersion(this.packageName);
+	}
+
 	/**
 	 * Retrieves the name of the configuration file.
 	 *
@@ -88,7 +92,8 @@ class Mcdev {
 	 * @returns {boolean} true if mcdev package is installed else false
 	 */
 	public isInstalled(): boolean {
-		return Terminal.isPackageInstalled(this.packageName);
+		return true;
+		// return Terminal.isPackageInstalled(this.packageName);
 	}
 
 	/**
@@ -107,6 +112,21 @@ class Mcdev {
 		}
 	}
 
+	public async updateConfigFile(projectPath: string) {
+		console.log("== Mcdev: Update Project Config ==");
+		const executeOnResult = ({ info, output, error }: TUtils.IOutputLogger) => {
+			if (error) throw new Error(`[mcdev_updateMetadataTypes]: ${error}`);
+			if (output) console.log(output);
+			if (info) console.log(info);
+		};
+		const result = await this.execute("upgrade", executeOnResult, { projectPath });
+		console.log("result = ", result);
+	}
+
+	public isOutdated(): boolean {
+		return Terminal.isPackageOutdated(this.packageName);
+	}
+
 	/**
 	 * Retrieves the project credentials configuration from the specified project path.
 	 *
@@ -117,16 +137,17 @@ class Mcdev {
 	 * @returns getMarkets - A method that returns an array of all market keys.
 	 * @returns getMarketsList - A method that returns an array of all market list keys.
 	 */
-	public retrieveProjectCredentialsConfig(projectPath: string): TDevTools.IProjectConfig {
+	public retrieveConfigFileData(projectPath: string): TDevTools.IProjectConfig {
 		const configProjectFilePath = Lib.removeLeadingRootDrivePath(this.getConfigFilePath(projectPath));
 		const configProjectFile = File.readFileSync(Lib.removeLeadingRootDrivePath(configProjectFilePath));
-		const { credentials, markets, marketList }: TDevTools.IConfigFile = JSON.parse(configProjectFile);
+		const { credentials, markets, marketList, version }: TDevTools.IConfigFile = JSON.parse(configProjectFile);
 		return {
 			getAllCredentials: () => (credentials ? Object.keys(credentials) : []),
 			getBusinessUnitsByCredential: (credential: string) =>
 				credentials[credential].businessUnits ? Object.keys(credentials[credential].businessUnits) : [],
 			getMarkets: () => (markets ? Object.keys(markets) : []),
-			getMarketsList: () => (marketList ? Object.keys(marketList) : [])
+			getMarketsList: () => (marketList ? Object.keys(marketList) : []),
+			getVersion: () => (version ? version : "")
 		};
 	}
 

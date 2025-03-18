@@ -61,7 +61,7 @@ class VSCodeEditor {
 	 *
 	 * @returns {TEditor.VSCodeContext}
 	 */
-	getContext() {
+	getContext(): TEditor.VSCodeContext {
 		return this.vscodeContext;
 	}
 
@@ -70,7 +70,7 @@ class VSCodeEditor {
 	 *
 	 * @returns {TEditor.VSCodeWorkspace}
 	 */
-	getWorkspace() {
+	getWorkspace(): TEditor.VSCodeWorkspace {
 		return this.vscodeWorkspace;
 	}
 
@@ -79,7 +79,7 @@ class VSCodeEditor {
 	 *
 	 * @returns {TEditor.VSCodeWindow}
 	 */
-	getWindow() {
+	getWindow(): TEditor.VSCodeWindow {
 		return this.vscodeWindow;
 	}
 
@@ -88,7 +88,7 @@ class VSCodeEditor {
 	 *
 	 * @returns {TEditor.VSCodeCommands}
 	 */
-	getCommands() {
+	getCommands(): TEditor.VSCodeCommands {
 		return this.vscodeCommands;
 	}
 
@@ -97,7 +97,7 @@ class VSCodeEditor {
 	 *
 	 * @returns {TEditor.VSCodeExtensions}
 	 */
-	getExtensions() {
+	getExtensions(): TEditor.VSCodeExtensions {
 		return this.vscodeExtensions;
 	}
 }

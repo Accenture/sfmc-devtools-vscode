@@ -86,6 +86,7 @@ interface IConfigFile {
 	credentials: { [credential: string]: IConfigFileCredentials };
 	markets: { [bu: string]: { [suffix: string]: string } };
 	marketList: { [market: string]: { description: string; [marketDef: string]: string } };
+	version: string;
 }
 
 interface IProjectConfig {
@@ -93,6 +94,7 @@ interface IProjectConfig {
 	getBusinessUnitsByCredential: (credential: string) => string[];
 	getMarkets: () => string[];
 	getMarketsList: () => string[];
+	getVersion: () => string;
 }
 
 export {
