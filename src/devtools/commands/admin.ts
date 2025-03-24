@@ -61,7 +61,7 @@ class AdminCommands extends Commands {
 			const projectPath = parameters.projectPath as string;
 
 			// command parameters configuration
-			const explainTypesConfig = [["--json", projectPath]];
+			const explainTypesConfig = [[this.retrieveFlag("json"), projectPath]];
 			return { alias: explainTypesAlias, config: explainTypesConfig };
 		}
 		throw new Error(`[admin_explainTypes]: The property 'projectPath' is missing from parameters.`);
