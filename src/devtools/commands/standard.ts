@@ -103,7 +103,7 @@ class StandardCommands extends Commands {
 						parameter.metadata = parameter.metadata.filter(
 							({ key }: TDevTools.IMetadataCommand) => key && key !== ""
 						);
-						parameter.optional = ["fromRetrieve"];
+						parameter.optional = [this.retrieveFlag("fromRetrieve")];
 					}
 					if (isFromRetrieveFolder && !parameter.metadata.length) return undefined;
 					return parameter;
