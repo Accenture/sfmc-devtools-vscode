@@ -297,12 +297,14 @@ class Mcdev {
 	 * @param {string} command - command name
 	 * @param {({ info, output, error }: TUtils.IOutputLogger) => void} commandHandler - command handler
 	 * @param {string[]} filePaths - file paths
+	 * @param {TUtils.ICancellationToken} [cancellationToken] - optional token to cancel the running command
 	 * @returns {Promise<{ success: boolean }>} success is true if command executed successfully otherwise false
 	 */
 	public async execute(
 		command: string,
 		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void,
-		parameters: TDevTools.IExecuteParameters
+		parameters: TDevTools.IExecuteParameters,
+		cancellationToken?: TUtils.ICancellationToken
 	): Promise<{ success: boolean }> {
 		console.log("== Mcdev: Execute ==");
 
@@ -323,7 +325,7 @@ class Mcdev {
 		}
 
 		// Calls the mcdev command to run with the right parameters
-		const commandResults = await this.runCommand(mcdevCommand, command, commandParameters, commandHandler);
+		const commandResults = await this.runCommand(mcdevCommand, command, commandParameters, commandHandler, cancellationToken);
 
 		// Returns success as true if every command execution was successfull
 		return { success: commandResults.every(result => result === true) };
@@ -336,25 +338,30 @@ class Mcdev {
 	 * @param command - The command string to be run.
 	 * @param commandParameters - The parameters for the command.
 	 * @param commandHandler - A handler function to process the command output.
+	 * @param cancellationToken - An optional token to cancel the running command.
 	 * @returns A promise that resolves to an array of boolean values indicating the success of each command execution.
 	 */
 	private async runCommand(
 		mcdevCommand: Commands,
 		command: string,
 		commandParameters: TDevTools.ICommandParameters,
-		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void
+		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void,
+		cancellationToken?: TUtils.ICancellationToken
 	) {
 		const commandResults: boolean[] = [];
 
 		const commandConfig = mcdevCommand.run(command, commandParameters);
 
 		for (const [parameters, projectPath] of commandConfig.config) {
+			if (cancellationToken?.isCancellationRequested) break;
+
 			// Command terminal configuration
 			const terminalConfig: TUtils.ITerminalCommandRunner = {
 				command: this.getPackageName(),
 				commandArgs: [commandConfig.alias, parameters],
 				commandCwd: projectPath,
-				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler({ output, error })
+				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler({ output, error }),
+				cancellationToken
 			};
 
 			// Logs the command that is being executed

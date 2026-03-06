@@ -29,17 +29,30 @@ function executeCommandSync({
  * @param {TUtils.ITerminalCommandRunner} param.commandArgs - terminal arguments
  * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
  * @param {TUtils.ITerminalCommandRunner} param.commandHandler - terminal handler function
+ * @param {TUtils.ITerminalCommandRunner} param.cancellationToken - optional token to cancel the running process
  * @returns {Promise<TUtils.ITerminalCommandResult>} object configured with the result of executing the terminal command
  */
 function executeCommand({
 	command,
 	commandArgs,
 	commandCwd,
-	commandHandler
+	commandHandler,
+	cancellationToken
 }: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
 	return new Promise(resolve => {
+		let resolved = false;
 		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
 		const proccess = spawn(command, commandArgs, { shell: true, cwd: commandCwd });
+
+		if (cancellationToken) {
+			cancellationToken.onCancellationRequested(() => {
+				if (!resolved) {
+					resolved = true;
+					proccess.kill();
+					resolve({ success: false, stdStreams: terminalOutput });
+				}
+			});
+		}
 
 		if (proccess.stdout && commandHandler)
 			proccess.stdout.on("data", (data: Buffer) =>
@@ -50,7 +63,12 @@ function executeCommand({
 				commandHandler({ ...terminalOutput, error: data.toString().trim() })
 			);
 
-		proccess.on("close", code => resolve({ success: code === 0, stdStreams: terminalOutput }));
+		proccess.on("close", code => {
+			if (!resolved) {
+				resolved = true;
+				resolve({ success: code === 0, stdStreams: terminalOutput });
+			}
+		});
 	});
 }
 

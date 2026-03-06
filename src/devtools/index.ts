@@ -821,15 +821,21 @@ class DevToolsExtension {
 		return new Promise(async resolveCommand => {
 			this.activateNotificationProgressBar(
 				inProgressBarTitle,
-				false,
-				() =>
+				true,
+				(_progress, cancelToken) =>
 					new Promise(async resolveExecute => {
 						const { success }: { success: boolean } = await this.mcdev.execute(
 							command,
 							executeOnOutput,
-							executeParameters
+							executeParameters,
+							cancelToken
 						);
-						executeOnResult(success, resolveCommand);
+						if (cancelToken.isCancellationRequested) {
+							this.updateStatusBar(packageName, initialStatusBarTitle, "");
+							resolveCommand(false);
+						} else {
+							executeOnResult(success, resolveCommand);
+						}
 						resolveExecute(success);
 					})
 			);
