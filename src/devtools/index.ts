@@ -843,6 +843,16 @@ class DevToolsExtension {
 								this.getStatusBarTitle("stop", packageName),
 								""
 							);
+							// Reset status bar icon back to default after a delay, same as after an error
+							Lib.executeAfterDelay(
+								() =>
+									this.updateStatusBar(
+										packageName,
+										this.getStatusBarTitle("success", packageName),
+										""
+									),
+								ConfigExtension.delayTimeUpdateStatusBar
+							);
 							resolveCommand(false);
 						} else {
 							executeOnResult(success, resolveCommand);
