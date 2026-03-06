@@ -722,7 +722,9 @@ class DevToolsExtension {
 	getStatusBarTitle(iconName: string, name: string): string {
 		// Get the status bar icon based on the icon name
 		const statusBarIcon = EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon];
-		return `$(${statusBarIcon}) ${name}`;
+		// Codicon names consist only of letters, digits, and hyphens; emoji/unicode chars are used directly
+		const iconText = /^[a-zA-Z0-9-]+$/.test(statusBarIcon) ? `$(${statusBarIcon})` : statusBarIcon;
+		return `${iconText} ${name}`;
 	}
 
 	/**
@@ -831,7 +833,16 @@ class DevToolsExtension {
 							cancelToken
 						);
 						if (cancelToken.isCancellationRequested) {
-							this.updateStatusBar(packageName, initialStatusBarTitle, "");
+							this.writeLog(
+								packageName,
+								MessagesEditor.runningCommandCancelled,
+								EnumsExtension.LoggerLevel.WARN
+							);
+							this.updateStatusBar(
+								packageName,
+								this.getStatusBarTitle("stop", packageName),
+								""
+							);
 							resolveCommand(false);
 						} else {
 							executeOnResult(success, resolveCommand);
