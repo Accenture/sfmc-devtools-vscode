@@ -3,7 +3,7 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils } from "@types";
-import { Lib } from "utils";
+import { Lib, VsceLogger } from "utils";
 
 /**
  * DevTools Extension class
@@ -26,6 +26,15 @@ class DevToolsExtension {
 	 * @type {Mcdev}
 	 */
 	private mcdev: Mcdev;
+
+	/**
+	 * VSCE file-based logger – writes extension debug/error logs to
+	 * `{workspace}/logs/vsce/{timestamp}-vsce.log` for each command execution.
+	 *
+	 * @private
+	 * @type {VsceLogger}
+	 */
+	private vsceLogger: VsceLogger = new VsceLogger();
 
 	/**
 	 * Creates an instance of DevToolsExtension.
@@ -310,8 +319,13 @@ class DevToolsExtension {
 		message = level !== EnumsExtension.LoggerLevel.OUTPUT ? `${timestamp} ${level}: ${message}` : message;
 
 		if (!nonOutputLevel.includes(level)) this.logTextOutputChannel(ouputChannel, message);
-		// logs into extension file
-		console.log(message); // TODO: remove console.log and add to log file
+		// write DEBUG/INFO/WARN/ERROR entries to the VSCE log file; skip OUTPUT (mcdev output)
+		if (level !== EnumsExtension.LoggerLevel.OUTPUT) {
+			const isError =
+				level === EnumsExtension.LoggerLevel.ERROR || level === EnumsExtension.LoggerLevel.WARN;
+			this.vsceLogger.write(message, isError);
+		}
+		console.log(message);
 	}
 
 	/**
@@ -753,6 +767,14 @@ class DevToolsExtension {
 		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
 		const inProgressBarTitle = MessagesEditor.runningCommand;
 
+		// Start a new VSCE log session for this command execution
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			this.vsceLogger.startSession(workspacePath);
+		} catch {
+			// If the workspace path is unavailable, file logging is skipped for this session
+		}
+
 		/**
 		 * Executes logging based on the provided output information.
 		 *
@@ -801,6 +823,9 @@ class DevToolsExtension {
 					() => this.updateStatusBar(packageName, this.getStatusBarTitle("success", packageName), ""),
 					ConfigExtension.delayTimeUpdateStatusBar
 				);
+
+			// End the VSCE log session – deletes the log file when the command succeeded without errors
+			this.vsceLogger.endSession(success);
 
 			resolveCommand(success);
 
