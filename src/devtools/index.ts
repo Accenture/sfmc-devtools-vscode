@@ -3,7 +3,7 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils } from "@types";
-import { Lib } from "utils";
+import { Lib, VsceLogger } from "utils";
 
 /**
  * DevTools Extension class
@@ -301,17 +301,23 @@ class DevToolsExtension {
 	 * @param {string} ouputChannel - ouput channel name
 	 * @param {string} message - message to be displayed
 	 * @param {EnumsExtension.LoggerLevel} level - logger level
+	 * @param {VsceLogger} [sessionLogger] - optional session-scoped logger for file output
 	 * @returns {void}
 	 */
-	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel): void {
+	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel, sessionLogger?: VsceLogger): void {
 		const timestamp = Lib.getCurrentTime();
 		const nonOutputLevel = [EnumsExtension.LoggerLevel.DEBUG, EnumsExtension.LoggerLevel.ERROR];
 		// every logger level except output should be in format 'timestamp level: message'
 		message = level !== EnumsExtension.LoggerLevel.OUTPUT ? `${timestamp} ${level}: ${message}` : message;
 
 		if (!nonOutputLevel.includes(level)) this.logTextOutputChannel(ouputChannel, message);
-		// logs into extension file
-		console.log(message); // TODO: remove console.log and add to log file
+		// write DEBUG/INFO/WARN/ERROR entries to the VSCE log file; skip OUTPUT (mcdev output)
+		if (level !== EnumsExtension.LoggerLevel.OUTPUT && sessionLogger) {
+			const isError =
+				level === EnumsExtension.LoggerLevel.ERROR || level === EnumsExtension.LoggerLevel.WARN;
+			sessionLogger.write(message, isError);
+		}
+		console.log(message);
 	}
 
 	/**
@@ -755,6 +761,16 @@ class DevToolsExtension {
 		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
 		const inProgressBarTitle = MessagesEditor.runningCommand;
 
+		// Create a new session-scoped VSCE logger for this command execution to avoid
+		// shared mutable state when multiple commands run concurrently
+		const sessionLogger = new VsceLogger();
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			sessionLogger.startSession(workspacePath);
+		} catch {
+			// If the workspace path is unavailable, file logging is skipped for this session
+		}
+
 		/**
 		 * Executes logging based on the provided output information.
 		 *
@@ -772,7 +788,7 @@ class DevToolsExtension {
 			if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
 			if (error) loggerLevel = EnumsExtension.LoggerLevel.WARN;
 
-			this.writeLog(packageName, message, loggerLevel);
+			this.writeLog(packageName, message, loggerLevel, sessionLogger);
 		};
 
 		/**
@@ -803,6 +819,9 @@ class DevToolsExtension {
 					() => this.updateStatusBar(packageName, this.getStatusBarTitle("success", packageName), ""),
 					ConfigExtension.delayTimeUpdateStatusBar
 				);
+
+			// End the VSCE log session – deletes the log file when the command succeeded without errors
+			sessionLogger.endSession(success);
 
 			resolveCommand(success);
 
@@ -836,7 +855,8 @@ class DevToolsExtension {
 							this.writeLog(
 								packageName,
 								MessagesEditor.runningCommandCancelled,
-								EnumsExtension.LoggerLevel.WARN
+								EnumsExtension.LoggerLevel.WARN,
+								sessionLogger
 							);
 							this.updateStatusBar(
 								packageName,
@@ -853,6 +873,8 @@ class DevToolsExtension {
 									),
 								ConfigExtension.delayTimeUpdateStatusBar
 							);
+							// End the VSCE log session on cancellation – keep the log file since the command did not succeed
+							sessionLogger.endSession(false);
 							resolveCommand(false);
 						} else {
 							executeOnResult(success, resolveCommand);
