@@ -878,6 +878,8 @@ class DevToolsExtension {
 									),
 								ConfigExtension.delayTimeUpdateStatusBar
 							);
+							// End the VSCE log session on cancellation – keep the log file since the command did not succeed
+							this.vsceLogger.endSession(false);
 							resolveCommand(false);
 						} else {
 							executeOnResult(success, resolveCommand);
