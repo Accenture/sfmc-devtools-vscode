@@ -1,194 +1,196 @@
 {
-   "name": "sfmc-devtools-vscode",
-   "displayName": "SFMC DevTools",
-   "description": "Unofficial IDE for Salesforce Marketing Cloud - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
-   "version": "2.2.1",
-   "license": "MIT",
-   "publisher": "Accenture-oss",
-   "repository": {
-      "type": "git",
-      "url": "https://github.com/Accenture/sfmc-devtools-vscode.git"
-   },
-   "icon": "resources/images/sfmc-devtools-logo.jpg",
-   "engines": {
-      "vscode": "^1.92.0"
-   },
-   "peerDependencies": {
-      "mcdev": ">=5.2.0"
-   },
-   "keywords": [
-      "amp",
-      "ampscript",
-      "business units",
-      "content builder",
-      "deployment",
-      "developer",
-      "devops",
-      "exacttarget",
-      "extension",
-      "ide",
-      "marketing cloud",
-      "mc",
-      "package manager",
-      "salesforce",
-      "server-side javascript",
-      "sfmc",
-      "ssjs",
-      "vscode"
-   ],
-   "categories": [
-      "Other"
-   ],
-   "main": "./dist/extension.bundle.js",
-   "activationEvents": [
-      "onStartupFinished"
-   ],
-   "contributes": {
-      "commands": [
-         {
-            "command": "sfmc-devtools-vscode.copytobu",
-            "title": "%command.title.copytobu%"
-         },
-         {
-            "command": "sfmc-devtools-vscode.delete",
-            "title": "%command.title.delete%"
-         },
-         {
-            "command": "sfmc-devtools-vscode.deploy",
-            "title": "%command.title.deploy%"
-         },
-         {
-            "command": "sfmc-devtools-vscode.retrieve",
-            "title": "%command.title.retrieve%"
-         }
-      ],
-      "menus": {
-         "commandPalette": [
-            {
-               "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%",
-               "group": "devtools"
-            }
-         ],
-         "editor/context": [
-            {
-               "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%",
-               "group": "devtools"
-            }
-         ],
-         "explorer/context": [
-            {
-               "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%",
-               "group": "devtools"
-            }
-         ],
-         "editor/title/context": [
-            {
-               "command": "sfmc-devtools-vscode.copytobu",
-               "when": "%command.when.copytobu%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.delete",
-               "when": "%command.when.delete%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.deploy",
-               "when": "%command.when.deploy%",
-               "group": "devtools"
-            },
-            {
-               "command": "sfmc-devtools-vscode.retrieve",
-               "when": "%command.when.retrieve%",
-               "group": "devtools"
-            }
-         ]
-      },
-      "configuration": {
-         "title": "SFMC DevTools",
-         "properties": {
-            "sfmc-devtools-vscode.recommendExtensions": {
-               "type": "boolean",
-               "default": true,
-               "description": "Indicates if recommended extensions popup should be shown to user or not."
-            }
-         }
-      }
-   },
-   "scripts": {
-      "webpack": "webpack --mode development",
-      "webpack-dev": "webpack --mode development --watch",
-      "vscode:prepublish": "npm run package",
-      "compile": "webpack",
-      "watch": "webpack --watch",
-      "package": "webpack --mode production --devtool hidden-source-map",
-      "lint": "eslint src --ext ts",
-      "test": "jest --coverage"
-   },
-   "devDependencies": {
-      "@types/node": "^22.13.17",
-      "@types/vscode": "^1.92.0",
-      "@typescript-eslint/eslint-plugin": "^8.8.0",
-      "@typescript-eslint/parser": "^8.8.0",
-      "eslint": "^9.23.0",
-      "eslint-config-prettier": "9.1.0",
-      "eslint-plugin-import": "^2.31.0",
-      "eslint-plugin-prettier": "5.1.3",
-      "prettier": "3.5.3",
-      "ts-loader": "^9.5.1",
-      "typescript": "^5.5.4",
-      "webpack": "^5.94.0",
-      "webpack-cli": "^5.1.4"
-   },
-   "dependencies": {
-      "@vscode/codicons": "^0.0.36"
-   }
+	"name": "sfmc-devtools-vscode",
+	"displayName": "SFMC DevTools",
+	"description": "Unofficial IDE for Salesforce Marketing Cloud - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
+	"version": "2.2.1",
+	"license": "MIT",
+	"publisher": "Accenture-oss",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Accenture/sfmc-devtools-vscode.git"
+	},
+	"icon": "resources/images/sfmc-devtools-logo.jpg",
+	"engines": {
+		"vscode": "^1.92.0"
+	},
+	"peerDependencies": {
+		"mcdev": ">=5.2.0"
+	},
+	"keywords": [
+		"amp",
+		"ampscript",
+		"business units",
+		"content builder",
+		"deployment",
+		"developer",
+		"devops",
+		"exacttarget",
+		"extension",
+		"ide",
+		"marketing cloud",
+		"mc",
+		"package manager",
+		"salesforce",
+		"server-side javascript",
+		"sfmc",
+		"ssjs",
+		"vscode"
+	],
+	"categories": [
+		"Other"
+	],
+	"main": "./dist/extension.bundle.js",
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"contributes": {
+		"commands": [
+			{
+				"command": "sfmc-devtools-vscode.copytobu",
+				"title": "%command.title.copytobu%"
+			},
+			{
+				"command": "sfmc-devtools-vscode.delete",
+				"title": "%command.title.delete%"
+			},
+			{
+				"command": "sfmc-devtools-vscode.deploy",
+				"title": "%command.title.deploy%"
+			},
+			{
+				"command": "sfmc-devtools-vscode.retrieve",
+				"title": "%command.title.retrieve%"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "sfmc-devtools-vscode.copytobu",
+					"when": "%command.when.copytobu%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.delete",
+					"when": "%command.when.delete%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.deploy",
+					"when": "%command.when.deploy%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.retrieve",
+					"when": "%command.when.retrieve%",
+					"group": "devtools"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "sfmc-devtools-vscode.copytobu",
+					"when": "%command.when.copytobu%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.delete",
+					"when": "%command.when.delete%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.deploy",
+					"when": "%command.when.deploy%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.retrieve",
+					"when": "%command.when.retrieve%",
+					"group": "devtools"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "sfmc-devtools-vscode.copytobu",
+					"when": "%command.when.copytobu%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.delete",
+					"when": "%command.when.delete%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.deploy",
+					"when": "%command.when.deploy%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.retrieve",
+					"when": "%command.when.retrieve%",
+					"group": "devtools"
+				}
+			],
+			"editor/title/context": [
+				{
+					"command": "sfmc-devtools-vscode.copytobu",
+					"when": "%command.when.copytobu%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.delete",
+					"when": "%command.when.delete%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.deploy",
+					"when": "%command.when.deploy%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.retrieve",
+					"when": "%command.when.retrieve%",
+					"group": "devtools"
+				}
+			]
+		},
+		"configuration": {
+			"title": "SFMC DevTools",
+			"properties": {
+				"sfmc-devtools-vscode.recommendExtensions": {
+					"type": "boolean",
+					"default": true,
+					"description": "Indicates if recommended extensions popup should be shown to user or not."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"webpack": "webpack --mode development",
+		"webpack-dev": "webpack --mode development --watch",
+		"vscode:prepublish": "npm run package",
+		"compile": "webpack",
+		"watch": "webpack --watch",
+		"package": "webpack --mode production --devtool hidden-source-map",
+		"package:test-vsix": "npx @vscode/vsce package --pre-release -o sfmc-devtools-vscode-test.vsix",
+		"lint": "eslint src --ext ts",
+		"test": "jest --coverage"
+	},
+	"devDependencies": {
+		"@types/node": "^22.13.17",
+		"@types/vscode": "^1.92.0",
+		"@typescript-eslint/eslint-plugin": "^8.8.0",
+		"@typescript-eslint/parser": "^8.8.0",
+		"@vscode/vsce": "^3.7.1",
+		"eslint": "^9.23.0",
+		"eslint-config-prettier": "9.1.0",
+		"eslint-plugin-import": "^2.31.0",
+		"eslint-plugin-prettier": "5.1.3",
+		"prettier": "3.5.3",
+		"ts-loader": "^9.5.1",
+		"typescript": "^5.5.4",
+		"webpack": "^5.94.0",
+		"webpack-cli": "^5.1.4"
+	},
+	"dependencies": {
+		"@vscode/codicons": "^0.0.36"
+	}
 }

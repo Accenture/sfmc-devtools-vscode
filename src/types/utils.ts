@@ -3,11 +3,17 @@ interface ITerminalCommandStreams {
 	error: string;
 }
 
+interface ICancellationToken {
+	readonly isCancellationRequested: boolean;
+	readonly onCancellationRequested: (listener: (e: unknown) => unknown) => unknown;
+}
+
 interface ITerminalCommandRunner {
 	command: string;
 	commandArgs: string[];
 	commandCwd?: string;
 	commandHandler?: (terminalStreams: ITerminalCommandStreams) => void;
+	cancellationToken?: ICancellationToken;
 }
 
 interface ITerminalCommandResult {
@@ -21,4 +27,4 @@ interface IOutputLogger {
 	error?: string;
 }
 
-export { ITerminalCommandRunner, ITerminalCommandStreams, ITerminalCommandResult, IOutputLogger };
+export { ICancellationToken, ITerminalCommandRunner, ITerminalCommandStreams, ITerminalCommandResult, IOutputLogger };
