@@ -62,9 +62,15 @@ class VsceLogger {
 			if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 			const fileName = `${getLogFileTimestamp()}${vsceLogSuffix}`;
 			this.logFilePath = path.join(logsDir, fileName);
+			// Touch the log file so it exists even if no log entries are written
+			fs.writeFileSync(
+				this.logFilePath,
+				`# VSCE log session started at ${new Date().toISOString()}\n`,
+				{ flag: "a" }
+			);
 			this.hasErrors = false;
 		} catch {
-			// If the log directory cannot be created, continue without file logging
+			// If the log directory or file cannot be created, continue without file logging
 			this.logFilePath = undefined;
 		}
 	}
