@@ -5,3 +5,4 @@ logs
 .vscode
 .vscode-test
 coverage
+*.vsix
