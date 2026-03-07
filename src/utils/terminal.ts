@@ -100,6 +100,36 @@ function executeCommand({
 }
 
 /**
+ * Executes a terminal command asynchronously and captures the full output.
+ * Unlike executeCommand, this accumulates all stdout/stderr output and returns
+ * it in the resolved result, making it suitable for commands like 'mcdev et --json'.
+ *
+ * @param {TUtils.ITerminalCommandRunner} param.command - terminal command
+ * @param {TUtils.ITerminalCommandRunner} param.commandArgs - terminal arguments
+ * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
+ * @returns {Promise<TUtils.ITerminalCommandResult>} object configured with the full result of executing the terminal command
+ */
+function executeTerminalCommandCapture({
+	command,
+	commandArgs,
+	commandCwd
+}: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
+	return new Promise(resolve => {
+		let output = "";
+		let error = "";
+		const cwd = commandCwd ? Lib.removeLeadingRootDrivePath(commandCwd) : commandCwd;
+		const proc = spawn(command, commandArgs, { shell: true, cwd });
+
+		if (proc.stdout) proc.stdout.on("data", (data: Buffer) => { output += data.toString(); });
+		if (proc.stderr) proc.stderr.on("data", (data: Buffer) => { error += data.toString(); });
+
+		proc.on("close", code => {
+			resolve({ success: code === 0, stdStreams: { output: output.trim(), error: error.trim() } });
+		});
+	});
+}
+
+/**
  * Executes terminal command either synchronously or asynchronously
  *
  * @param {TUtils.ITerminalCommandRunner} param.command - terminal command
@@ -171,4 +201,4 @@ function installPackage(packageName: string): TUtils.ITerminalCommandResult {
 	return terminal;
 }
 
-export { executeTerminalCommand, isPackageInstalled, installPackage };
+export { executeTerminalCommand, executeTerminalCommandCapture, isPackageInstalled, installPackage };

@@ -93,6 +93,8 @@ class DevToolsExtension {
 				this.activateMenuCommands();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
+				// refresh metadata types in background from mcdev
+				this.refreshMetadataTypesInBackground();
 			}
 		} catch (error) {
 			// log as debug error
@@ -256,6 +258,39 @@ class DevToolsExtension {
 		];
 		// Prints the messages to the Output channel
 		messages.forEach(message => this.writeLog(packageName, message, EnumsExtension.LoggerLevel.INFO));
+	}
+
+	/**
+	 * Runs 'mcdev explainTypes --json' in the background after initial load and updates
+	 * the metadata types list if new or removed types are detected.
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async refreshMetadataTypesInBackground(): Promise<void> {
+		try {
+			const workspace = this.vscodeEditor.getWorkspace();
+			const workspacePath = workspace.getWorkspaceFsPath();
+			const packageName = this.mcdev.getPackageName();
+
+			const types = await this.mcdev.runExplainTypes(workspacePath);
+			if (!types) return;
+
+			const updated = this.mcdev.updateMetadataTypes(types);
+			if (updated) {
+				this.writeLog(
+					packageName,
+					`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
+					EnumsExtension.LoggerLevel.INFO
+				);
+			}
+		} catch (error) {
+			this.writeLog(
+				this.mcdev.getPackageName(),
+				`[index_refreshMetadataTypesInBackground]: ${error}`,
+				EnumsExtension.LoggerLevel.WARN
+			);
+		}
 	}
 
 	/**
