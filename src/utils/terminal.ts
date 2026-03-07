@@ -123,6 +123,10 @@ function executeTerminalCommandCapture({
 		if (proc.stdout) proc.stdout.on("data", (data: Buffer) => { output += data.toString(); });
 		if (proc.stderr) proc.stderr.on("data", (data: Buffer) => { error += data.toString(); });
 
+		proc.on("error", () => {
+			resolve({ success: false, stdStreams: { output: output.trim(), error: error.trim() } });
+		});
+
 		proc.on("close", code => {
 			resolve({ success: code === 0, stdStreams: { output: output.trim(), error: error.trim() } });
 		});

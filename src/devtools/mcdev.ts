@@ -154,7 +154,7 @@ class Mcdev {
 			const jsonOutput = result.stdStreams.output.slice(jsonStart);
 
 			return JSON.parse(jsonOutput) as TDevTools.IMetadataTypes[];
-		} catch {
+		} catch (error) {
 			return null;
 		}
 	}
