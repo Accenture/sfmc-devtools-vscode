@@ -23,34 +23,79 @@ function executeCommandSync({
 }
 
 /**
+ * Kills a spawned process and its entire process tree.
+ * On Windows, uses `taskkill /T /F` to terminate the tree.
+ * On Unix/macOS, kills the process group (requires the process to have been
+ * spawned with `detached: true` so it becomes a process-group leader).
+ *
+ * @param {ReturnType<typeof spawn>} proc - the spawned child process
+ */
+function killProcessTree(proc: ReturnType<typeof spawn>): void {
+	try {
+		if (process.platform === "win32") {
+			spawnSync("taskkill", ["/pid", String(proc.pid), "/T", "/F"]);
+		} else if (proc.pid !== undefined) {
+			process.kill(-proc.pid, "SIGTERM");
+		}
+	} catch (_) {
+		// Fall back to killing just the shell process if group-kill fails
+		proc.kill();
+	}
+}
+
+/**
  * Executes a terminal command asynchronously
  *
  * @param {TUtils.ITerminalCommandRunner} param.command - terminal command
  * @param {TUtils.ITerminalCommandRunner} param.commandArgs - terminal arguments
  * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
  * @param {TUtils.ITerminalCommandRunner} param.commandHandler - terminal handler function
+ * @param {TUtils.ITerminalCommandRunner} param.cancellationToken - optional token to cancel the running process
  * @returns {Promise<TUtils.ITerminalCommandResult>} object configured with the result of executing the terminal command
  */
 function executeCommand({
 	command,
 	commandArgs,
 	commandCwd,
-	commandHandler
+	commandHandler,
+	cancellationToken
 }: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
 	return new Promise(resolve => {
+		let resolved = false;
 		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
-		const proccess = spawn(command, commandArgs, { shell: true, cwd: commandCwd });
+		// detached: true on Unix makes the shell a process-group leader so we can
+		// kill the entire group (shell + mcdev child) via process.kill(-pid, signal).
+		const proc = spawn(command, commandArgs, {
+			shell: true,
+			cwd: commandCwd,
+			detached: process.platform !== "win32"
+		});
 
-		if (proccess.stdout && commandHandler)
-			proccess.stdout.on("data", (data: Buffer) =>
+		if (cancellationToken) {
+			cancellationToken.onCancellationRequested(() => {
+				if (!resolved) {
+					resolved = true;
+					killProcessTree(proc);
+					resolve({ success: false, stdStreams: terminalOutput });
+				}
+			});
+		}
+
+		if (proc.stdout && commandHandler)
+			proc.stdout.on("data", (data: Buffer) =>
 				commandHandler({ ...terminalOutput, output: data.toString().trim() })
 			);
-		if (proccess.stderr && commandHandler)
-			proccess.stderr.on("data", (data: Buffer) =>
+		if (proc.stderr && commandHandler)
+			proc.stderr.on("data", (data: Buffer) =>
 				commandHandler({ ...terminalOutput, error: data.toString().trim() })
 			);
 
-		proccess.on("close", code => resolve({ success: code === 0, stdStreams: terminalOutput }));
+		proc.on("close", code => {
+			if (!resolved) {
+				resolved = true;
+				resolve({ success: code === 0, stdStreams: terminalOutput });
+			}
+		});
 	});
 }
 
@@ -65,13 +110,13 @@ function executeCommand({
  * @returns {(TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult>)} object configured with the result of executing the terminal command in an sync or async way
  */
 function executeTerminalCommand(
-	{ command, commandArgs, commandCwd, commandHandler }: TUtils.ITerminalCommandRunner,
+	{ command, commandArgs, commandCwd, commandHandler, cancellationToken }: TUtils.ITerminalCommandRunner,
 	sync: boolean
 ): TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult> {
 	if (commandCwd) commandCwd = Lib.removeLeadingRootDrivePath(commandCwd);
 	return sync
 		? executeCommandSync({ command, commandArgs, commandCwd })
-		: executeCommand({ command, commandArgs, commandCwd, commandHandler });
+		: executeCommand({ command, commandArgs, commandCwd, commandHandler, cancellationToken });
 }
 
 /**
