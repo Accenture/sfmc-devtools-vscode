@@ -6,4 +6,3 @@ logs
 .vscode-test
 coverage
 *.vsix
-package-lock.json
