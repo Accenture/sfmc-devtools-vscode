@@ -465,6 +465,45 @@ class DevToolsExtension {
 	}
 
 	/**
+	 * Filters the given files to only those whose metadata type supports the specified action.
+	 * For files where the type is not known (no metadataType field), the file is kept (permissive).
+	 * When unsupported types are found, a 5-second warning notification is shown.
+	 *
+	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files to validate
+	 * @param {string} action - action to validate (e.g. "delete", "deploy")
+	 * @returns {TDevTools.IExecuteFileDetails[]} subset of files whose type supports the action
+	 */
+	filterSupportedFiles(files: TDevTools.IExecuteFileDetails[], action: string): TDevTools.IExecuteFileDetails[] {
+		const unsupportedTypes: string[] = [];
+		const supportedFiles = files.filter(file => {
+			if (!file.metadataType) return true; // no type info at this path depth → pass through (permissive)
+			const supported = this.mcdev.isActionSupportedForType(action, file.metadataType);
+			if (!supported && !unsupportedTypes.includes(file.metadataType)) unsupportedTypes.push(file.metadataType);
+			return supported;
+		});
+		if (unsupportedTypes.length) this.showActionNotSupportedWarning(action, unsupportedTypes);
+		return supportedFiles;
+	}
+
+	/**
+	 * Shows a 5-second warning notification in the VS Code notifications area when a command
+	 * is invoked for a metadata type that does not support the requested action.
+	 * The notification auto-dismisses after 5 seconds, replacing the normal "running command" overlay.
+	 *
+	 * @param {string} action - the action that is not supported
+	 * @param {string[]} metadataTypes - list of metadata type names that do not support the action
+	 * @returns {void}
+	 */
+	showActionNotSupportedWarning(action: string, metadataTypes: string[]): void {
+		const message = MessagesEditor.unsupportedAction(action, metadataTypes);
+		this.activateNotificationProgressBar(
+			message,
+			false,
+			() => new Promise(resolve => setTimeout(resolve, 5000))
+		);
+	}
+
+	/**
 	 * Registers the extension menu commands
 	 *
 	 * @returns {void}
@@ -527,6 +566,11 @@ class DevToolsExtension {
 	 */
 	async handleCopyToBUCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		try {
+			// Filter out metadata types that do not support deploy (clone requires deployability)
+			const supportedFiles = this.filterSupportedFiles(files, "deploy");
+			if (!supportedFiles.length) return;
+			files = supportedFiles;
+
 			// Request user to select the action to perform
 			const userCopyToBUAnswer = (await this.requestInputWithOptions(
 				Object.keys(EnumsDevTools.CopyToBUOptions),
@@ -591,8 +635,11 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async handleDeleteCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		// Filter out metadata types that do not support delete
+		const supportedFiles = this.filterSupportedFiles(files, "delete");
+		if (!supportedFiles.length) return;
 		// Get the file names and metadata types to display in the confirmation message
-		const fileNamesList = files.map(file => `${file.filename} (${file.metadataType})`);
+		const fileNamesList = supportedFiles.map(file => `${file.filename} (${file.metadataType})`);
 		// Request user confirmation to delete the selected files
 		const confirmationAnswer = await this.showInformationMessage(
 			"info",
@@ -603,7 +650,7 @@ class DevToolsExtension {
 		// If the user cancels the confirmation, return
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
 		// Execute the 'delete' command
-		this.executeCommand("delete", { filesDetails: files });
+		this.executeCommand("delete", { filesDetails: supportedFiles });
 	}
 
 	/**
@@ -613,7 +660,10 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
-		this.executeCommand("deploy", { filesDetails: files });
+		// Filter out metadata types that do not support deploy
+		const supportedFiles = this.filterSupportedFiles(files, "deploy");
+		if (!supportedFiles.length) return;
+		this.executeCommand("deploy", { filesDetails: supportedFiles });
 	}
 
 	/**

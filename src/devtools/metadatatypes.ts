@@ -102,6 +102,29 @@ class MetadataTypes {
 	}
 
 	/**
+	 * Checks whether the given action is supported for a specific metadata type.
+	 * The apiName is matched against the beginning of the stored type's apiName to handle
+	 * sub-typed names such as "asset-block" (base apiName: "asset").
+	 * Unknown types are treated as supported so that future mcdev types are never blocked.
+	 *
+	 * @param {string} action - action to check (e.g. "delete", "deploy")
+	 * @param {string} apiName - metadata type API name, optionally with subtype suffix (e.g. "asset-block")
+	 * @returns {boolean} true if the action is supported or if the type is not in the cache
+	 */
+	isActionSupportedForType(action: string, apiName: string): boolean {
+		const metaDataTypeAction = MetadataTypesSupportedActions[action];
+		if (!metaDataTypeAction) return true;
+		// Try exact match first; if not found, strip a subtype suffix (e.g. "asset-block" → "asset")
+		// to handle asset sub-types while still correctly matching types whose base apiName contains a hyphen
+		const mdType =
+			this.getAllMetaDataTypes().find(t => t.apiName === apiName) ||
+			this.getAllMetaDataTypes().find(t => t.apiName === apiName.split("-")[0]);
+		// Unknown type → don't block (permissive fallback for future mcdev types)
+		if (!mdType) return true;
+		return metaDataTypeAction.some(a => mdType.supports[a]);
+	}
+
+	/**
 	 * Handles Metadata Type name configuration for specific cases
 	 *
 	 * @param {string} mdt - metadata type name

@@ -18,6 +18,8 @@ const deleteConfirmation = (items: string[]) =>
 		)}${items.length > 3 ? `\n...and ${items.length - 3} more item${items.length - 3 > 1 ? "s" : ""}.` : ""}`;
 const noBusinessUnitsFound = (credential: string) =>
 	`No business units were found for the selected credential: "${credential}". Please check the configuration file.`;
+const unsupportedAction = (action: string, metadataTypes: string[]) =>
+	`The selected metadata type${metadataTypes.length > 1 ? "s do" : " does"} not support "${action}": ${metadataTypes.join(", ")}`;
 
 export {
 	recommendedExtensions,
@@ -31,5 +33,6 @@ export {
 	copyToBuPrompt,
 	noCredentialFound,
 	deleteConfirmation,
-	noBusinessUnitsFound
+	noBusinessUnitsFound,
+	unsupportedAction
 };

@@ -187,6 +187,17 @@ class Mcdev {
 	}
 
 	/**
+	 * Checks whether the given action is supported for a specific metadata type apiName.
+	 *
+	 * @param {string} action - action name (e.g. "delete", "deploy")
+	 * @param {string} apiName - metadata type API name, optionally with subtype suffix
+	 * @returns {boolean} true if the action is supported or if the type is not in the cache
+	 */
+	public isActionSupportedForType(action: string, apiName: string): boolean {
+		return this.metadataTypes.isActionSupportedForType(action, apiName);
+	}
+
+	/**
 	 * Convert files paths to DevTools File Format
 	 *
 	 * @public
