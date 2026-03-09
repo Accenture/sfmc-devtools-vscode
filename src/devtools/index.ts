@@ -467,10 +467,10 @@ class DevToolsExtension {
 	/**
 	 * Filters the given files to only those whose metadata type supports the specified action.
 	 * For files where the type is not known (no metadataType field), the file is kept (permissive).
-	 * When unsupported types are found, a 5-second warning notification is shown.
+	 * When unsupported types are found, an error notification is shown and the error is logged.
 	 *
 	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files to validate
-	 * @param {string} action - action to validate (e.g. "delete", "deploy")
+	 * @param {string} action - action to validate (e.g. "delete", "deploy", "retrieve")
 	 * @returns {TDevTools.IExecuteFileDetails[]} subset of files whose type supports the action
 	 */
 	filterSupportedFiles(files: TDevTools.IExecuteFileDetails[], action: string): TDevTools.IExecuteFileDetails[] {
@@ -481,26 +481,41 @@ class DevToolsExtension {
 			if (!supported && !unsupportedTypes.includes(file.metadataType)) unsupportedTypes.push(file.metadataType);
 			return supported;
 		});
-		if (unsupportedTypes.length) this.showActionNotSupportedWarning(action, unsupportedTypes);
+		if (unsupportedTypes.length) this.showActionNotSupportedError(action, unsupportedTypes);
 		return supportedFiles;
 	}
 
 	/**
-	 * Shows a 5-second warning notification in the VS Code notifications area when a command
-	 * is invoked for a metadata type that does not support the requested action.
-	 * The notification auto-dismisses after 5 seconds, replacing the normal "running command" overlay.
+	 * Shows an error notification (without a loading bar) when a command is invoked for a
+	 * metadata type that does not support the requested action.
+	 * The error is logged to the extension's output channel and written to the VSCE log file.
+	 * When ALL selected items are unsupported the error replaces the "running command" overlay
+	 * (handlers return early before calling executeCommand). When only SOME items are unsupported
+	 * the error notification appears alongside the running-command progress bar.
 	 *
 	 * @param {string} action - the action that is not supported
-	 * @param {string[]} metadataTypes - list of metadata type names that do not support the action
+	 * @param {string[]} metadataTypes - list of metadata type api names that do not support the action
 	 * @returns {void}
 	 */
-	showActionNotSupportedWarning(action: string, metadataTypes: string[]): void {
+	showActionNotSupportedError(action: string, metadataTypes: string[]): void {
+		const packageName = this.mcdev.getPackageName();
 		const message = MessagesEditor.unsupportedAction(action, metadataTypes);
-		this.activateNotificationProgressBar(
-			message,
-			false,
-			() => new Promise(resolve => setTimeout(resolve, 5000))
-		);
+
+		// Create a dedicated log session so the error is persisted to the VSCE log file
+		const sessionLogger = new VsceLogger();
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			sessionLogger.startSession(workspacePath);
+		} catch {
+			// If workspace path is unavailable, skip file logging
+		}
+		// Logs to output channel (WARN appears there) and to the vsce-log file
+		this.writeLog(packageName, message, EnumsExtension.LoggerLevel.WARN, sessionLogger);
+		// Keep the log file since an error was logged
+		sessionLogger.endSession(false);
+
+		// Show error popup without a loading bar (fire-and-forget, same appearance as mcdev failure)
+		this.showInformationMessage("error", message, []);
 	}
 
 	/**
@@ -711,7 +726,10 @@ class DevToolsExtension {
 				);
 				files = this.mcdev.convertPathsToFiles(mdTypesPaths);
 			}
-			this.executeCommand("retrieve", { filesDetails: files });
+			// Filter out metadata types that do not support retrieve (catches custom/demo folder names)
+			const retrieveFiles = this.filterSupportedFiles(files, "retrieve");
+			if (!retrieveFiles.length) return;
+			this.executeCommand("retrieve", { filesDetails: retrieveFiles });
 		});
 	}
 
