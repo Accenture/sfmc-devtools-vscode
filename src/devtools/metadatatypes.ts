@@ -81,6 +81,50 @@ class MetadataTypes {
 	}
 
 	/**
+	 * Updates the metadata types list with the provided types.
+	 * Returns true if any new or removed types were detected.
+	 *
+	 * @param {TDevTools.IMetadataTypes[]} types - updated list of metadata types
+	 * @returns {boolean} true if the list changed, false otherwise
+	 */
+	updateMetadataTypes(types: TDevTools.IMetadataTypes[]): boolean {
+		const currentApiNames = new Set(this.metadataTypes.map(t => t.apiName));
+		const newApiNames = new Set(types.map(t => t.apiName));
+
+		const hasNewTypes = types.some(t => !currentApiNames.has(t.apiName));
+		const hasRemovedTypes = this.metadataTypes.some(t => !newApiNames.has(t.apiName));
+
+		if (hasNewTypes || hasRemovedTypes) {
+			this.metadataTypes = types;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Checks whether the given action is supported for a specific metadata type.
+	 * The apiName is matched against the beginning of the stored type's apiName to handle
+	 * sub-typed names such as "asset-block" (base apiName: "asset").
+	 * Unknown types are blocked so that folder names that don't match any known type are rejected.
+	 *
+	 * @param {string} action - action to check (e.g. "delete", "deploy")
+	 * @param {string} apiName - metadata type API name, optionally with subtype suffix (e.g. "asset-block")
+	 * @returns {boolean} true if the action is supported; false if the type is unknown or does not support the action
+	 */
+	isActionSupportedForType(action: string, apiName: string): boolean {
+		const metaDataTypeAction = MetadataTypesSupportedActions[action];
+		if (!metaDataTypeAction) return true;
+		// Try exact match first; if not found, strip a subtype suffix (e.g. "asset-block" → "asset")
+		// to handle asset sub-types while still correctly matching types whose base apiName contains a hyphen
+		const mdType =
+			this.getAllMetaDataTypes().find(t => t.apiName === apiName) ||
+			this.getAllMetaDataTypes().find(t => t.apiName === apiName.split("-")[0]);
+		// Unknown type → block (folder name doesn't match any known metadata type)
+		if (!mdType) return false;
+		return metaDataTypeAction.some(a => mdType.supports[a]);
+	}
+
+	/**
 	 * Handles Metadata Type name configuration for specific cases
 	 *
 	 * @param {string} mdt - metadata type name

@@ -93,6 +93,8 @@ class DevToolsExtension {
 				this.activateMenuCommands();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
+				// refresh metadata types in background from mcdev
+				this.refreshMetadataTypesInBackground();
 			}
 		} catch (error) {
 			// log as debug error
@@ -256,6 +258,39 @@ class DevToolsExtension {
 		];
 		// Prints the messages to the Output channel
 		messages.forEach(message => this.writeLog(packageName, message, EnumsExtension.LoggerLevel.INFO));
+	}
+
+	/**
+	 * Runs 'mcdev explainTypes --json' in the background after initial load and updates
+	 * the metadata types list if new or removed types are detected.
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async refreshMetadataTypesInBackground(): Promise<void> {
+		try {
+			const workspace = this.vscodeEditor.getWorkspace();
+			const workspacePath = workspace.getWorkspaceFsPath();
+			const packageName = this.mcdev.getPackageName();
+
+			const types = await this.mcdev.runExplainTypes(workspacePath);
+			if (!types) return;
+
+			const updated = this.mcdev.updateMetadataTypes(types);
+			if (updated) {
+				this.writeLog(
+					packageName,
+					`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
+					EnumsExtension.LoggerLevel.INFO
+				);
+			}
+		} catch (error) {
+			this.writeLog(
+				this.mcdev.getPackageName(),
+				`[index_refreshMetadataTypesInBackground]: ${error}`,
+				EnumsExtension.LoggerLevel.WARN
+			);
+		}
 	}
 
 	/**
@@ -430,6 +465,60 @@ class DevToolsExtension {
 	}
 
 	/**
+	 * Filters the given files to only those whose metadata type supports the specified action.
+	 * For files where the type is not known (no metadataType field), the file is kept (permissive).
+	 * When unsupported types are found, an error notification is shown and the error is logged.
+	 *
+	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files to validate
+	 * @param {string} action - action to validate (e.g. "delete", "deploy", "retrieve")
+	 * @returns {TDevTools.IExecuteFileDetails[]} subset of files whose type supports the action
+	 */
+	filterSupportedFiles(files: TDevTools.IExecuteFileDetails[], action: string): TDevTools.IExecuteFileDetails[] {
+		const unsupportedTypes: string[] = [];
+		const supportedFiles = files.filter(file => {
+			if (!file.metadataType) return true; // no type info at this path depth → pass through (permissive)
+			const supported = this.mcdev.isActionSupportedForType(action, file.metadataType);
+			if (!supported && !unsupportedTypes.includes(file.metadataType)) unsupportedTypes.push(file.metadataType);
+			return supported;
+		});
+		if (unsupportedTypes.length) this.showActionNotSupportedError(action, unsupportedTypes);
+		return supportedFiles;
+	}
+
+	/**
+	 * Shows an error notification (without a loading bar) when a command is invoked for a
+	 * metadata type that does not support the requested action.
+	 * The error is logged to the extension's output channel and written to the VSCE log file.
+	 * When ALL selected items are unsupported the error replaces the "running command" overlay
+	 * (handlers return early before calling executeCommand). When only SOME items are unsupported
+	 * the error notification appears alongside the running-command progress bar.
+	 *
+	 * @param {string} action - the action that is not supported
+	 * @param {string[]} metadataTypes - list of metadata type api names that do not support the action
+	 * @returns {void}
+	 */
+	showActionNotSupportedError(action: string, metadataTypes: string[]): void {
+		const packageName = this.mcdev.getPackageName();
+		const message = MessagesEditor.unsupportedAction(action, metadataTypes);
+
+		// Create a dedicated log session so the error is persisted to the VSCE log file
+		const sessionLogger = new VsceLogger();
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			sessionLogger.startSession(workspacePath);
+		} catch {
+			// If workspace path is unavailable, skip file logging
+		}
+		// Logs to output channel (WARN appears there) and to the vsce-log file
+		this.writeLog(packageName, message, EnumsExtension.LoggerLevel.WARN, sessionLogger);
+		// Keep the log file since an error was logged
+		sessionLogger.endSession(false);
+
+		// Show error popup without a loading bar (fire-and-forget, same appearance as mcdev failure)
+		this.showInformationMessage("error", message, []);
+	}
+
+	/**
 	 * Registers the extension menu commands
 	 *
 	 * @returns {void}
@@ -450,6 +539,12 @@ class DevToolsExtension {
 				}
 			})
 		);
+
+		// Register the palette-only "Restart extension" command that re-checks supported types
+		vscodeCommands.registerCommand({
+			command: `${ConfigExtension.extensionName}.restartExtension`,
+			callbackAction: () => this.refreshMetadataTypesInBackground()
+		});
 	}
 
 	/**
@@ -492,6 +587,11 @@ class DevToolsExtension {
 	 */
 	async handleCopyToBUCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		try {
+			// Filter out metadata types that do not support deploy (clone requires deployability)
+			const supportedFiles = this.filterSupportedFiles(files, "deploy");
+			if (!supportedFiles.length) return;
+			files = supportedFiles;
+
 			// Request user to select the action to perform
 			const userCopyToBUAnswer = (await this.requestInputWithOptions(
 				Object.keys(EnumsDevTools.CopyToBUOptions),
@@ -556,8 +656,11 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async handleDeleteCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		// Filter out metadata types that do not support delete
+		const supportedFiles = this.filterSupportedFiles(files, "delete");
+		if (!supportedFiles.length) return;
 		// Get the file names and metadata types to display in the confirmation message
-		const fileNamesList = files.map(file => `${file.filename} (${file.metadataType})`);
+		const fileNamesList = supportedFiles.map(file => `${file.filename} (${file.metadataType})`);
 		// Request user confirmation to delete the selected files
 		const confirmationAnswer = await this.showInformationMessage(
 			"info",
@@ -568,7 +671,7 @@ class DevToolsExtension {
 		// If the user cancels the confirmation, return
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
 		// Execute the 'delete' command
-		this.executeCommand("delete", { filesDetails: files });
+		this.executeCommand("delete", { filesDetails: supportedFiles });
 	}
 
 	/**
@@ -578,7 +681,10 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
-		this.executeCommand("deploy", { filesDetails: files });
+		// Filter out metadata types that do not support deploy
+		const supportedFiles = this.filterSupportedFiles(files, "deploy");
+		if (!supportedFiles.length) return;
+		this.executeCommand("deploy", { filesDetails: supportedFiles });
 	}
 
 	/**
@@ -626,7 +732,10 @@ class DevToolsExtension {
 				);
 				files = this.mcdev.convertPathsToFiles(mdTypesPaths);
 			}
-			this.executeCommand("retrieve", { filesDetails: files });
+			// Filter out metadata types that do not support retrieve (catches custom/demo folder names)
+			const retrieveFiles = this.filterSupportedFiles(files, "retrieve");
+			if (!retrieveFiles.length) return;
+			this.executeCommand("retrieve", { filesDetails: retrieveFiles });
 		});
 	}
 
@@ -759,7 +868,6 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 		// Sets the status bar title and icon based on the command execution
 		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
-		const inProgressBarTitle = MessagesEditor.runningCommand;
 
 		// Create a new session-scoped VSCE logger for this command execution to avoid
 		// shared mutable state when multiple commands run concurrently
@@ -771,8 +879,16 @@ class DevToolsExtension {
 			// If the workspace path is unavailable, file logging is skipped for this session
 		}
 
+		// Tracks the progress-bar reporter so executeOnOutput can update the popup message
+		let progressReporter: TEditor.ProgressBar | null = null;
+		// Tracks the last full mcdev command string (used in the cancellation log message)
+		let lastRunCommand = "";
+
 		/**
 		 * Executes logging based on the provided output information.
+		 * When an info line begins with the "Running DevTools Command:" prefix it also
+		 * updates the progress-bar popup to show the actual mcdev command (without
+		 * --noLogColors which adds no value in the UI) and records it for the cancel log.
 		 *
 		 * @param {Object} param - The output logger object.
 		 * @param {string} [param.info=""] - Informational message to log.
@@ -787,6 +903,18 @@ class DevToolsExtension {
 			if (info) loggerLevel = EnumsExtension.LoggerLevel.INFO;
 			if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
 			if (error) loggerLevel = EnumsExtension.LoggerLevel.WARN;
+
+			// When a "Running DevTools Command: ..." info line arrives, extract the mcdev
+			// command and update the progress-bar notification to show it (minus --noLogColors).
+			const runningPrefix = `${MessagesDevTools.mcdevRunningCommand} `;
+			const trimmedInfo = info.trimStart();
+			if (info && trimmedInfo.startsWith(runningPrefix)) {
+				lastRunCommand = trimmedInfo.slice(runningPrefix.length).trimEnd();
+				if (progressReporter) {
+					const displayCommand = lastRunCommand.replace(/ --noLogColors/g, "").trimEnd();
+					progressReporter.report({ message: `Running ${displayCommand}` });
+				}
+			}
 
 			this.writeLog(packageName, message, loggerLevel, sessionLogger);
 		};
@@ -841,10 +969,14 @@ class DevToolsExtension {
 		// Execute the commands asynchronously
 		return new Promise(async resolveCommand => {
 			this.activateNotificationProgressBar(
-				inProgressBarTitle,
+				"",
 				true,
-				(_progress, cancelToken) =>
+				(progress, cancelToken) =>
 					new Promise(async resolveExecute => {
+						// Capture the reporter so executeOnOutput can update the popup message
+						progressReporter = progress;
+						// Show a placeholder message immediately while the command is being prepared
+						progress.report({ message: MessagesEditor.runningCommand });
 						const { success }: { success: boolean } = await this.mcdev.execute(
 							command,
 							executeOnOutput,
@@ -854,8 +986,8 @@ class DevToolsExtension {
 						if (cancelToken.isCancellationRequested) {
 							this.writeLog(
 								packageName,
-								MessagesEditor.runningCommandCancelled,
-								EnumsExtension.LoggerLevel.WARN,
+								MessagesEditor.runningCommandCancelled(lastRunCommand),
+								EnumsExtension.LoggerLevel.INFO,
 								sessionLogger
 							);
 							this.updateStatusBar(
