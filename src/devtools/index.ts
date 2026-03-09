@@ -3,7 +3,7 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils } from "@types";
-import { Lib } from "utils";
+import { Lib, VsceLogger } from "utils";
 
 /**
  * DevTools Extension class
@@ -93,6 +93,8 @@ class DevToolsExtension {
 				this.activateMenuCommands();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
+				// refresh metadata types in background from mcdev
+				this.refreshMetadataTypesInBackground();
 			}
 		} catch (error) {
 			// log as debug error
@@ -259,6 +261,39 @@ class DevToolsExtension {
 	}
 
 	/**
+	 * Runs 'mcdev explainTypes --json' in the background after initial load and updates
+	 * the metadata types list if new or removed types are detected.
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async refreshMetadataTypesInBackground(): Promise<void> {
+		try {
+			const workspace = this.vscodeEditor.getWorkspace();
+			const workspacePath = workspace.getWorkspaceFsPath();
+			const packageName = this.mcdev.getPackageName();
+
+			const types = await this.mcdev.runExplainTypes(workspacePath);
+			if (!types) return;
+
+			const updated = this.mcdev.updateMetadataTypes(types);
+			if (updated) {
+				this.writeLog(
+					packageName,
+					`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
+					EnumsExtension.LoggerLevel.INFO
+				);
+			}
+		} catch (error) {
+			this.writeLog(
+				this.mcdev.getPackageName(),
+				`[index_refreshMetadataTypesInBackground]: ${error}`,
+				EnumsExtension.LoggerLevel.WARN
+			);
+		}
+	}
+
+	/**
 	 * Updates extension containers
 	 *
 	 * @param {string} containerName - name of the container
@@ -301,17 +336,23 @@ class DevToolsExtension {
 	 * @param {string} ouputChannel - ouput channel name
 	 * @param {string} message - message to be displayed
 	 * @param {EnumsExtension.LoggerLevel} level - logger level
+	 * @param {VsceLogger} [sessionLogger] - optional session-scoped logger for file output
 	 * @returns {void}
 	 */
-	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel): void {
+	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel, sessionLogger?: VsceLogger): void {
 		const timestamp = Lib.getCurrentTime();
 		const nonOutputLevel = [EnumsExtension.LoggerLevel.DEBUG, EnumsExtension.LoggerLevel.ERROR];
 		// every logger level except output should be in format 'timestamp level: message'
 		message = level !== EnumsExtension.LoggerLevel.OUTPUT ? `${timestamp} ${level}: ${message}` : message;
 
 		if (!nonOutputLevel.includes(level)) this.logTextOutputChannel(ouputChannel, message);
-		// logs into extension file
-		console.log(message); // TODO: remove console.log and add to log file
+		// write DEBUG/INFO/WARN/ERROR entries to the VSCE log file; skip OUTPUT (mcdev output)
+		if (level !== EnumsExtension.LoggerLevel.OUTPUT && sessionLogger) {
+			const isError =
+				level === EnumsExtension.LoggerLevel.ERROR || level === EnumsExtension.LoggerLevel.WARN;
+			sessionLogger.write(message, isError);
+		}
+		console.log(message);
 	}
 
 	/**
@@ -424,6 +465,60 @@ class DevToolsExtension {
 	}
 
 	/**
+	 * Filters the given files to only those whose metadata type supports the specified action.
+	 * For files where the type is not known (no metadataType field), the file is kept (permissive).
+	 * When unsupported types are found, an error notification is shown and the error is logged.
+	 *
+	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files to validate
+	 * @param {string} action - action to validate (e.g. "delete", "deploy", "retrieve")
+	 * @returns {TDevTools.IExecuteFileDetails[]} subset of files whose type supports the action
+	 */
+	filterSupportedFiles(files: TDevTools.IExecuteFileDetails[], action: string): TDevTools.IExecuteFileDetails[] {
+		const unsupportedTypes: string[] = [];
+		const supportedFiles = files.filter(file => {
+			if (!file.metadataType) return true; // no type info at this path depth → pass through (permissive)
+			const supported = this.mcdev.isActionSupportedForType(action, file.metadataType);
+			if (!supported && !unsupportedTypes.includes(file.metadataType)) unsupportedTypes.push(file.metadataType);
+			return supported;
+		});
+		if (unsupportedTypes.length) this.showActionNotSupportedError(action, unsupportedTypes);
+		return supportedFiles;
+	}
+
+	/**
+	 * Shows an error notification (without a loading bar) when a command is invoked for a
+	 * metadata type that does not support the requested action.
+	 * The error is logged to the extension's output channel and written to the VSCE log file.
+	 * When ALL selected items are unsupported the error replaces the "running command" overlay
+	 * (handlers return early before calling executeCommand). When only SOME items are unsupported
+	 * the error notification appears alongside the running-command progress bar.
+	 *
+	 * @param {string} action - the action that is not supported
+	 * @param {string[]} metadataTypes - list of metadata type api names that do not support the action
+	 * @returns {void}
+	 */
+	showActionNotSupportedError(action: string, metadataTypes: string[]): void {
+		const packageName = this.mcdev.getPackageName();
+		const message = MessagesEditor.unsupportedAction(action, metadataTypes);
+
+		// Create a dedicated log session so the error is persisted to the VSCE log file
+		const sessionLogger = new VsceLogger();
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			sessionLogger.startSession(workspacePath);
+		} catch {
+			// If workspace path is unavailable, skip file logging
+		}
+		// Logs to output channel (WARN appears there) and to the vsce-log file
+		this.writeLog(packageName, message, EnumsExtension.LoggerLevel.WARN, sessionLogger);
+		// Keep the log file since an error was logged
+		sessionLogger.endSession(false);
+
+		// Show error popup without a loading bar (fire-and-forget, same appearance as mcdev failure)
+		this.showInformationMessage("error", message, []);
+	}
+
+	/**
 	 * Registers the extension menu commands
 	 *
 	 * @returns {void}
@@ -444,6 +539,12 @@ class DevToolsExtension {
 				}
 			})
 		);
+
+		// Register the palette-only "Restart extension" command that re-checks supported types
+		vscodeCommands.registerCommand({
+			command: `${ConfigExtension.extensionName}.restartExtension`,
+			callbackAction: () => this.refreshMetadataTypesInBackground()
+		});
 	}
 
 	/**
@@ -486,6 +587,11 @@ class DevToolsExtension {
 	 */
 	async handleCopyToBUCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		try {
+			// Filter out metadata types that do not support deploy (clone requires deployability)
+			const supportedFiles = this.filterSupportedFiles(files, "deploy");
+			if (!supportedFiles.length) return;
+			files = supportedFiles;
+
 			// Request user to select the action to perform
 			const userCopyToBUAnswer = (await this.requestInputWithOptions(
 				Object.keys(EnumsDevTools.CopyToBUOptions),
@@ -550,8 +656,11 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async handleDeleteCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		// Filter out metadata types that do not support delete
+		const supportedFiles = this.filterSupportedFiles(files, "delete");
+		if (!supportedFiles.length) return;
 		// Get the file names and metadata types to display in the confirmation message
-		const fileNamesList = files.map(file => `${file.filename} (${file.metadataType})`);
+		const fileNamesList = supportedFiles.map(file => `${file.filename} (${file.metadataType})`);
 		// Request user confirmation to delete the selected files
 		const confirmationAnswer = await this.showInformationMessage(
 			"info",
@@ -562,7 +671,7 @@ class DevToolsExtension {
 		// If the user cancels the confirmation, return
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
 		// Execute the 'delete' command
-		this.executeCommand("delete", { filesDetails: files });
+		this.executeCommand("delete", { filesDetails: supportedFiles });
 	}
 
 	/**
@@ -572,7 +681,10 @@ class DevToolsExtension {
 	 * @returns {void}
 	 */
 	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
-		this.executeCommand("deploy", { filesDetails: files });
+		// Filter out metadata types that do not support deploy
+		const supportedFiles = this.filterSupportedFiles(files, "deploy");
+		if (!supportedFiles.length) return;
+		this.executeCommand("deploy", { filesDetails: supportedFiles });
 	}
 
 	/**
@@ -620,7 +732,10 @@ class DevToolsExtension {
 				);
 				files = this.mcdev.convertPathsToFiles(mdTypesPaths);
 			}
-			this.executeCommand("retrieve", { filesDetails: files });
+			// Filter out metadata types that do not support retrieve (catches custom/demo folder names)
+			const retrieveFiles = this.filterSupportedFiles(files, "retrieve");
+			if (!retrieveFiles.length) return;
+			this.executeCommand("retrieve", { filesDetails: retrieveFiles });
 		});
 	}
 
@@ -722,7 +837,9 @@ class DevToolsExtension {
 	getStatusBarTitle(iconName: string, name: string): string {
 		// Get the status bar icon based on the icon name
 		const statusBarIcon = EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon];
-		return `$(${statusBarIcon}) ${name}`;
+		// Codicon names consist only of letters, digits, and hyphens; emoji/unicode chars are used directly
+		const iconText = /^[a-zA-Z0-9-]+$/.test(statusBarIcon) ? `$(${statusBarIcon})` : statusBarIcon;
+		return `${iconText} ${name}`;
 	}
 
 	/**
@@ -751,10 +868,27 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 		// Sets the status bar title and icon based on the command execution
 		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
-		const inProgressBarTitle = MessagesEditor.runningCommand;
+
+		// Create a new session-scoped VSCE logger for this command execution to avoid
+		// shared mutable state when multiple commands run concurrently
+		const sessionLogger = new VsceLogger();
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			sessionLogger.startSession(workspacePath);
+		} catch {
+			// If the workspace path is unavailable, file logging is skipped for this session
+		}
+
+		// Tracks the progress-bar reporter so executeOnOutput can update the popup message
+		let progressReporter: TEditor.ProgressBar | null = null;
+		// Tracks the last full mcdev command string (used in the cancellation log message)
+		let lastRunCommand = "";
 
 		/**
 		 * Executes logging based on the provided output information.
+		 * When an info line begins with the "Running DevTools Command:" prefix it also
+		 * updates the progress-bar popup to show the actual mcdev command (without
+		 * --noLogColors which adds no value in the UI) and records it for the cancel log.
 		 *
 		 * @param {Object} param - The output logger object.
 		 * @param {string} [param.info=""] - Informational message to log.
@@ -770,7 +904,19 @@ class DevToolsExtension {
 			if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
 			if (error) loggerLevel = EnumsExtension.LoggerLevel.WARN;
 
-			this.writeLog(packageName, message, loggerLevel);
+			// When a "Running DevTools Command: ..." info line arrives, extract the mcdev
+			// command and update the progress-bar notification to show it (minus --noLogColors).
+			const runningPrefix = `${MessagesDevTools.mcdevRunningCommand} `;
+			const trimmedInfo = info.trimStart();
+			if (info && trimmedInfo.startsWith(runningPrefix)) {
+				lastRunCommand = trimmedInfo.slice(runningPrefix.length).trimEnd();
+				if (progressReporter) {
+					const displayCommand = lastRunCommand.replace(/ --noLogColors/g, "").trimEnd();
+					progressReporter.report({ message: `Running ${displayCommand}` });
+				}
+			}
+
+			this.writeLog(packageName, message, loggerLevel, sessionLogger);
 		};
 
 		/**
@@ -802,6 +948,9 @@ class DevToolsExtension {
 					ConfigExtension.delayTimeUpdateStatusBar
 				);
 
+			// End the VSCE log session – deletes the log file when the command succeeded without errors
+			sessionLogger.endSession(success);
+
 			resolveCommand(success);
 
 			// Shows the modal message with the result of the command execution
@@ -820,16 +969,48 @@ class DevToolsExtension {
 		// Execute the commands asynchronously
 		return new Promise(async resolveCommand => {
 			this.activateNotificationProgressBar(
-				inProgressBarTitle,
-				false,
-				() =>
+				"",
+				true,
+				(progress, cancelToken) =>
 					new Promise(async resolveExecute => {
+						// Capture the reporter so executeOnOutput can update the popup message
+						progressReporter = progress;
+						// Show a placeholder message immediately while the command is being prepared
+						progress.report({ message: MessagesEditor.runningCommand });
 						const { success }: { success: boolean } = await this.mcdev.execute(
 							command,
 							executeOnOutput,
-							executeParameters
+							executeParameters,
+							cancelToken
 						);
-						executeOnResult(success, resolveCommand);
+						if (cancelToken.isCancellationRequested) {
+							this.writeLog(
+								packageName,
+								MessagesEditor.runningCommandCancelled(lastRunCommand),
+								EnumsExtension.LoggerLevel.INFO,
+								sessionLogger
+							);
+							this.updateStatusBar(
+								packageName,
+								this.getStatusBarTitle("stop", packageName),
+								""
+							);
+							// Reset status bar icon back to default after a delay, same as after an error
+							Lib.executeAfterDelay(
+								() =>
+									this.updateStatusBar(
+										packageName,
+										this.getStatusBarTitle("success", packageName),
+										""
+									),
+								ConfigExtension.delayTimeUpdateStatusBar
+							);
+							// End the VSCE log session on cancellation – keep the log file since the command did not succeed
+							sessionLogger.endSession(false);
+							resolveCommand(false);
+						} else {
+							executeOnResult(success, resolveCommand);
+						}
 						resolveExecute(success);
 					})
 			);

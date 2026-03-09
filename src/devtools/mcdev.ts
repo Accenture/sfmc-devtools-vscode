@@ -131,6 +131,47 @@ class Mcdev {
 	}
 
 	/**
+	 * Runs 'mcdev explainTypes --json' asynchronously and returns the parsed type list.
+	 * Returns null if the command fails or the output cannot be parsed.
+	 *
+	 * @public
+	 * @param {string} projectPath - working directory path for mcdev
+	 * @returns {Promise<TDevTools.IMetadataTypes[] | null>} parsed metadata types or null on failure
+	 */
+	public async runExplainTypes(projectPath: string): Promise<TDevTools.IMetadataTypes[] | null> {
+		try {
+			const result = await Terminal.executeTerminalCommandCapture({
+				command: this.packageName,
+				commandArgs: ["et", "--json"],
+				commandCwd: projectPath
+			});
+
+			if (!result.success || !result.stdStreams.output) return null;
+
+			// The output may include non-JSON lines before the JSON array; extract the JSON portion
+			const jsonStart = result.stdStreams.output.indexOf("[");
+			if (jsonStart === -1) return null;
+			const jsonOutput = result.stdStreams.output.slice(jsonStart);
+
+			return JSON.parse(jsonOutput) as TDevTools.IMetadataTypes[];
+		} catch (error) {
+			return null;
+		}
+	}
+
+	/**
+	 * Updates the internal metadata types list with a new set of types.
+	 * Returns true when the list was changed (new or removed types detected).
+	 *
+	 * @public
+	 * @param {TDevTools.IMetadataTypes[]} types - updated metadata types list
+	 * @returns {boolean} true if the list changed, false otherwise
+	 */
+	public updateMetadataTypes(types: TDevTools.IMetadataTypes[]): boolean {
+		return this.metadataTypes.updateMetadataTypes(types);
+	}
+
+	/**
 	 * Retrieves the metadata types supported by a given action.
 	 *
 	 * @param {string} action - The action for which to retrieve supported metadata types.
@@ -143,6 +184,17 @@ class Mcdev {
 				`[mcdev_retrieveSupportedMetadataDataTypes]: Invalid Metadata Type supported action '${action}'.`
 			);
 		return this.metadataTypes.getMetaDataTypesSupportedByAction(action);
+	}
+
+	/**
+	 * Checks whether the given action is supported for a specific metadata type apiName.
+	 *
+	 * @param {string} action - action name (e.g. "delete", "deploy")
+	 * @param {string} apiName - metadata type API name, optionally with subtype suffix
+	 * @returns {boolean} true if the action is supported or if the type is not in the cache
+	 */
+	public isActionSupportedForType(action: string, apiName: string): boolean {
+		return this.metadataTypes.isActionSupportedForType(action, apiName);
 	}
 
 	/**
@@ -297,12 +349,14 @@ class Mcdev {
 	 * @param {string} command - command name
 	 * @param {({ info, output, error }: TUtils.IOutputLogger) => void} commandHandler - command handler
 	 * @param {string[]} filePaths - file paths
+	 * @param {TUtils.ICancellationToken} [cancellationToken] - optional token to cancel the running command
 	 * @returns {Promise<{ success: boolean }>} success is true if command executed successfully otherwise false
 	 */
 	public async execute(
 		command: string,
 		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void,
-		parameters: TDevTools.IExecuteParameters
+		parameters: TDevTools.IExecuteParameters,
+		cancellationToken?: TUtils.ICancellationToken
 	): Promise<{ success: boolean }> {
 		console.log("== Mcdev: Execute ==");
 
@@ -323,7 +377,7 @@ class Mcdev {
 		}
 
 		// Calls the mcdev command to run with the right parameters
-		const commandResults = await this.runCommand(mcdevCommand, command, commandParameters, commandHandler);
+		const commandResults = await this.runCommand(mcdevCommand, command, commandParameters, commandHandler, cancellationToken);
 
 		// Returns success as true if every command execution was successfull
 		return { success: commandResults.every(result => result === true) };
@@ -336,25 +390,30 @@ class Mcdev {
 	 * @param command - The command string to be run.
 	 * @param commandParameters - The parameters for the command.
 	 * @param commandHandler - A handler function to process the command output.
+	 * @param cancellationToken - An optional token to cancel the running command.
 	 * @returns A promise that resolves to an array of boolean values indicating the success of each command execution.
 	 */
 	private async runCommand(
 		mcdevCommand: Commands,
 		command: string,
 		commandParameters: TDevTools.ICommandParameters,
-		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void
+		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void,
+		cancellationToken?: TUtils.ICancellationToken
 	) {
 		const commandResults: boolean[] = [];
 
 		const commandConfig = mcdevCommand.run(command, commandParameters);
 
 		for (const [parameters, projectPath] of commandConfig.config) {
+			if (cancellationToken?.isCancellationRequested) break;
+
 			// Command terminal configuration
 			const terminalConfig: TUtils.ITerminalCommandRunner = {
 				command: this.getPackageName(),
 				commandArgs: [commandConfig.alias, parameters],
 				commandCwd: projectPath,
-				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler({ output, error })
+				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler({ output, error }),
+				cancellationToken
 			};
 
 			// Logs the command that is being executed

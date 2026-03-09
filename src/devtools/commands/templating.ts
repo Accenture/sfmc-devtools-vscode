@@ -11,16 +11,6 @@ enum TemplatingCommandsAlias {
 }
 
 /**
- * Enum representing the flags for templating commands.
- *
- * @enum {string}
- */
-enum TemplatingCommandsFlags {
-	buFrom = "--bf",
-	buTarget = "--bt"
-}
-
-/**
  * Templating Commands class
  *
  * @class TemplatingCommands
@@ -67,8 +57,8 @@ class TemplatingCommands extends Commands {
 	 */
 	clone(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== Templating Commands: Clone ==");
-		const buFromFlag = TemplatingCommandsFlags.buFrom;
-		const buTargetFlag = TemplatingCommandsFlags.buTarget;
+		const buFromFlag = this.retrieveAlias("buFrom");
+		const buTargetFlag = this.retrieveAlias("buTarget");
 
 		// Check if the parameters object contains the 'files' and 'targetBusinessUnit' properties
 		if ("files" in parameters && "targetBusinessUnit" in parameters) {
@@ -78,7 +68,11 @@ class TemplatingCommands extends Commands {
 			// file parameters configuration
 			const fileParameters = (parameters.files as TDevTools.ICommandFileParameters[]).map(file => {
 				const credential = `${buFromFlag} ${file.credential} ${buTargetFlag} ${parameters.targetBusinessUnit}`;
-				return { ...file, credential, optional: ["no-purge"] };
+				return {
+					...file,
+					credential,
+					optional: [this.retrieveFlag("noPurge"), this.retrieveFlag("skipValidation")]
+				};
 			});
 
 			// command parameters configuration
