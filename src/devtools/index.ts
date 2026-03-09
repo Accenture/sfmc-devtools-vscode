@@ -862,7 +862,6 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 		// Sets the status bar title and icon based on the command execution
 		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
-		const inProgressBarTitle = MessagesEditor.runningCommand;
 
 		// Create a new session-scoped VSCE logger for this command execution to avoid
 		// shared mutable state when multiple commands run concurrently
@@ -874,8 +873,16 @@ class DevToolsExtension {
 			// If the workspace path is unavailable, file logging is skipped for this session
 		}
 
+		// Tracks the progress-bar reporter so executeOnOutput can update the popup message
+		let progressReporter: TEditor.ProgressBar | null = null;
+		// Tracks the last full mcdev command string (used in the cancellation log message)
+		let lastRunCommand = "";
+
 		/**
 		 * Executes logging based on the provided output information.
+		 * When an info line begins with the "Running DevTools Command:" prefix it also
+		 * updates the progress-bar popup to show the actual mcdev command (without
+		 * --noLogColors which adds no value in the UI) and records it for the cancel log.
 		 *
 		 * @param {Object} param - The output logger object.
 		 * @param {string} [param.info=""] - Informational message to log.
@@ -890,6 +897,18 @@ class DevToolsExtension {
 			if (info) loggerLevel = EnumsExtension.LoggerLevel.INFO;
 			if (output) loggerLevel = EnumsExtension.LoggerLevel.OUTPUT;
 			if (error) loggerLevel = EnumsExtension.LoggerLevel.WARN;
+
+			// When a "Running DevTools Command: ..." info line arrives, extract the mcdev
+			// command and update the progress-bar notification to show it (minus --noLogColors).
+			const runningPrefix = `${MessagesDevTools.mcdevRunningCommand} `;
+			const trimmedInfo = info.trimStart();
+			if (info && trimmedInfo.startsWith(runningPrefix)) {
+				lastRunCommand = trimmedInfo.slice(runningPrefix.length).trimEnd();
+				if (progressReporter) {
+					const displayCommand = lastRunCommand.replace(/ --noLogColors/g, "").trimEnd();
+					progressReporter.report({ message: `Running ${displayCommand}` });
+				}
+			}
 
 			this.writeLog(packageName, message, loggerLevel, sessionLogger);
 		};
@@ -944,10 +963,14 @@ class DevToolsExtension {
 		// Execute the commands asynchronously
 		return new Promise(async resolveCommand => {
 			this.activateNotificationProgressBar(
-				inProgressBarTitle,
+				"",
 				true,
-				(_progress, cancelToken) =>
+				(progress, cancelToken) =>
 					new Promise(async resolveExecute => {
+						// Capture the reporter so executeOnOutput can update the popup message
+						progressReporter = progress;
+						// Show a placeholder message immediately while the command is being prepared
+						progress.report({ message: MessagesEditor.runningCommand });
 						const { success }: { success: boolean } = await this.mcdev.execute(
 							command,
 							executeOnOutput,
@@ -957,8 +980,8 @@ class DevToolsExtension {
 						if (cancelToken.isCancellationRequested) {
 							this.writeLog(
 								packageName,
-								MessagesEditor.runningCommandCancelled,
-								EnumsExtension.LoggerLevel.WARN,
+								MessagesEditor.runningCommandCancelled(lastRunCommand),
+								EnumsExtension.LoggerLevel.INFO,
 								sessionLogger
 							);
 							this.updateStatusBar(

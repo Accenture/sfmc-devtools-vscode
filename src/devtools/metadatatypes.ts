@@ -105,11 +105,11 @@ class MetadataTypes {
 	 * Checks whether the given action is supported for a specific metadata type.
 	 * The apiName is matched against the beginning of the stored type's apiName to handle
 	 * sub-typed names such as "asset-block" (base apiName: "asset").
-	 * Unknown types are treated as supported so that future mcdev types are never blocked.
+	 * Unknown types are blocked so that folder names that don't match any known type are rejected.
 	 *
 	 * @param {string} action - action to check (e.g. "delete", "deploy")
 	 * @param {string} apiName - metadata type API name, optionally with subtype suffix (e.g. "asset-block")
-	 * @returns {boolean} true if the action is supported or if the type is not in the cache
+	 * @returns {boolean} true if the action is supported; false if the type is unknown or does not support the action
 	 */
 	isActionSupportedForType(action: string, apiName: string): boolean {
 		const metaDataTypeAction = MetadataTypesSupportedActions[action];
@@ -119,8 +119,8 @@ class MetadataTypes {
 		const mdType =
 			this.getAllMetaDataTypes().find(t => t.apiName === apiName) ||
 			this.getAllMetaDataTypes().find(t => t.apiName === apiName.split("-")[0]);
-		// Unknown type → don't block (permissive fallback for future mcdev types)
-		if (!mdType) return true;
+		// Unknown type → block (folder name doesn't match any known metadata type)
+		if (!mdType) return false;
 		return metaDataTypeAction.some(a => mdType.supports[a]);
 	}
 
