@@ -539,6 +539,12 @@ class DevToolsExtension {
 				}
 			})
 		);
+
+		// Register the palette-only "Restart extension" command that re-checks supported types
+		vscodeCommands.registerCommand({
+			command: `${ConfigExtension.extensionName}.restartExtension`,
+			callbackAction: () => this.refreshMetadataTypesInBackground()
+		});
 	}
 
 	/**
