@@ -971,11 +971,13 @@ class DevToolsExtension {
 		this.updateStatusBar(packageName, initialStatusBarTitle, "");
 
 		// Execute the commands asynchronously
+		// eslint-disable-next-line no-async-promise-executor
 		return new Promise(async resolveCommand => {
 			this.activateNotificationProgressBar(
 				"",
 				true,
 				(progress, cancelToken) =>
+					// eslint-disable-next-line no-async-promise-executor
 					new Promise(async resolveExecute => {
 						// Capture the reporter so executeOnOutput can update the popup message
 						progressReporter = progress;
