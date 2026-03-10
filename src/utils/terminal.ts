@@ -64,7 +64,7 @@ function executeCommand({
 		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
 		const commandStreamHandler = (data: Buffer, stream: keyof TUtils.ITerminalCommandStreams) => {
 			if (commandHandler) {
-				terminalOutput[stream] += data.toString().trim();
+				terminalOutput[stream] = data.toString().trim();
 				commandHandler(terminalOutput);
 			}
 		};

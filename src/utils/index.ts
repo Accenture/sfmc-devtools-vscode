@@ -1,4 +1,4 @@
 export * as File from "./file";
 export * as Lib from "./lib";
 export * as Terminal from "./terminal";
-export { VsceLogger } from "./logger";
+export { SessionLogger } from "./sessionlogger";
