@@ -192,6 +192,9 @@
 		"version:patch": "npm version --no-commit-hooks patch"
 	},
 	"devDependencies": {
+		"@eslint/compat": "^2.0.3",
+		"@eslint/eslintrc": "^3.3.5",
+		"@eslint/js": "^9.39.4",
 		"@types/node": "^25.3.5",
 		"@types/vscode": "^1.109.0",
 		"@typescript-eslint/eslint-plugin": "^8.56.1",
