@@ -44,7 +44,7 @@ class VsceLogger {
 	 * @private
 	 * @type {boolean}
 	 */
-	private hasErrors: boolean = false;
+	private hasErrors = false;
 
 	/**
 	 * Starts a new log session by creating the log file under
@@ -63,11 +63,9 @@ class VsceLogger {
 			const fileName = `${getLogFileTimestamp()}${vsceLogSuffix}`;
 			this.logFilePath = path.join(logsDir, fileName);
 			// Touch the log file so it exists even if no log entries are written
-			fs.writeFileSync(
-				this.logFilePath,
-				`# VSCE log session started at ${new Date().toISOString()}\n`,
-				{ flag: "a" }
-			);
+			fs.writeFileSync(this.logFilePath, `# VSCE log session started at ${new Date().toISOString()}\n`, {
+				flag: "a"
+			});
 			this.hasErrors = false;
 		} catch {
 			// If the log directory or file cannot be created, continue without file logging

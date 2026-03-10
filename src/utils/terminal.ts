@@ -120,8 +120,14 @@ function executeTerminalCommandCapture({
 		const cwd = commandCwd ? Lib.removeLeadingRootDrivePath(commandCwd) : commandCwd;
 		const proc = spawn(command, commandArgs, { shell: true, cwd });
 
-		if (proc.stdout) proc.stdout.on("data", (data: Buffer) => { output += data.toString(); });
-		if (proc.stderr) proc.stderr.on("data", (data: Buffer) => { error += data.toString(); });
+		if (proc.stdout)
+			proc.stdout.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+		if (proc.stderr)
+			proc.stderr.on("data", (data: Buffer) => {
+				error += data.toString();
+			});
 
 		proc.on("error", () => {
 			resolve({ success: false, stdStreams: { output: output.trim(), error: error.trim() } });
