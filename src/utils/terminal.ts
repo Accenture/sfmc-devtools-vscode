@@ -37,7 +37,7 @@ function killProcessTree(proc: ReturnType<typeof spawn>): void {
 		} else if (proc.pid !== undefined) {
 			process.kill(-proc.pid, "SIGTERM");
 		}
-	} catch (_) {
+	} catch {
 		// Fall back to killing just the shell process if group-kill fails
 		proc.kill();
 	}
@@ -161,24 +161,18 @@ function executeTerminalCommand(
  * @returns {string[]} list of the installed packages names
  */
 function getGlobalInstalledPackages(): string[] {
-	try {
-		const commandArgs: TUtils.ITerminalCommandRunner = { command: "npm", commandArgs: ["list", "-g", "--json"] };
-		const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
+	const commandArgs: TUtils.ITerminalCommandRunner = { command: "npm", commandArgs: ["list", "-g", "--json"] };
+	const terminal = <TUtils.ITerminalCommandResult>executeTerminalCommand(commandArgs, true);
 
-		if (terminal.stdStreams.error)
-			throw new Error(
-				`[terminal_globalInstalledPackages]: Retrieving global packages: ${terminal.stdStreams.error}`
-			);
-		if (!terminal.stdStreams.output.includes('"dependencies"'))
-			throw new Error(`[terminal_globalInstalledPackages]: Retrieving global packages: no "dependencies" found.`);
+	if (terminal.stdStreams.error)
+		throw new Error(`[terminal_globalInstalledPackages]: Retrieving global packages: ${terminal.stdStreams.error}`);
+	if (!terminal.stdStreams.output.includes('"dependencies"'))
+		throw new Error(`[terminal_globalInstalledPackages]: Retrieving global packages: no "dependencies" found.`);
 
-		const terminalOutput: { name: string; dependencies: Record<string, unknown> } = JSON.parse(
-			terminal.stdStreams.output
-		);
-		return Object.keys(terminalOutput.dependencies || {});
-	} catch (error) {
-		throw error;
-	}
+	const terminalOutput: { name: string; dependencies: Record<string, unknown> } = JSON.parse(
+		terminal.stdStreams.output
+	);
+	return Object.keys(terminalOutput.dependencies || {});
 }
 
 /**

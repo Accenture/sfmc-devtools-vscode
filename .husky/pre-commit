@@ -1,0 +1,3 @@
+# run lint-staged hooks
+echo "[PRE-COMMIT] Run lint-staged"
+lint-staged

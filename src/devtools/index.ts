@@ -513,11 +513,6 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 		const message = MessagesEditor.unsupportedAction(action, metadataTypes);
 
-		try {
-			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
-		} catch {
-			// If workspace path is unavailable, skip file logging
-		}
 		// Logs to output channel (WARN appears there) and to the vsce-log file
 		this.writeLog(packageName, message, EnumsExtension.LoggerLevel.WARN);
 		// Keep the log file since an error was logged
@@ -965,11 +960,13 @@ class DevToolsExtension {
 		this.updateStatusBar(packageName, initialStatusBarTitle, "");
 
 		// Execute the commands asynchronously
+		// eslint-disable-next-line no-async-promise-executor
 		return new Promise(async resolveCommand => {
 			this.activateNotificationProgressBar(
 				"",
 				true,
 				(progress, cancelToken) =>
+					// eslint-disable-next-line no-async-promise-executor
 					new Promise(async resolveExecute => {
 						// Capture the reporter so executeOnOutput can update the popup message
 						progressReporter = progress;

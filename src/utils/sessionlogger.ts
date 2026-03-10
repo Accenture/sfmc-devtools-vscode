@@ -45,7 +45,7 @@ class SessionLogger {
 	 * @private
 	 * @type {boolean}
 	 */
-	private hasErrors: boolean = false;
+	private hasErrors = false;
 
 	/**
 	 * Starts a new log session by creating the log file under

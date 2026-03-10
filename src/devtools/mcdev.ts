@@ -154,7 +154,7 @@ class Mcdev {
 			const jsonOutput = result.stdStreams.output.slice(jsonStart);
 
 			return JSON.parse(jsonOutput) as TDevTools.IMetadataTypes[];
-		} catch (error) {
+		} catch {
 			return null;
 		}
 	}
@@ -377,7 +377,13 @@ class Mcdev {
 		}
 
 		// Calls the mcdev command to run with the right parameters
-		const commandResults = await this.runCommand(mcdevCommand, command, commandParameters, commandHandler, cancellationToken);
+		const commandResults = await this.runCommand(
+			mcdevCommand,
+			command,
+			commandParameters,
+			commandHandler,
+			cancellationToken
+		);
 
 		// Returns success as true if every command execution was successfull
 		return { success: commandResults.every(result => result === true) };
@@ -412,7 +418,8 @@ class Mcdev {
 				command: this.getPackageName(),
 				commandArgs: [commandConfig.alias, parameters],
 				commandCwd: projectPath,
-				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) => commandHandler({ output, error }),
+				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) =>
+					commandHandler({ output, error }),
 				cancellationToken
 			};
 

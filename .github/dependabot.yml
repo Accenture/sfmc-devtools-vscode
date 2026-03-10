@@ -5,10 +5,18 @@
 
 version: 2
 updates:
-  - package-ecosystem: 'npm' # See documentation for possible values
-    directory: '/' # Location of package manifests
-    schedule:
-      interval: 'monthly'
-    target-branch: 'develop'
-    labels:
-        - 'dependencies'
+    - package-ecosystem: "npm" # See documentation for possible values
+      directory: "/" # Location of package manifests
+      schedule:
+          interval: "weekly"
+      target-branch: "develop"
+      labels:
+          - "dependencies"
+    - package-ecosystem: "github-actions"
+      directory: "/"
+      schedule:
+          interval: "weekly"
+      target-branch: "main"
+      labels:
+          - "dependencies"
+          - "github-action"

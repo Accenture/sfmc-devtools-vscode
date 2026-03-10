@@ -7,11 +7,7 @@ import * as fs from "fs";
  * @returns {string[]} all the file path that exist
  */
 function fileExists(path: string | string[]): string[] {
-	try {
-		return [path].flat().filter(path => fs.existsSync(path.replace(/^\/[a-zA-Z]:/g, "")));
-	} catch (error) {
-		throw error;
-	}
+	return [path].flat().filter(path => fs.existsSync(path.replace(/^\/[a-zA-Z]:/g, "")));
 }
 
 function readFileSync(path: string): string {
@@ -26,7 +22,7 @@ function readFileSync(path: string): string {
  */
 function extractFileNameFromPath(filePath: string): string {
 	// splits path
-	const fileName = filePath.split(/[\/]/).pop() || filePath;
+	const fileName = filePath.split(/[/]/).pop() || filePath;
 
 	// returns folder name
 	if (!fileName.includes(".")) return fileName;

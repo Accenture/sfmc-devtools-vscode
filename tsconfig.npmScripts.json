@@ -1,9 +1,11 @@
 {
+	"include": ["src/**/*.ts"],
+	"exclude": ["node_modules"],
 	"compilerOptions": {
 		"module": "Node16",
 		"target": "es2023",
 		"lib": ["es2023", "DOM"],
-		"sourceMap": true,
+		"noEmit": true,
 		"rootDir": "src",
 		"strict": true,
 		"esModuleInterop": true,
@@ -20,7 +22,5 @@
 			"@messages": ["./src/messages/index"],
 			"utils": ["./src/utils/index"]
 		}
-	},
-	"include": ["src/**/*.ts"],
-	"exclude": ["node_modules"]
+	}
 }
