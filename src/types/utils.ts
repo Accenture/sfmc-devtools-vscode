@@ -4,8 +4,8 @@ interface ITerminalCommandStreams {
 }
 
 interface ICancellationToken {
-	readonly isCancellationRequested: boolean;
-	readonly onCancellationRequested: (listener: (e: unknown) => unknown) => unknown;
+	isCancellationRequested: boolean;
+	onCancellationRequested: (listener: () => void) => void;
 }
 
 interface ITerminalCommandRunner {

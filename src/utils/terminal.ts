@@ -61,8 +61,14 @@ function executeCommand({
 	cancellationToken
 }: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
 	return new Promise(resolve => {
-		let resolved = false;
 		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
+		const commandStreamHandler = (data: Buffer, stream: keyof TUtils.ITerminalCommandStreams) => {
+			if (commandHandler) {
+				terminalOutput[stream] += data.toString().trim();
+				commandHandler(terminalOutput);
+			}
+		};
+
 		// detached: true on Unix makes the shell a process-group leader so we can
 		// kill the entire group (shell + mcdev child) via process.kill(-pid, signal).
 		const proc = spawn(command, commandArgs, {
@@ -73,28 +79,18 @@ function executeCommand({
 
 		if (cancellationToken) {
 			cancellationToken.onCancellationRequested(() => {
-				if (!resolved) {
-					resolved = true;
-					killProcessTree(proc);
-					resolve({ success: false, stdStreams: terminalOutput });
-				}
+				killProcessTree(proc);
+				resolve({ success: false, stdStreams: terminalOutput });
 			});
 		}
 
 		if (proc.stdout && commandHandler)
-			proc.stdout.on("data", (data: Buffer) =>
-				commandHandler({ ...terminalOutput, output: data.toString().trim() })
-			);
+			proc.stdout.on("data", (data: Buffer) => commandStreamHandler(data, "output"));
 		if (proc.stderr && commandHandler)
-			proc.stderr.on("data", (data: Buffer) =>
-				commandHandler({ ...terminalOutput, error: data.toString().trim() })
-			);
+			proc.stderr.on("data", (data: Buffer) => commandStreamHandler(data, "error"));
 
 		proc.on("close", code => {
-			if (!resolved) {
-				resolved = true;
-				resolve({ success: code === 0, stdStreams: terminalOutput });
-			}
+			resolve({ success: code === 0, stdStreams: terminalOutput });
 		});
 	});
 }
@@ -120,8 +116,14 @@ function executeTerminalCommandCapture({
 		const cwd = commandCwd ? Lib.removeLeadingRootDrivePath(commandCwd) : commandCwd;
 		const proc = spawn(command, commandArgs, { shell: true, cwd });
 
-		if (proc.stdout) proc.stdout.on("data", (data: Buffer) => { output += data.toString(); });
-		if (proc.stderr) proc.stderr.on("data", (data: Buffer) => { error += data.toString(); });
+		if (proc.stdout)
+			proc.stdout.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+		if (proc.stderr)
+			proc.stderr.on("data", (data: Buffer) => {
+				error += data.toString();
+			});
 
 		proc.on("error", () => {
 			resolve({ success: false, stdStreams: { output: output.trim(), error: error.trim() } });

@@ -2,7 +2,7 @@ const recommendedExtensions =
 	"There are some recommended extensions that can enhance your usage of SFMC DevTools. Would you like to install them?";
 const runningCommand = "Running DevTools command...";
 const runningCommandSuccess = "DevTools command has run successfully!";
-const runningCommandCancelled = (command: string) => `DevTools command cancelled: ${command}`;
+const runningCommandCancelled = (command: string) => `DevTools command has been cancelled: ${command}`;
 const runningCommandFailure = "Oh no. Something went wrong while running DevTools Command...";
 const credentialPrompt = "Please select the credential you would like to use:";
 const businessUnitsPrompt = "Please select the business unit you would like to use:";

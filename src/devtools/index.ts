@@ -339,7 +339,12 @@ class DevToolsExtension {
 	 * @param {VsceLogger} [sessionLogger] - optional session-scoped logger for file output
 	 * @returns {void}
 	 */
-	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel, sessionLogger?: VsceLogger): void {
+	writeLog(
+		ouputChannel: string,
+		message: string,
+		level: EnumsExtension.LoggerLevel,
+		sessionLogger?: VsceLogger
+	): void {
 		const timestamp = Lib.getCurrentTime();
 		const nonOutputLevel = [EnumsExtension.LoggerLevel.DEBUG, EnumsExtension.LoggerLevel.ERROR];
 		// every logger level except output should be in format 'timestamp level: message'
@@ -348,8 +353,7 @@ class DevToolsExtension {
 		if (!nonOutputLevel.includes(level)) this.logTextOutputChannel(ouputChannel, message);
 		// write DEBUG/INFO/WARN/ERROR entries to the VSCE log file; skip OUTPUT (mcdev output)
 		if (level !== EnumsExtension.LoggerLevel.OUTPUT && sessionLogger) {
-			const isError =
-				level === EnumsExtension.LoggerLevel.ERROR || level === EnumsExtension.LoggerLevel.WARN;
+			const isError = level === EnumsExtension.LoggerLevel.ERROR || level === EnumsExtension.LoggerLevel.WARN;
 			sessionLogger.write(message, isError);
 		}
 		console.log(message);
@@ -990,11 +994,7 @@ class DevToolsExtension {
 								EnumsExtension.LoggerLevel.INFO,
 								sessionLogger
 							);
-							this.updateStatusBar(
-								packageName,
-								this.getStatusBarTitle("stop", packageName),
-								""
-							);
+							this.updateStatusBar(packageName, this.getStatusBarTitle("cancel", packageName), "");
 							// Reset status bar icon back to default after a delay, same as after an error
 							Lib.executeAfterDelay(
 								() =>
