@@ -192,12 +192,10 @@
 		"version:patch": "npm version --no-commit-hooks patch"
 	},
 	"devDependencies": {
-		"@eslint/compat": "^2.0.3",
 		"@eslint/eslintrc": "^3.3.5",
 		"@eslint/js": "^9.39.4",
 		"@types/node": "^25.3.5",
 		"@types/vscode": "^1.109.0",
-		"@typescript-eslint/eslint-plugin": "^8.56.1",
 		"@typescript-eslint/parser": "^8.56.1",
 		"@vscode/vsce": "^3.7.1",
 		"eslint": "^9.39.4",
@@ -209,6 +207,7 @@
 		"prettier": "3.8.1",
 		"ts-loader": "^9.5.4",
 		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.57.0",
 		"webpack": "^5.105.4",
 		"webpack-cli": "^6.0.1"
 	},
