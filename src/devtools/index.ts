@@ -54,10 +54,15 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async init(): Promise<void> {
-		console.log("== Init ==");
+		console.log("== Init DevTools Extension ==");
 		// Checks if is there any DevTools Project
 		const isDevToolsProject = await this.isDevToolsProject();
 		if (isDevToolsProject) this.loadConfiguration();
+	}
+
+	async close(): Promise<void> {
+		console.log("== Close DevTools Extension ==");
+		this.sessionLogger.endSession(true);
 	}
 
 	/**
