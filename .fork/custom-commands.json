@@ -1,134 +1,140 @@
 [
   {
-    "version": 1
+    "version" : 2
   },
   {
-    "action": {
-      "type": "url",
-      "url": "https://github.com/Accenture/sfmc-devtools-vscode/compare/main...${ref:short}?expand=1&template=pr_template_release.md"
+    "action" : {
+      "type" : "url",
+      "url" : "https://github.com/Accenture/sfmc-devtools-vscode/compare/main...${ref:short}?expand=1&template=pr_template_release.md"
     },
-    "name": "Create PR/Release-PR to master branch",
-    "refTargets": [
+    "name" : "Create PR/Release-PR to master branch",
+    "refTargets" : [
       "localbranch",
       "remotebranch"
     ],
-    "target": "ref"
+    "target" : "ref"
   },
   {
-    "action": {
-      "type": "url",
-      "url": "https://github.com/Accenture/sfmc-devtools-vscode/compare/develop...${ref:short}?expand=1"
+    "action" : {
+      "type" : "url",
+      "url" : "https://github.com/Accenture/sfmc-devtools-vscode/compare/develop...${ref:short}?expand=1"
     },
-    "name": "Create PR/To develop branch",
-    "refTargets": [
+    "name" : "Create PR/To develop branch",
+    "refTargets" : [
       "localbranch",
       "remotebranch"
     ],
-    "target": "ref"
+    "target" : "ref"
   },
   {
-    "action": {
-      "type": "url",
-      "url": "https://github.com/Accenture/sfmc-devtools-vscode/compare/hotfix...${ref:short}?expand=1"
+    "action" : {
+      "type" : "url",
+      "url" : "https://github.com/Accenture/sfmc-devtools-vscode/compare/hotfix...${ref:short}?expand=1"
     },
-    "name": "Create PR/To hotfix branch",
-    "refTargets": [
+    "name" : "Create PR/To hotfix branch",
+    "refTargets" : [
       "localbranch",
       "remotebranch"
     ],
-    "target": "ref"
+    "target" : "ref"
   },
   {
-    "action": {
-      "script": "SKIP_HOOKS=1 git switch ${ref}",
-      "showOutput": false,
-      "type": "sh",
-      "waitForExit": true
+    "action" : {
+      "script" : "SKIP_HOOKS=1 git switch ${ref}",
+      "showOutput" : false,
+      "type" : "sh",
+      "waitForExit" : true
     },
-    "name": "Skip Hooks/Checkout",
-    "refTargets": ["localbranch"],
-    "target": "ref"
+    "name" : "Skip Hooks/Checkout",
+    "refTargets" : [
+      "localbranch"
+    ],
+    "target" : "ref"
   },
   {
-    "action": {
-      "script": "SKIP_HOOKS=1 git switch ${ref:short} && SKIP_HOOKS=2 git pull",
-      "showOutput": false,
-      "type": "sh",
-      "waitForExit": true
+    "action" : {
+      "script" : "SKIP_HOOKS=1 git switch ${ref:short} && SKIP_HOOKS=2 git pull",
+      "showOutput" : false,
+      "type" : "sh",
+      "waitForExit" : true
     },
-    "name": "Skip Hooks/Checkout & Pull",
-    "refTargets": ["remotebranch"],
-    "target": "ref"
+    "name" : "Skip Hooks/Checkout & Pull",
+    "refTargets" : [
+      "remotebranch"
+    ],
+    "target" : "ref"
   },
   {
-    "name": "Skip Hooks/Commit",
-    "refTargets": [
+    "name" : "Skip Hooks/Commit",
+    "refTargets" : [
       "localbranch",
       "remotebranch"
     ],
-    "target": "ref",
-    "ui": {
-      "buttons": [
+    "target" : "ref",
+    "ui" : {
+      "buttons" : [
         {
-          "action": {
-            "args": "commit -n -m \"$1{text}\" -m \" $2{text}\"",
-            "path": "${git}",
-            "showOutput": false,
-            "type": "process",
-            "waitForExit": true
+          "action" : {
+            "args" : "commit -n -m \"$1{text}\" -m \" $2{text}\"",
+            "path" : "${git}",
+            "showOutput" : false,
+            "type" : "process",
+            "waitForExit" : true
           },
-          "title": "Commit without Hooks"
+          "title" : "Commit without Hooks"
         },
         {
-          "action": {
-            "type": "cancel"
+          "action" : {
+            "type" : "cancel"
           },
-          "title": "Cancel"
+          "title" : "Cancel"
         }
       ],
-      "controls": [
+      "controls" : [
         {
-          "placeholder": "",
-          "text": "",
-          "textBoxType": "generic",
-          "title": "Commit subject",
-          "type": "textBox"
+          "placeholder" : "",
+          "text" : "",
+          "textBoxType" : "generic",
+          "title" : "Commit subject",
+          "type" : "textBox"
         },
         {
-          "placeholder": "",
-          "text": "",
-          "textBoxType": "generic",
-          "title": "Description",
-          "type": "textBox"
+          "placeholder" : "",
+          "text" : "",
+          "textBoxType" : "generic",
+          "title" : "Description",
+          "type" : "textBox"
         }
       ],
-      "description": "This will create a commit but not run pre-commit hooks",
-      "title": "Commit skipping Hooks"
+      "description" : "This will create a commit but not run pre-commit hooks",
+      "title" : "Commit skipping Hooks"
     }
   },
   {
-    "action": {
-      "script": "SKIP_HOOKS=4 git merge ${ref:short}",
-      "showOutput": false,
-      "type": "sh",
-      "waitForExit": true
+    "action" : {
+      "script" : "SKIP_HOOKS=4 git merge ${ref:short}",
+      "showOutput" : false,
+      "type" : "sh",
+      "waitForExit" : true
     },
-    "name": "Skip Hooks/Merge into current branch",
-    "refTargets": ["localbranch"],
-    "target": "ref"
+    "name" : "Skip Hooks/Merge into current branch",
+    "refTargets" : [
+      "localbranch"
+    ],
+    "target" : "ref"
   },
   {
-    "action": {
-      "script": "SKIP_HOOKS=3 git pull",
-      "showOutput": false,
-      "type": "sh",
-      "waitForExit": true
+    "action" : {
+      "script" : "SKIP_HOOKS=3 git pull",
+      "showOutput" : false,
+      "type" : "sh",
+      "waitForExit" : true
     },
-    "name": "Skip Hooks/Pull",
-    "refTargets": [
+    "name" : "Skip Hooks/Pull",
+    "refTargets" : [
       "localbranch",
       "remotebranch"
     ],
-    "target": "ref"
+    "target" : "ref"
   }
 ]
