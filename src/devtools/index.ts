@@ -3,7 +3,7 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils } from "@types";
-import { Lib, SessionLogger } from "utils";
+import { Lib, VsceLogger } from "utils";
 
 /**
  * DevTools Extension class
@@ -28,14 +28,6 @@ class DevToolsExtension {
 	private mcdev: Mcdev;
 
 	/**
-	 * Session logger instance for file logging
-	 *
-	 * @private
-	 * @type {SessionLogger}
-	 */
-	private sessionLogger: SessionLogger;
-
-	/**
 	 * Creates an instance of DevToolsExtension.
 	 *
 	 * @constructor
@@ -44,7 +36,6 @@ class DevToolsExtension {
 	constructor(context: TEditor.IExtensionContext) {
 		this.vscodeEditor = new TEditor.VSCodeEditor(context);
 		this.mcdev = new Mcdev();
-		this.sessionLogger = new SessionLogger();
 	}
 
 	/**
@@ -54,15 +45,10 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async init(): Promise<void> {
-		console.log("== Init DevTools Extension ==");
+		console.log("== Init ==");
 		// Checks if is there any DevTools Project
 		const isDevToolsProject = await this.isDevToolsProject();
 		if (isDevToolsProject) this.loadConfiguration();
-	}
-
-	async close(): Promise<void> {
-		console.log("== Close DevTools Extension ==");
-		this.sessionLogger.endSession(true);
 	}
 
 	/**
@@ -272,9 +258,6 @@ class DevToolsExtension {
 		];
 		// Prints the messages to the Output channel
 		messages.forEach(message => this.writeLog(packageName, message, EnumsExtension.LoggerLevel.INFO));
-
-		// Initiates the session logger for the extension – creates the log file and starts the session
-		this.sessionLogger.startSession(workspace.getWorkspaceFsPath());
 	}
 
 	/**
@@ -356,7 +339,12 @@ class DevToolsExtension {
 	 * @param {VsceLogger} [sessionLogger] - optional session-scoped logger for file output
 	 * @returns {void}
 	 */
-	writeLog(ouputChannel: string, message: string, level: EnumsExtension.LoggerLevel): void {
+	writeLog(
+		ouputChannel: string,
+		message: string,
+		level: EnumsExtension.LoggerLevel,
+		sessionLogger?: VsceLogger
+	): void {
 		const timestamp = Lib.getCurrentTime();
 		const nonOutputLevel = [EnumsExtension.LoggerLevel.DEBUG, EnumsExtension.LoggerLevel.ERROR];
 		// every logger level except output should be in format 'timestamp level: message'
@@ -364,10 +352,11 @@ class DevToolsExtension {
 
 		if (!nonOutputLevel.includes(level)) this.logTextOutputChannel(ouputChannel, message);
 		// write DEBUG/INFO/WARN/ERROR entries to the VSCE log file; skip OUTPUT (mcdev output)
-		if (level !== EnumsExtension.LoggerLevel.OUTPUT) {
+		if (level !== EnumsExtension.LoggerLevel.OUTPUT && sessionLogger) {
 			const isError = level === EnumsExtension.LoggerLevel.ERROR || level === EnumsExtension.LoggerLevel.WARN;
-			this.sessionLogger.write(message, isError);
+			sessionLogger.write(message, isError);
 		}
+		console.log(message);
 	}
 
 	/**
@@ -404,10 +393,12 @@ class DevToolsExtension {
 	/**
 	 * Prompts the user with a selection of options and returns their choice.
 	 *
-	 * @param {string[]} options - An array of strings representing the options to present to the user.
-	 * @param {string} title - The title of the prompt window.
-	 * @param {boolean} multipleOptions - A boolean indicating whether multiple options can be selected.
-	 * @returns {Promise<string | string[] | undefined>} A promise that resolves to the user's selection. If `multipleOptions` is true, it returns an array of selected options. If `multipleOptions` is false, it returns a single selected option. If the user cancels the prompt, it returns `undefined`.
+	 * @param options - An array of strings representing the options to present to the user.
+	 * @param title - The title of the prompt window.
+	 * @param multipleOptions - A boolean indicating whether multiple options can be selected.
+	 * @returns A promise that resolves to the user's selection. If `multipleOptions` is true,
+	 *          it returns an array of selected options. If `multipleOptions` is false, it
+	 *          returns a single selected option. If the user cancels the prompt, it returns `undefined`.
 	 */
 	async requestInputWithOptions(
 		options: string[],
@@ -427,8 +418,9 @@ class DevToolsExtension {
 	/**
 	 * Opens a file in the editor given its path.
 	 *
-	 * @param {string} path - The path of the file to open.
-	 * @returns {Promise<void>} A promise that resolves when the file is opened in the editor.
+	 * @param path - The path of the file to open.
+	 * @returns A promise that resolves when the file is opened in the editor.
+	 *
 	 * @throws Will log an error if the file cannot be opened.
 	 */
 	async openFileInEditor(path: string): Promise<void> {
@@ -447,7 +439,7 @@ class DevToolsExtension {
 	/**
 	 * Gets the current open tab file path
 	 *
-	 * @returns {string | undefined} - opened file path or undefined otherwise
+	 * @returns {(string | undefined)} - opened file path or undefined otherwise
 	 */
 	getActiveTabFilePath(): string | undefined {
 		try {
@@ -460,7 +452,7 @@ class DevToolsExtension {
 	}
 
 	/**
-	 * Displays the VSCode In Progress modal
+	 * Displays the Vscode In Progress modal
 	 *
 	 * @param {string} title - message to be displayed in the modal
 	 * @param {boolean} cancellable - options to define if the modal is cancellable
@@ -513,9 +505,18 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 		const message = MessagesEditor.unsupportedAction(action, metadataTypes);
 
+		// Create a dedicated log session so the error is persisted to the VSCE log file
+		const sessionLogger = new VsceLogger();
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			sessionLogger.startSession(workspacePath);
+		} catch {
+			// If workspace path is unavailable, skip file logging
+		}
 		// Logs to output channel (WARN appears there) and to the vsce-log file
-		this.writeLog(packageName, message, EnumsExtension.LoggerLevel.WARN);
+		this.writeLog(packageName, message, EnumsExtension.LoggerLevel.WARN, sessionLogger);
 		// Keep the log file since an error was logged
+		sessionLogger.endSession(false);
 
 		// Show error popup without a loading bar (fire-and-forget, same appearance as mcdev failure)
 		this.showInformationMessage("error", message, []);
@@ -655,7 +656,7 @@ class DevToolsExtension {
 	 * Handles the Menu Command 'delete'
 	 *
 	 * @async
-	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files details
+	 * @param {string[]} files - selected files paths
 	 * @returns {Promise<void>}
 	 */
 	async handleDeleteCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
@@ -680,7 +681,7 @@ class DevToolsExtension {
 	/**
 	 * Handles the Menu Command 'deploy'
 	 *
-	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files details
+	 * @param {string[]} files - selected files paths
 	 * @returns {void}
 	 */
 	handleDeployCommand(files: TDevTools.IExecuteFileDetails[]): void {
@@ -693,7 +694,7 @@ class DevToolsExtension {
 	/**
 	 * Handles the Menu Command 'retrieve'
 	 *
-	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files details
+	 * @param {string[]} files - selected files paths
 	 * @returns {void}
 	 */
 	handleRetrieveCommand(files: TDevTools.IExecuteFileDetails[]): void {
@@ -748,7 +749,6 @@ class DevToolsExtension {
 	 * @param {string} projectPath - The path to the project.
 	 * @param {Object} options - The options for selecting business units.
 	 * @param {boolean} options.multiBUs - Indicates if multiple business units can be selected.
-	 * @param {string} [options.credential] - Optional credential to filter business units.
 	 * @returns {Promise<string[] | undefined>} A promise that resolves to an array of selected business units or undefined.
 	 * @throws {Error} If no credentials or business units are found.
 	 */
@@ -811,12 +811,6 @@ class DevToolsExtension {
 		return [];
 	}
 
-	/**
-	 * Selects metadata types based on the provided action.
-	 *
-	 * @param {string} action - The action to filter metadata types (e.g., "retrieve").
-	 * @returns {Promise<string[] | undefined>} A promise that resolves to an array of selected metadata type API names or undefined.
-	 */
 	async selectMetaDataTypes(action: string) {
 		try {
 			const metadataTypes = this.mcdev.retrieveSupportedMetadataDataTypes(action);
@@ -840,9 +834,9 @@ class DevToolsExtension {
 	/**
 	 * Generates a status bar title string with an icon and name.
 	 *
-	 * @param {string} iconName - The name of the icon to be displayed in the status bar.
-	 * @param {string} name - The name to be displayed next to the icon in the status bar.
-	 * @returns {string} The formatted status bar title string.
+	 * @param iconName - The name of the icon to be displayed in the status bar.
+	 * @param name - The name to be displayed next to the icon in the status bar.
+	 * @returns The formatted status bar title string.
 	 */
 	getStatusBarTitle(iconName: string, name: string): string {
 		// Get the status bar icon based on the icon name
@@ -855,10 +849,10 @@ class DevToolsExtension {
 	/**
 	 * Updates the status bar with the specified name, title, and color.
 	 *
-	 * @param {string} name - The name of the status bar item to update.
-	 * @param {string} title - The text to display in the status bar.
-	 * @param {string} color - The background color of the status bar item.
-	 * @returns {void}
+	 * @param name - The name of the status bar item to update.
+	 * @param title - The text to display in the status bar.
+	 * @param color - The background color of the status bar item.
+	 * @returns void
 	 */
 	updateStatusBar(name: string, title: string, color: string): void {
 		this.updateContainers(name, { text: title, backgroundColor: color });
@@ -869,7 +863,8 @@ class DevToolsExtension {
 	 *
 	 * @param {string} command - The command to be executed.
 	 * @param {TDevTools.IExecuteParameters} executeParameters - The parameters required for command execution.
-	 * @returns {Promise<boolean>} A promise that resolves to a boolean indicating the success of the command execution.
+	 * @returns {Promise<boolean>} - A promise that resolves to a boolean indicating the success of the command execution.
+	 *
 	 */
 	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): Promise<boolean> {
 		console.log("== Execute Menu Commands == ");
@@ -877,6 +872,16 @@ class DevToolsExtension {
 		const packageName = this.mcdev.getPackageName();
 		// Sets the status bar title and icon based on the command execution
 		const initialStatusBarTitle = this.getStatusBarTitle(command, packageName);
+
+		// Create a new session-scoped VSCE logger for this command execution to avoid
+		// shared mutable state when multiple commands run concurrently
+		const sessionLogger = new VsceLogger();
+		try {
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			sessionLogger.startSession(workspacePath);
+		} catch {
+			// If the workspace path is unavailable, file logging is skipped for this session
+		}
 
 		// Tracks the progress-bar reporter so executeOnOutput can update the popup message
 		let progressReporter: TEditor.ProgressBar | null = null;
@@ -889,7 +894,7 @@ class DevToolsExtension {
 		 * updates the progress-bar popup to show the actual mcdev command (without
 		 * --noLogColors which adds no value in the UI) and records it for the cancel log.
 		 *
-		 * @param {TUtils.IOutputLogger} param - The output logger object.
+		 * @param {Object} param - The output logger object.
 		 * @param {string} [param.info=""] - Informational message to log.
 		 * @param {string} [param.output=""] - Output message to log.
 		 * @param {string} [param.error=""] - Error message to log.
@@ -914,15 +919,16 @@ class DevToolsExtension {
 				}
 			}
 
-			this.writeLog(packageName, message, loggerLevel);
+			this.writeLog(packageName, message, loggerLevel, sessionLogger);
 		};
 
 		/**
 		 * Executes actions based on the result of a command.
 		 *
-		 * @param {boolean} success - A boolean indicating whether the command was successful.
-		 * @param {(value: boolean) => void} resolveCommand - A function to resolve the command with a boolean value.
-		 * @returns {Promise<void>} A promise that resolves when the actions are completed.
+		 * @param success - A boolean indicating whether the command was successful.
+		 * @param resolveCommand - A function to resolve the command with a boolean value.
+		 *
+		 * @returns A promise that resolves when the actions are completed.
 		 */
 		const executeOnResult = async (success: boolean, resolveCommand: (value: boolean) => void) => {
 			const statusBarIcon = success ? "success" : "error";
@@ -943,6 +949,9 @@ class DevToolsExtension {
 					() => this.updateStatusBar(packageName, this.getStatusBarTitle("success", packageName), ""),
 					ConfigExtension.delayTimeUpdateStatusBar
 				);
+
+			// End the VSCE log session – deletes the log file when the command succeeded without errors
+			sessionLogger.endSession(success);
 
 			resolveCommand(success);
 
@@ -982,7 +991,8 @@ class DevToolsExtension {
 							this.writeLog(
 								packageName,
 								MessagesEditor.runningCommandCancelled(lastRunCommand),
-								EnumsExtension.LoggerLevel.INFO
+								EnumsExtension.LoggerLevel.INFO,
+								sessionLogger
 							);
 							this.updateStatusBar(packageName, this.getStatusBarTitle("cancel", packageName), "");
 							// Reset status bar icon back to default after a delay, same as after an error
@@ -995,6 +1005,8 @@ class DevToolsExtension {
 									),
 								ConfigExtension.delayTimeUpdateStatusBar
 							);
+							// End the VSCE log session on cancellation – keep the log file since the command did not succeed
+							sessionLogger.endSession(false);
 							resolveCommand(false);
 						} else {
 							executeOnResult(success, resolveCommand);

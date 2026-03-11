@@ -15,20 +15,20 @@ function getLogFileTimestamp(): string {
 }
 
 /**
- * SessionLogger – writes VSCE extension debug/error logs to a file under
+ * VsceLogger – writes VSCE extension debug/error logs to a file under
  * `{projectPath}/logs/vsce/{timestamp}-vsce.log`.
  *
  * Usage pattern:
- *   1. Create an instance: `const logger = new SessionLogger()`
- *   2. Call `logger.startSession(projectPath)` at the start of a command execution.
- *   3. Call `logger.write(message, isError)` for every log entry that should be recorded.
- *   4. Call `logger.endSession(success)` when the command finishes.
+ *   1. Call `startSession(projectPath)` at the start of a command execution.
+ *   2. Call `write(message, isError)` for every log entry that should be recorded.
+ *   3. Call `endSession(success)` when the command finishes.
+
  *      – If `success` is true and no errors were recorded the log file is
  *        deleted automatically, keeping the folder clean for happy-path runs.
  *
- * @class SessionLogger
+ * @class VsceLogger
  */
-class SessionLogger {
+class VsceLogger {
 	/**
 	 * Absolute path of the currently active log file, or `undefined` when no
 	 * session is running.
@@ -36,7 +36,7 @@ class SessionLogger {
 	 * @private
 	 * @type {string | undefined}
 	 */
-	private filePath: string | undefined;
+	private logFilePath: string | undefined;
 
 	/**
 	 * Whether an error or warning was written during the current session.
@@ -62,19 +62,15 @@ class SessionLogger {
 			const logsDir = path.join(projectPath, vsceLogsFolder);
 			if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 			const fileName = `${getLogFileTimestamp()}${vsceLogSuffix}`;
-			this.filePath = path.join(logsDir, fileName);
+			this.logFilePath = path.join(logsDir, fileName);
 			// Touch the log file so it exists even if no log entries are written
-			fs.writeFileSync(
-				this.filePath,
-				`# VSCode DevTools Extension log session started at ${new Date().toISOString()}\n`,
-				{
-					flag: "a"
-				}
-			);
+			fs.writeFileSync(this.logFilePath, `# VSCE log session started at ${new Date().toISOString()}\n`, {
+				flag: "a"
+			});
 			this.hasErrors = false;
 		} catch {
 			// If the log directory or file cannot be created, continue without file logging
-			this.filePath = undefined;
+			this.logFilePath = undefined;
 		}
 	}
 
@@ -87,10 +83,10 @@ class SessionLogger {
 	 * @returns {void}
 	 */
 	write(message: string, isError: boolean): void {
-		if (!this.filePath) return;
+		if (!this.logFilePath) return;
 		if (isError) this.hasErrors = true;
 		try {
-			fs.appendFileSync(this.filePath, `${message}\n`);
+			fs.appendFileSync(this.logFilePath, `${message}\n`);
 		} catch {
 			// Silently ignore write errors
 		}
@@ -106,17 +102,17 @@ class SessionLogger {
 	 * @returns {void}
 	 */
 	endSession(success: boolean): void {
-		if (!this.filePath) return;
+		if (!this.logFilePath) return;
 		if (success && !this.hasErrors) {
 			try {
-				fs.unlinkSync(this.filePath);
+				fs.unlinkSync(this.logFilePath);
 			} catch {
 				// Silently ignore deletion errors
 			}
 		}
-		this.filePath = undefined;
+		this.logFilePath = undefined;
 		this.hasErrors = false;
 	}
 }
 
-export { SessionLogger };
+export { VsceLogger };
