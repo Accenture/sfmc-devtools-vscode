@@ -22,6 +22,7 @@ function getLogFileTimestamp(): string {
  *   1. Call `startSession(projectPath)` at the start of a command execution.
  *   2. Call `write(message, isError)` for every log entry that should be recorded.
  *   3. Call `endSession(success)` when the command finishes.
+
  *      – If `success` is true and no errors were recorded the log file is
  *        deleted automatically, keeping the folder clean for happy-path runs.
  *
