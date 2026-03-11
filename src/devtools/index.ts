@@ -452,7 +452,7 @@ class DevToolsExtension {
 	}
 
 	/**
-	 * Displayes the Vscode In Progress modal
+	 * Displays the Vscode In Progress modal
 	 *
 	 * @param {string} title - message to be displayed in the modal
 	 * @param {boolean} cancellable - options to define if the modal is cancellable
@@ -898,7 +898,6 @@ class DevToolsExtension {
 		 * @param {string} [param.info=""] - Informational message to log.
 		 * @param {string} [param.output=""] - Output message to log.
 		 * @param {string} [param.error=""] - Error message to log.
-		 *
 		 */
 		const executeOnOutput = ({ info = "", output = "", error = "" }: TUtils.IOutputLogger) => {
 			const message = info || output || error;
@@ -930,7 +929,6 @@ class DevToolsExtension {
 		 * @param resolveCommand - A function to resolve the command with a boolean value.
 		 *
 		 * @returns A promise that resolves when the actions are completed.
-		 *
 		 */
 		const executeOnResult = async (success: boolean, resolveCommand: (value: boolean) => void) => {
 			const statusBarIcon = success ? "success" : "error";
@@ -996,7 +994,7 @@ class DevToolsExtension {
 								EnumsExtension.LoggerLevel.INFO,
 								sessionLogger
 							);
-							this.updateStatusBar(packageName, this.getStatusBarTitle("stop", packageName), "");
+							this.updateStatusBar(packageName, this.getStatusBarTitle("cancel", packageName), "");
 							// Reset status bar icon back to default after a delay, same as after an error
 							Lib.executeAfterDelay(
 								() =>

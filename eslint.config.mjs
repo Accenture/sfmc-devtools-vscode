@@ -3,6 +3,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 import tsParser from "@typescript-eslint/parser";
 import js from "@eslint/js";
+import globals from "globals";
 
 export default defineConfig([
 	js.configs.recommended,
@@ -31,6 +32,19 @@ export default defineConfig([
 			"no-path-concat": "error",
 			"@typescript-eslint/typedef": "error",
 			"@typescript-eslint/no-inferrable-types": "error"
+		}
+	},
+	{
+		files: ["*.js", "*.mjs"],
+		languageOptions: {
+			globals: {
+				...globals.nodeBuiltin,
+				Atomics: "readonly",
+				SharedArrayBuffer: "readonly"
+			},
+
+			ecmaVersion: 2022,
+			sourceType: "module"
 		}
 	}
 ]);

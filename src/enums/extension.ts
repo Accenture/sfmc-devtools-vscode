@@ -23,6 +23,7 @@ enum RecommendedExtensionsOptions {
  * Status Bar Icon Options
  *
  * @enum {number}
+ * reference: https://code.visualstudio.com/api/references/icons-in-labels
  */
 enum StatusBarIcon {
 	success = "check-all",
@@ -33,7 +34,7 @@ enum StatusBarIcon {
 	info = "extensions-info-message",
 	delete = "trash",
 	clone = "copy",
-	stop = "✋"
+	cancel = "stop"
 }
 
 /**
