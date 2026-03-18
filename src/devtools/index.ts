@@ -725,6 +725,11 @@ class DevToolsExtension {
 				const candidatePath = `${basePathWithoutExt}.json`;
 				if (File.fileExists(candidatePath).length > 0) {
 					jsonPath = candidatePath;
+				} else if (filePath.endsWith("-doc.md")) {
+					const candidatePath = `${filePath.split("-doc.md")[0]}-meta.json`;
+					if (File.fileExists(candidatePath).length > 0) {
+						jsonPath = candidatePath;
+					}
 				}
 			}
 			const content = File.readFileSync(Lib.removeLeadingRootDrivePath(jsonPath));
