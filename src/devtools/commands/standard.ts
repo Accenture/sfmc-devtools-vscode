@@ -176,8 +176,8 @@ class StandardCommands extends Commands {
 				);
 			}
 
-			// Build the optional flags: always --fromRetrieve plus either --changeKeyField or --changeKeyValue
-			const optionalFlags: string[] = [this.retrieveFlag("fromRetrieve")];
+			// Build the optional flags: always --fromRetrieve and --skipValidation, plus either --changeKeyField or --changeKeyValue
+			const optionalFlags: string[] = [this.retrieveFlag("fromRetrieve"), this.retrieveFlag("skipValidation")];
 			if (hasChangeKeyField) {
 				optionalFlags.push(`${this.retrieveFlag("changeKeyField")} "${parameters.changeKeyField}"`);
 			} else {
