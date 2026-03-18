@@ -50,6 +50,16 @@ class VSCodeContext {
 	getExtensionPath(): string {
 		return this.context.extensionPath;
 	}
+
+	/**
+	 * Registers a disposable resource so it is cleaned up when the extension is deactivated.
+	 *
+	 * @param {VSCode.Disposable} disposable - The disposable to register
+	 * @returns {void}
+	 */
+	registerDisposable(disposable: VSCode.Disposable): void {
+		this.context.subscriptions.push(disposable);
+	}
 }
 
 export default VSCodeContext;
