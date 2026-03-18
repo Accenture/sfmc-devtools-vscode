@@ -1,5 +1,5 @@
 import Mcdev from "./mcdev";
-import ContentBlockLinkProvider from "../editor/contentBlockLinkProvider";
+import ContentBlockLinkProvider, { ASSET_CACHE_GLOB } from "../editor/contentBlockLinkProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
@@ -571,16 +571,36 @@ class DevToolsExtension {
 	 * Enables Ctrl+Click navigation from ContentBlockByKey() references
 	 * to the corresponding asset file in the workspace.
 	 *
+	 * A key cache is pre-built by scanning retrieve/<cred>/<bu>/asset/{other,block}
+	 * files on startup (fire-and-forget) and kept live via a FileSystemWatcher so
+	 * that files added or deleted during the session are reflected immediately.
+	 *
 	 * @returns {void}
 	 */
 	activateLinkProviders(): void {
 		console.log("== Activate Link Providers ==");
 		const vscodeContext = this.vscodeEditor.getContext();
-		const disposable = VSCode.languages.registerDocumentLinkProvider(
-			{ scheme: "file" },
-			new ContentBlockLinkProvider()
-		);
-		vscodeContext.registerDisposable(disposable);
+		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
+
+		const provider = new ContentBlockLinkProvider();
+
+		// Populate the key cache in the background; links resolve instantly once ready
+		provider.init().catch(err => {
+			console.error("[sfmc-devtools-vscode] ContentBlockLinkProvider cache init failed:", err);
+		});
+
+		// Keep the cache live as asset files are added or removed
+		const workspaceUri = vscodeWorkspace.getWorkspaceURI();
+		if (workspaceUri) {
+			const watcher = VSCode.workspace.createFileSystemWatcher(
+				new VSCode.RelativePattern(workspaceUri, ASSET_CACHE_GLOB)
+			);
+			watcher.onDidCreate(uri => provider.addToCache(uri));
+			watcher.onDidDelete(uri => provider.removeFromCache(uri));
+			vscodeContext.registerDisposable(watcher);
+		}
+
+		vscodeContext.registerDisposable(VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, provider));
 	}
 
 	/**
