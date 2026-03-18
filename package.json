@@ -46,6 +46,10 @@
 	"contributes": {
 		"commands": [
 			{
+				"command": "sfmc-devtools-vscode.changekey",
+				"title": "%command.title.changekey%"
+			},
+			{
 				"command": "sfmc-devtools-vscode.copytobu",
 				"title": "%command.title.copytobu%"
 			},
@@ -68,6 +72,11 @@
 		],
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "sfmc-devtools-vscode.changekey",
+					"when": "%command.when.changekey%",
+					"group": "devtools"
+				},
 				{
 					"command": "sfmc-devtools-vscode.copytobu",
 					"when": "%command.when.copytobu%",
@@ -96,6 +105,11 @@
 			],
 			"editor/context": [
 				{
+					"command": "sfmc-devtools-vscode.changekey",
+					"when": "%command.when.changekey%",
+					"group": "devtools"
+				},
+				{
 					"command": "sfmc-devtools-vscode.copytobu",
 					"when": "%command.when.copytobu%",
 					"group": "devtools"
@@ -118,6 +132,11 @@
 			],
 			"explorer/context": [
 				{
+					"command": "sfmc-devtools-vscode.changekey",
+					"when": "%command.when.changekey%",
+					"group": "devtools"
+				},
+				{
 					"command": "sfmc-devtools-vscode.copytobu",
 					"when": "%command.when.copytobu%",
 					"group": "devtools"
@@ -139,6 +158,11 @@
 				}
 			],
 			"editor/title/context": [
+				{
+					"command": "sfmc-devtools-vscode.changekey",
+					"when": "%command.when.changekey%",
+					"group": "devtools"
+				},
 				{
 					"command": "sfmc-devtools-vscode.copytobu",
 					"when": "%command.when.copytobu%",

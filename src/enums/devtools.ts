@@ -8,4 +8,14 @@ enum CopyToBUOptions {
 	"Copy And Deploy" = "copy and deploy"
 }
 
-export { CopyToBUOptions };
+/**
+ * Enum representing the options for changing the key of a metadata item.
+ *
+ * @enum {string}
+ */
+enum ChangeKeyOptions {
+	"Field" = "field",
+	"Custom Value" = "custom value"
+}
+
+export { CopyToBUOptions, ChangeKeyOptions };

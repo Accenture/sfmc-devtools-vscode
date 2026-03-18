@@ -34,7 +34,8 @@ enum StatusBarIcon {
 	info = "extensions-info-message",
 	delete = "trash",
 	clone = "copy",
-	cancel = "stop"
+	cancel = "stop",
+	changekey = "key"
 }
 
 /**

@@ -10,7 +10,8 @@ import { TDevTools } from "@types";
 const MetadataTypesSupportedActions: { [action: string]: TDevTools.MetadataTypesActions[] } = {
 	retrieve: ["retrieve"],
 	deploy: ["create", "update"],
-	delete: ["delete"]
+	delete: ["delete"],
+	changekey: ["changeKey"]
 };
 
 /**
