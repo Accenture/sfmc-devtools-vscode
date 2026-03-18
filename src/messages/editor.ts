@@ -9,6 +9,8 @@ const businessUnitsPrompt = "Please select the business unit you would like to u
 const metaDataTypePrompt = "Please select the metadata types you would like to use:";
 const copyToBuPrompt = "Please select the action you would like to perform:";
 const changeKeyMethodPrompt = "Please select how you would like to change the key:";
+const changeKeyMixedTypesError = (metadataTypes: string[]) =>
+	`Please select files of the same metadata type to use Change Key by field. Selected types: ${metadataTypes.join(", ")}`;
 const changeKeyFieldListPrompt = "Please select the field to use as the new key:";
 const changeKeyFieldPrompt =
 	"Please enter the field name to use as the new key (must match exact spelling, including casing):";
@@ -37,6 +39,7 @@ export {
 	metaDataTypePrompt,
 	copyToBuPrompt,
 	changeKeyMethodPrompt,
+	changeKeyMixedTypesError,
 	changeKeyFieldListPrompt,
 	changeKeyFieldPrompt,
 	changeKeyValuePrompt,

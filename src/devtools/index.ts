@@ -744,8 +744,24 @@ class DevToolsExtension {
 		let changeKeyValue: string | undefined;
 
 		if (supportedFiles.length > 1) {
-			// Multiple files selected: only --changeKeyField is supported
-			changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+			// Multiple files selected: all must share the same metadata type for "change key by field".
+			const distinctTypes = [...new Set(supportedFiles.map(f => f.metadataType).filter(Boolean))] as string[];
+			if (distinctTypes.length > 1) {
+				this.showInformationMessage("error", MessagesEditor.changeKeyMixedTypesError(distinctTypes), []);
+				return;
+			}
+			// All files share the same type: scan the first file and show the same
+			// type-to-filter QuickPick as in single-file "Field" mode.
+			const jsonKeys = this.readJsonTopLevelKeys(supportedFiles[0].path);
+			if (jsonKeys.length) {
+				changeKeyField = (await this.requestInputWithOptions(
+					jsonKeys,
+					MessagesEditor.changeKeyFieldListPrompt,
+					false
+				)) as string | undefined;
+			} else {
+				changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+			}
 			if (!changeKeyField) return;
 		} else {
 			// Single file selected: ask the user to choose between field or custom value

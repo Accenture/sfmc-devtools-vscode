@@ -27,8 +27,9 @@ class StandardCommands extends Commands {
 	 */
 	commandsList(): string[] {
 		console.log("== StandardCommands: commandsList ==");
-		// "changekey" is listed separately because it shares the deploy ("d") alias but requires
-		// different build logic; adding it as a duplicate enum key is not possible in TypeScript.
+		// "changekey" is listed separately because it reuses the deploy ("d") alias at runtime
+		// but requires its own build logic (adds --fromRetrieve, --skipValidation and a
+		// changeKey flag); adding it as a duplicate enum key is not possible in TypeScript.
 		return [...Object.keys(StandardCommandsAlias), "changekey"];
 	}
 
