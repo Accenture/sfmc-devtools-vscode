@@ -1025,7 +1025,10 @@ class DevToolsExtension {
 			if (info && trimmedInfo.startsWith(runningPrefix)) {
 				lastRunCommand = trimmedInfo.slice(runningPrefix.length).trimEnd();
 				if (progressReporter) {
-					const displayCommand = lastRunCommand.replace(/ --noLogColors/g, "").trimEnd();
+					const displayCommand = lastRunCommand
+						.replace(/ --noLogColors/g, "")
+						.replace(/ --y/g, "")
+						.trimEnd();
 					progressReporter.report({ message: `Running ${displayCommand}` });
 				}
 			}
