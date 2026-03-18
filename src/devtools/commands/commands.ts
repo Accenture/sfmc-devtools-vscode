@@ -22,7 +22,9 @@ enum CommandFlags {
 	noPurge = "--no-purge",
 	skipValidation = "--skipValidation",
 	fromRetrieve = "--fromRetrieve",
-	json = "--json"
+	json = "--json",
+	changeKeyField = "--changeKeyField",
+	changeKeyValue = "--changeKeyValue"
 }
 
 /**

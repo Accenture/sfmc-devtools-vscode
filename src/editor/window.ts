@@ -224,6 +224,18 @@ class VSCodeWindow {
 	}
 
 	/**
+	 * Shows an input box to collect text input from the user.
+	 *
+	 * @param {string} prompt - The message to show below the input field.
+	 * @param {string} [placeHolder] - Placeholder text shown in the input field.
+	 * @returns {Promise<string | undefined>} The value entered by the user, or undefined if cancelled.
+	 */
+	async showInputBox(prompt: string, placeHolder?: string): Promise<string | undefined> {
+		const response = await this.window.showInputBox({ prompt, placeHolder, ignoreFocusOut: true });
+		return response;
+	}
+
+	/**
 	 * Gets the current opened file path
 	 *
 	 * @returns {string} - opened file path

@@ -416,6 +416,18 @@ class DevToolsExtension {
 	}
 
 	/**
+	 * Prompts the user to enter free-form text and returns their input.
+	 *
+	 * @param {string} prompt - The message shown below the input field.
+	 * @param {string} [placeHolder] - Optional placeholder text shown inside the input field.
+	 * @returns {Promise<string | undefined>} The value entered by the user, or undefined if cancelled.
+	 */
+	async requestInputText(prompt: string, placeHolder?: string): Promise<string | undefined> {
+		const window = this.vscodeEditor.getWindow();
+		return window.showInputBox(prompt, placeHolder);
+	}
+
+	/**
 	 * Opens a file in the editor given its path.
 	 *
 	 * @param path - The path of the file to open.
@@ -564,6 +576,7 @@ class DevToolsExtension {
 
 		// menu commands handlers
 		const menuCommandsHandlers: { [key: string]: () => void } = {
+			changekey: () => this.handleChangeKeyCommand(selectedFiles),
 			copytobu: () => this.handleCopyToBUCommand(selectedFiles),
 			delete: () => this.handleDeleteCommand(selectedFiles),
 			deploy: () => this.handleDeployCommand(selectedFiles),
@@ -689,6 +702,56 @@ class DevToolsExtension {
 		const supportedFiles = this.filterSupportedFiles(files, "deploy");
 		if (!supportedFiles.length) return;
 		this.executeCommand("deploy", { filesDetails: supportedFiles });
+	}
+
+	/**
+	 * Handles the Menu Command 'changekey'.
+	 * Prompts the user for the key-change method (field name or custom value) and
+	 * runs `mcdev deploy ... --changeKeyField` or `--changeKeyValue` accordingly.
+	 * Only works with files from the retrieve folder.
+	 *
+	 * @async
+	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files
+	 * @returns {Promise<void>}
+	 */
+	async handleChangeKeyCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		// Filter out metadata types that do not support changeKey
+		const supportedFiles = this.filterSupportedFiles(files, "changekey");
+		if (!supportedFiles.length) return;
+
+		let changeKeyField: string | undefined;
+		let changeKeyValue: string | undefined;
+
+		if (supportedFiles.length > 1) {
+			// Multiple files selected: only --changeKeyField is supported
+			changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+			if (!changeKeyField) return;
+		} else {
+			// Single file selected: ask the user to choose between field or custom value
+			const method = (await this.requestInputWithOptions(
+				Object.keys(EnumsDevTools.ChangeKeyOptions),
+				MessagesEditor.changeKeyMethodPrompt,
+				false
+			)) as string | undefined;
+			if (!method) return;
+
+			// QuickPick returns the option key as a label (e.g. "Field"); lowercasing it
+			// matches the enum value (e.g. ChangeKeyOptions.Field = "field") – same pattern
+			// as CopyToBUOptions comparisons in this file.
+			if (method.toLowerCase() === EnumsDevTools.ChangeKeyOptions.Field) {
+				changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+				if (!changeKeyField) return;
+			} else {
+				changeKeyValue = await this.requestInputText(MessagesEditor.changeKeyValuePrompt);
+				if (!changeKeyValue) return;
+			}
+		}
+
+		const executeParams: TDevTools.IExecuteParameters = { filesDetails: supportedFiles };
+		if (changeKeyField) executeParams.changeKeyField = changeKeyField;
+		else if (changeKeyValue) executeParams.changeKeyValue = changeKeyValue;
+
+		this.executeCommand("changekey", executeParams);
 	}
 
 	/**
