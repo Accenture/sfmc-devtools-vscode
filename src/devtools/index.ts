@@ -3,7 +3,7 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils } from "@types";
-import { Lib, VsceLogger } from "utils";
+import { Lib, File, VsceLogger } from "utils";
 
 /**
  * DevTools Extension class
@@ -705,6 +705,27 @@ class DevToolsExtension {
 	}
 
 	/**
+	 * Reads a JSON file and returns its top-level attribute names.
+	 * Returns an empty array when the file cannot be read or is not a JSON object.
+	 *
+	 * @private
+	 * @param {string} filePath - absolute path to the file
+	 * @returns {string[]} sorted top-level keys, or [] on error
+	 */
+	private readJsonTopLevelKeys(filePath: string): string[] {
+		try {
+			const content = File.readFileSync(Lib.removeLeadingRootDrivePath(filePath));
+			const parsed = JSON.parse(content);
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				return Object.keys(parsed).sort();
+			}
+		} catch {
+			// File is not JSON or cannot be read; caller will fall back to free-text input
+		}
+		return [];
+	}
+
+	/**
 	 * Handles the Menu Command 'changekey'.
 	 * Prompts the user for the key-change method (field name or custom value) and
 	 * runs `mcdev deploy ... --changeKeyField` or `--changeKeyValue` accordingly.
@@ -739,7 +760,18 @@ class DevToolsExtension {
 			// matches the enum value (e.g. ChangeKeyOptions.Field = "field") – same pattern
 			// as CopyToBUOptions comparisons in this file.
 			if (method.toLowerCase() === EnumsDevTools.ChangeKeyOptions.Field) {
-				changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+				// Try to populate the QuickPick from the file's JSON top-level keys so the
+				// user can start typing to filter; fall back to free-text when unavailable.
+				const jsonKeys = this.readJsonTopLevelKeys(supportedFiles[0].path);
+				if (jsonKeys.length) {
+					changeKeyField = (await this.requestInputWithOptions(
+						jsonKeys,
+						MessagesEditor.changeKeyFieldListPrompt,
+						false
+					)) as string | undefined;
+				} else {
+					changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+				}
 				if (!changeKeyField) return;
 			} else {
 				changeKeyValue = await this.requestInputText(MessagesEditor.changeKeyValuePrompt);

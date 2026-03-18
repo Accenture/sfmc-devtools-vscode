@@ -9,6 +9,7 @@ const businessUnitsPrompt = "Please select the business unit you would like to u
 const metaDataTypePrompt = "Please select the metadata types you would like to use:";
 const copyToBuPrompt = "Please select the action you would like to perform:";
 const changeKeyMethodPrompt = "Please select how you would like to change the key:";
+const changeKeyFieldListPrompt = "Please select the field to use as the new key:";
 const changeKeyFieldPrompt =
 	"Please enter the field name to use as the new key (must match exact spelling, including casing):";
 const changeKeyValuePrompt = "Please enter the new key value:";
@@ -36,6 +37,7 @@ export {
 	metaDataTypePrompt,
 	copyToBuPrompt,
 	changeKeyMethodPrompt,
+	changeKeyFieldListPrompt,
 	changeKeyFieldPrompt,
 	changeKeyValuePrompt,
 	noCredentialFound,

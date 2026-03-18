@@ -27,8 +27,8 @@ class StandardCommands extends Commands {
 	 */
 	commandsList(): string[] {
 		console.log("== StandardCommands: commandsList ==");
-		// "changekey" is listed separately because it reuses the deploy ("d") alias at runtime,
-		// and TypeScript/ESLint prohibit duplicate enum values in StandardCommandsAlias.
+		// "changekey" is listed separately because it shares the deploy ("d") alias but requires
+		// different build logic; adding it as a duplicate enum key is not possible in TypeScript.
 		return [...Object.keys(StandardCommandsAlias), "changekey"];
 	}
 
@@ -176,7 +176,8 @@ class StandardCommands extends Commands {
 				);
 			}
 
-			// Build the optional flags: always --fromRetrieve and --skipValidation, plus either --changeKeyField or --changeKeyValue
+			// Build the flags assigned to ICommandFileParameters.optional:
+			// always --fromRetrieve and --skipValidation, plus either --changeKeyField or --changeKeyValue.
 			const optionalFlags: string[] = [this.retrieveFlag("fromRetrieve"), this.retrieveFlag("skipValidation")];
 			if (hasChangeKeyField) {
 				optionalFlags.push(`${this.retrieveFlag("changeKeyField")} "${parameters.changeKeyField}"`);
