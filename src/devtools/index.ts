@@ -706,7 +706,10 @@ class DevToolsExtension {
 
 	/**
 	 * Reads a JSON file and returns its top-level attribute names.
-	 * Returns an empty array when the file cannot be read or is not a JSON object.
+	 * When the given path is not a .json file, the method looks for a sibling .json file
+	 * with the same base name (e.g. myEmail.amp → myEmail.json) so that clicking on a
+	 * related file still surfaces the correct field list.
+	 * Returns an empty array when no readable JSON object can be found.
 	 *
 	 * @private
 	 * @param {string} filePath - absolute path to the file
@@ -714,7 +717,22 @@ class DevToolsExtension {
 	 */
 	private readJsonTopLevelKeys(filePath: string): string[] {
 		try {
-			const content = File.readFileSync(Lib.removeLeadingRootDrivePath(filePath));
+			let jsonPath = filePath;
+			if (!filePath.endsWith(".json")) {
+				// Derive the related .json path by replacing the last extension
+				const lastDotIndex = filePath.lastIndexOf(".");
+				const basePathWithoutExt = lastDotIndex > -1 ? filePath.substring(0, lastDotIndex) : filePath;
+				const candidatePath = `${basePathWithoutExt}.json`;
+				if (File.fileExists(candidatePath).length > 0) {
+					jsonPath = candidatePath;
+				} else if (filePath.endsWith("-doc.md")) {
+					const candidatePath = `${filePath.split("-doc.md")[0]}-meta.json`;
+					if (File.fileExists(candidatePath).length > 0) {
+						jsonPath = candidatePath;
+					}
+				}
+			}
+			const content = File.readFileSync(Lib.removeLeadingRootDrivePath(jsonPath));
 			const parsed = JSON.parse(content);
 			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
 				return Object.keys(parsed).sort();
