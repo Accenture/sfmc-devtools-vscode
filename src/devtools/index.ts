@@ -1,8 +1,9 @@
 import Mcdev from "./mcdev";
+import ContentBlockLinkProvider from "../editor/contentBlockLinkProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
-import { TDevTools, TEditor, TUtils } from "@types";
+import { TDevTools, TEditor, TUtils, VSCode } from "@types";
 import { Lib, File, VsceLogger } from "utils";
 
 /**
@@ -91,6 +92,8 @@ class DevToolsExtension {
 				this.activateContainers();
 				// activate menu commands
 				this.activateMenuCommands();
+				// activate document link providers
+				this.activateLinkProviders();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
 				// refresh metadata types in background from mcdev
@@ -561,6 +564,23 @@ class DevToolsExtension {
 			command: `${ConfigExtension.extensionName}.restartExtension`,
 			callbackAction: () => this.refreshMetadataTypesInBackground()
 		});
+	}
+
+	/**
+	 * Registers document link providers for the extension.
+	 * Enables Ctrl+Click navigation from ContentBlockByKey() references
+	 * to the corresponding asset file in the workspace.
+	 *
+	 * @returns {void}
+	 */
+	activateLinkProviders(): void {
+		console.log("== Activate Link Providers ==");
+		const vscodeContext = this.vscodeEditor.getContext();
+		const disposable = VSCode.languages.registerDocumentLinkProvider(
+			{ scheme: "file" },
+			new ContentBlockLinkProvider()
+		);
+		vscodeContext.registerDisposable(disposable);
 	}
 
 	/**
