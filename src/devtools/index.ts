@@ -1,6 +1,7 @@
 import Mcdev from "./mcdev";
 import ContentBlockLinkProvider, { ASSET_CACHE_GLOB } from "../editor/contentBlockLinkProvider";
 import RelatedItemLinkProvider from "../editor/relatedItemLinkProvider";
+import DataExtensionLinkProvider from "../editor/dataExtensionLinkProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
@@ -580,6 +581,14 @@ class DevToolsExtension {
 	 *    metadata files to the corresponding metadata file in the same BU tree.
 	 *    Links are resolved on demand and cached after the first lookup.
 	 *
+	 * 3. DataExtensionLinkProvider – enables Ctrl+Click navigation from
+	 *    dataExtension names referenced in FROM / JOIN clauses of SQL query
+	 *    files (retrieve/<cred>/<bu>/query/*.sql) to the corresponding
+	 *    dataExtension-meta.json file.  Names prefixed with "ENT." (case-
+	 *    insensitive) are resolved against the parent BU folder instead.
+	 *    A per-BU name cache is built lazily the first time a query file for
+	 *    that BU is opened.
+	 *
 	 * @returns {void}
 	 */
 	activateLinkProviders(): void {
@@ -611,6 +620,12 @@ class DevToolsExtension {
 		const relatedItemProvider = new RelatedItemLinkProvider();
 		vscodeContext.registerDisposable(
 			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, relatedItemProvider)
+		);
+
+		// Register on-demand link provider for dataExtension names in SQL query files
+		const dataExtensionProvider = new DataExtensionLinkProvider();
+		vscodeContext.registerDisposable(
+			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, dataExtensionProvider)
 		);
 	}
 
