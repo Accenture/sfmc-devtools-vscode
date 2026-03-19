@@ -257,7 +257,7 @@ suite("TemplatingCommands (clone / Copy to BU)", () => {
 		test("throws when 'targetBusinessUnit' property is missing", () => {
 			assert.throws(
 				() => cmd.clone({ files: [makeFileParam()] }),
-				/\[templating_clone\]: The property 'files' is missing/
+				/\[templating_clone\]: The property 'targetBusinessUnit' is missing/
 			);
 		});
 	});
@@ -269,5 +269,21 @@ suite("TemplatingCommands (clone / Copy to BU)", () => {
 		const originalOptional = fileParam.optional;
 		cmd.clone({ files: [fileParam], targetBusinessUnit: "myCred/targetBU" });
 		assert.strictEqual(fileParam.optional, originalOptional, "should not mutate optional on input");
+	});
+
+	// ─── run() dispatch ────────────────────────────────────────────────────────
+
+	suite("run() dispatch", () => {
+		test("run('clone', ...) dispatches to clone() and returns alias 'clone'", () => {
+			const result = cmd.run("clone", { files: [makeFileParam()], targetBusinessUnit: "myCred/targetBU" });
+			assert.strictEqual(result.alias, "clone");
+			assert.strictEqual(result.config.length, 1);
+		});
+
+		test("run(unknown command) returns empty config", () => {
+			const result = cmd.run("unknown" as "clone", {});
+			assert.strictEqual(result.alias, "");
+			assert.deepStrictEqual(result.config, []);
+		});
 	});
 });

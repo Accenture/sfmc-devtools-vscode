@@ -414,4 +414,38 @@ suite("StandardCommands", () => {
 			);
 		});
 	});
+
+	// ─── run() dispatch ───────────────────────────────────────────────────────
+
+	suite("run() dispatch", () => {
+		test("run('retrieve', ...) dispatches to retrieve() — alias is 'r'", () => {
+			const result = cmd.run("retrieve", { files: [makeFileParam()] });
+			assert.strictEqual(result.alias, "r");
+			assert.strictEqual(result.config.length, 1);
+		});
+
+		test("run('deploy', ...) dispatches to deploy() — alias is 'd'", () => {
+			const result = cmd.run("deploy", { files: [makeFileParam({ topFolder: "/deploy/" })] });
+			assert.strictEqual(result.alias, "d");
+		});
+
+		test("run('delete', ...) dispatches to delete() — alias is 'del'", () => {
+			const result = cmd.run("delete", { files: [makeFileParam()] });
+			assert.strictEqual(result.alias, "del");
+		});
+
+		test("run('changekey', ...) dispatches to changekey() with correct flags", () => {
+			const result = cmd.run("changekey", { files: [makeFileParam()], changeKeyField: "name" });
+			assert.strictEqual(result.alias, "d");
+			const [params] = result.config[0];
+			assert.ok(params.includes("--changeKeyField"), "expected changekey flag from dispatch");
+		});
+
+		test("run(unknown command) returns empty config without throwing", () => {
+			assert.doesNotThrow(() => cmd.run("unknown", {}));
+			const result = cmd.run("unknown", {});
+			assert.strictEqual(result.alias, "");
+			assert.deepStrictEqual(result.config, []);
+		});
+	});
 });
