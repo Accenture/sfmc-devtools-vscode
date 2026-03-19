@@ -1,0 +1,16 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"module": "CommonJS",
+		"moduleResolution": "node",
+		"baseUrl": ".",
+		"paths": {
+			"@types": ["./src/types/index"],
+			"@enums": ["./src/enums/index"],
+			"@config": ["./src/config/index"],
+			"@messages": ["./src/messages/index"],
+			"utils": ["./src/utils/index"]
+		}
+	},
+	"include": ["src/**/*.ts"]
+}
