@@ -1,5 +1,6 @@
 import Mcdev from "./mcdev";
 import ContentBlockLinkProvider, { ASSET_CACHE_GLOB } from "../editor/contentBlockLinkProvider";
+import RelatedItemLinkProvider from "../editor/relatedItemLinkProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
@@ -568,12 +569,16 @@ class DevToolsExtension {
 
 	/**
 	 * Registers document link providers for the extension.
-	 * Enables Ctrl+Click navigation from ContentBlockByKey() references
-	 * to the corresponding asset file in the workspace.
 	 *
-	 * A key cache is pre-built by scanning retrieve/<cred>/<bu>/asset/{other,block}
-	 * files on startup (fire-and-forget) and kept live via a FileSystemWatcher so
-	 * that files added or deleted during the session are reflected immediately.
+	 * 1. ContentBlockLinkProvider – enables Ctrl+Click navigation from
+	 *    ContentBlockByKey() references to the corresponding asset file.
+	 *    A key cache is pre-built by scanning retrieve/<cred>/<bu>/asset/{other,block}
+	 *    files on startup (fire-and-forget) and kept live via a FileSystemWatcher.
+	 *
+	 * 2. RelatedItemLinkProvider – enables Ctrl+Click navigation from
+	 *    r__TYPE_key values (and automation r__type / r__key pairs) in JSON
+	 *    metadata files to the corresponding metadata file in the same BU tree.
+	 *    Links are resolved on demand and cached after the first lookup.
 	 *
 	 * @returns {void}
 	 */
@@ -601,6 +606,12 @@ class DevToolsExtension {
 		}
 
 		vscodeContext.registerDisposable(VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, provider));
+
+		// Register on-demand link provider for r__TYPE_key relation fields in JSON files
+		const relatedItemProvider = new RelatedItemLinkProvider();
+		vscodeContext.registerDisposable(
+			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, relatedItemProvider)
+		);
 	}
 
 	/**
