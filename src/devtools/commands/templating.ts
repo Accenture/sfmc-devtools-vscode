@@ -60,29 +60,33 @@ class TemplatingCommands extends Commands {
 		const buFromFlag = this.retrieveAlias("buFrom");
 		const buTargetFlag = this.retrieveAlias("buTarget");
 
-		// Check if the parameters object contains the 'files' and 'targetBusinessUnit' properties
-		if ("files" in parameters && "targetBusinessUnit" in parameters) {
-			// command alias
-			const cloneAlias = TemplatingCommandsAlias.clone;
-
-			// file parameters configuration
-			const fileParameters = (parameters.files as TDevTools.ICommandFileParameters[]).map(file => {
-				const credential = `${buFromFlag} ${file.credential} ${buTargetFlag} ${parameters.targetBusinessUnit}`;
-				return {
-					...file,
-					credential,
-					optional: [this.retrieveFlag("noPurge"), this.retrieveFlag("skipValidation")]
-				};
-			});
-
-			// command parameters configuration
-			const cloneConfig = fileParameters.map(parameter => [
-				this.configureParameters(parameter),
-				parameter.projectPath
-			]);
-			return { alias: cloneAlias, config: cloneConfig };
+		// Validate required properties individually so error messages are accurate
+		if (!("files" in parameters)) {
+			throw new Error(`[templating_clone]: The property 'files' is missing from parameters.`);
 		}
-		throw new Error(`[templating_clone]: The property 'files' is missing from parameters.`);
+		if (!("targetBusinessUnit" in parameters)) {
+			throw new Error(`[templating_clone]: The property 'targetBusinessUnit' is missing from parameters.`);
+		}
+
+		// command alias
+		const cloneAlias = TemplatingCommandsAlias.clone;
+
+		// file parameters configuration
+		const fileParameters = (parameters.files as TDevTools.ICommandFileParameters[]).map(file => {
+			const credential = `${buFromFlag} ${file.credential} ${buTargetFlag} ${parameters.targetBusinessUnit}`;
+			return {
+				...file,
+				credential,
+				optional: [this.retrieveFlag("noPurge"), this.retrieveFlag("skipValidation")]
+			};
+		});
+
+		// command parameters configuration
+		const cloneConfig = fileParameters.map(parameter => [
+			this.configureParameters(parameter),
+			parameter.projectPath
+		]);
+		return { alias: cloneAlias, config: cloneConfig };
 	}
 }
 

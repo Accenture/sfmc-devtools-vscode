@@ -260,11 +260,11 @@ class Mcdev {
 	/**
 	 * Maps DevTools Files Format to Command Parameters
 	 *
-	 * @private
+	 * @public
 	 * @param {TDevTools.IExecuteFileDetails[]} files - files to be converted
 	 * @returns {TDevTools.ICommandParameters[]} - list of command parameters
 	 */
-	private mapToCommandFileParameters(files: TDevTools.IExecuteFileDetails[]): TDevTools.ICommandFileParameters[] {
+	public mapToCommandFileParameters(files: TDevTools.IExecuteFileDetails[]): TDevTools.ICommandFileParameters[] {
 		type MetadataByCredential = {
 			[projectPath: string]: { [topFolder: string]: { [credential: string]: TDevTools.IMetadataCommand[] } };
 		};
