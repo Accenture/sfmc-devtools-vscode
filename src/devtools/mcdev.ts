@@ -164,10 +164,14 @@ class Mcdev {
 	 * Returns true when the list was changed (new or removed types detected).
 	 *
 	 * @public
-	 * @param {TDevTools.IMetadataTypes[]} types - updated metadata types list
+	 * @param {TDevTools.IMetadataTypes[]} jsonMetadataTypes - updated metadata types list
 	 * @returns {boolean} true if the list changed, false otherwise
 	 */
-	public updateMetadataTypes(types: TDevTools.IMetadataTypes[]): boolean {
+	public updateMetadataTypes(types: string): boolean {
+		// The output may include non-JSON lines before the JSON array; extract the JSON portion
+		const jsonStart = types.indexOf("[");
+		if (jsonStart === -1)
+			throw new Error(`[mcdev_updateMetadataTypes]: Invalid output for metadata types: ${types}`);
 		return this.metadataTypes.updateMetadataTypes(types);
 	}
 

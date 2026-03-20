@@ -271,19 +271,24 @@ class DevToolsExtension {
 		try {
 			const workspace = this.vscodeEditor.getWorkspace();
 			const workspacePath = workspace.getWorkspaceFsPath();
-			const packageName = this.mcdev.getPackageName();
+			// const packageName = this.mcdev.getPackageName();
 
-			const types = await this.mcdev.runExplainTypes(workspacePath);
-			if (!types) return;
+			const onResult = ({ output }: TUtils.IOutputLogger): void => {
+				if (output) this.mcdev.updateMetadataTypes(output);
+			};
+			const { success } = await this.mcdev.execute("explainTypes", onResult, {
+				projectPath: workspacePath
+			});
+			if (!success) return;
 
-			const updated = this.mcdev.updateMetadataTypes(types);
-			if (updated) {
-				this.writeLog(
-					packageName,
-					`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
-					EnumsExtension.LoggerLevel.INFO
-				);
-			}
+			// const updated = this.mcdev.updateMetadataTypes(types);
+			// if (updated) {
+			// 	this.writeLog(
+			// 		packageName,
+			// 		`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
+			// 		EnumsExtension.LoggerLevel.INFO
+			// 	);
+			// }
 		} catch (error) {
 			this.writeLog(
 				this.mcdev.getPackageName(),

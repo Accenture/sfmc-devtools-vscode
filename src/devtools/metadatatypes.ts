@@ -84,20 +84,18 @@ class MetadataTypes {
 	 * Updates the metadata types list with the provided types.
 	 * Returns true if any new or removed types were detected.
 	 *
-	 * @param {TDevTools.IMetadataTypes[]} types - updated list of metadata types
+	 * @param {string} types - updated list of metadata types
 	 * @returns {boolean} true if the list changed, false otherwise
 	 */
-	updateMetadataTypes(types: TDevTools.IMetadataTypes[]): boolean {
-		const currentApiNames = new Set(this.metadataTypes.map(t => t.apiName));
-		const newApiNames = new Set(types.map(t => t.apiName));
+	updateMetadataTypes(types: string): boolean {
+		console.log("== MetadataTypes: Update Metadata Types ==");
+		const currentTypes = JSON.stringify(this.metadataTypes);
 
-		const hasNewTypes = types.some(t => !currentApiNames.has(t.apiName));
-		const hasRemovedTypes = this.metadataTypes.some(t => !newApiNames.has(t.apiName));
-
-		if (hasNewTypes || hasRemovedTypes) {
-			this.metadataTypes = types;
+		if (types !== currentTypes) {
+			this.metadataTypes = JSON.parse(types) as TDevTools.IMetadataTypes[];
 			return true;
 		}
+
 		return false;
 	}
 
@@ -132,7 +130,7 @@ class MetadataTypes {
 	 * @returns {{ filename?: string; metadataTypeName?: string }} file name and metadata type name configured
 	 */
 	handleFileConfiguration(mdt: string, files: string[]): { filename?: string; metadataTypeName?: string } {
-		console.log("== MetadataTypes ExtractFileName ==");
+		console.log("== MetadataTypes HandleFileConfiguration ==");
 		if (mdt === "asset") {
 			const [assetName, filename] = files;
 
