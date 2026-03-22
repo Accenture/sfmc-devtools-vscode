@@ -270,7 +270,12 @@ class RelatedItemDiagnosticProvider {
 						VSCode.DiagnosticSeverity.Warning
 					);
 					diagnostic.source = DIAGNOSTIC_SOURCE;
-					diagnostic.code = JSON.stringify({ credBu, type, key });
+					diagnostic.code = {
+						value: "warnOnMissingJsonRelation",
+						target: VSCode.Uri.parse(
+							`vscode://settings/${DIAGNOSTIC_SOURCE}.warnOnMissingJsonRelation?credBu=${encodeURIComponent(credBu)}&type=${encodeURIComponent(type)}&key=${encodeURIComponent(key)}`
+						)
+					};
 					return diagnostic;
 				}
 
@@ -283,7 +288,12 @@ class RelatedItemDiagnosticProvider {
 					VSCode.DiagnosticSeverity.Warning
 				);
 				diagnostic.source = DIAGNOSTIC_SOURCE;
-				diagnostic.code = JSON.stringify({ credBu, type, key });
+				diagnostic.code = {
+					value: "warnOnMissingJsonRelation",
+					target: VSCode.Uri.parse(
+						`vscode://settings/${DIAGNOSTIC_SOURCE}.warnOnMissingJsonRelation?credBu=${encodeURIComponent(credBu)}&type=${encodeURIComponent(type)}&key=${encodeURIComponent(key)}`
+					)
+				};
 				return diagnostic;
 			})
 		);

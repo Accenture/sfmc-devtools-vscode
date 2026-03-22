@@ -61,16 +61,18 @@ class RelatedItemCodeActionProvider implements VSCode.CodeActionProvider {
 
 		for (const diagnostic of context.diagnostics) {
 			if (diagnostic.source !== DIAGNOSTIC_SOURCE) continue;
-			if (typeof diagnostic.code !== "string") continue;
-
-			let info: { credBu: string; type: string; key: string };
-			try {
-				info = JSON.parse(diagnostic.code);
-			} catch {
+			if (
+				typeof diagnostic.code !== "object" ||
+				diagnostic.code.value !== "warnOnMissingJsonRelation"
+			)
 				continue;
-			}
 
-			const { credBu, type, key } = info;
+			const queryString = diagnostic.code.target.query;
+			const params = new URLSearchParams(queryString);
+			const credBu = params.get("credBu") ?? "";
+			const type = params.get("type") ?? "";
+			const key = params.get("key") ?? "";
+			if (!credBu || !type || !key) continue;
 			const title = `Retrieve ${type}:${key} from ${credBu}`;
 
 			const action = new VSCode.CodeAction(title, VSCode.CodeActionKind.QuickFix);
