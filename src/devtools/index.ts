@@ -636,12 +636,49 @@ class DevToolsExtension {
 
 		// Keep the cache live as asset files are added or removed
 		const workspaceUri = vscodeWorkspace.getWorkspaceURI();
+		// contentBlockDiagnosticProvider is conditionally created below so that
+		// the existing watcher can fan out to both the link provider and the
+		// diagnostic provider without duplicating FileSystemWatchers.
+		let contentBlockDiagnosticProvider: ContentBlockDiagnosticProvider | undefined;
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnContentBlockByKey")) {
+			contentBlockDiagnosticProvider = new ContentBlockDiagnosticProvider();
+			vscodeContext.registerDisposable(contentBlockDiagnosticProvider.getDiagnosticCollection());
+
+			// Populate the key cache; validateDocument() internally awaits
+			// this promise so event handlers registered below are safe to
+			// fire before init completes (no false-positive race).
+			contentBlockDiagnosticProvider.init().catch(err => {
+				console.error("[sfmc-devtools-vscode] ContentBlockDiagnosticProvider cache init failed:", err);
+			});
+		}
+
 		if (workspaceUri) {
 			const watcher = VSCode.workspace.createFileSystemWatcher(
 				new VSCode.RelativePattern(workspaceUri, ASSET_CACHE_GLOB)
 			);
-			watcher.onDidCreate(uri => provider.addToCache(uri));
-			watcher.onDidDelete(uri => provider.removeFromCache(uri));
+			watcher.onDidCreate(uri => {
+				provider.addToCache(uri);
+				if (contentBlockDiagnosticProvider) {
+					const cbProvider = contentBlockDiagnosticProvider;
+					cbProvider.addToCache(uri);
+					// A new key is now resolvable — clear warnings in open documents
+					VSCode.workspace.textDocuments.forEach(doc => {
+						cbProvider.validateDocument(doc).catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider create revalidation failed:",
+								err
+							);
+						});
+					});
+				}
+			});
+			watcher.onDidDelete(uri => {
+				provider.removeFromCache(uri);
+				if (contentBlockDiagnosticProvider) {
+					contentBlockDiagnosticProvider.removeFromCache(uri);
+				}
+			});
 			vscodeContext.registerDisposable(watcher);
 		}
 
@@ -783,56 +820,26 @@ class DevToolsExtension {
 			);
 		}
 
-		// ── Diagnostic + quick-fix providers for unresolvable ContentBlockByKey references ──
-		// Only activated when the warnOnContentBlockByKey feature flag is enabled.
+		// ── ContentBlockByKey diagnostic + quick-fix providers ──
+		// The contentBlockDiagnosticProvider was already created and initialised
+		// above (before the watcher) when the feature flag is enabled.
 
-		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnContentBlockByKey")) {
-			const contentBlockDiagnosticProvider = new ContentBlockDiagnosticProvider();
-			vscodeContext.registerDisposable(contentBlockDiagnosticProvider.getDiagnosticCollection());
+		if (contentBlockDiagnosticProvider) {
+			const cbProvider = contentBlockDiagnosticProvider;
 
-			// Populate the key cache, then validate any already-open documents.
-			// Chaining ensures open documents are not validated against an empty cache.
-			contentBlockDiagnosticProvider
-				.init()
-				.then(() => {
-					VSCode.workspace.textDocuments.forEach(doc => {
-						contentBlockDiagnosticProvider.validateDocument(doc).catch(err => {
-							console.error(
-								"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider init validation failed:",
-								err
-							);
-						});
-					});
-				})
-				.catch(err => {
-					console.error("[sfmc-devtools-vscode] ContentBlockDiagnosticProvider cache init failed:", err);
+			// Validate already-open documents on startup (fire-and-forget).
+			// validateDocument() internally awaits the init promise so this is
+			// safe even if the cache is still being populated.
+			VSCode.workspace.textDocuments.forEach(doc => {
+				cbProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] ContentBlockDiagnosticProvider init validation failed:", err);
 				});
-
-			// Keep the key cache live and re-validate open documents when asset files change
-			if (workspaceUri) {
-				const cbWatcher = VSCode.workspace.createFileSystemWatcher(
-					new VSCode.RelativePattern(workspaceUri, ASSET_CACHE_GLOB)
-				);
-				cbWatcher.onDidCreate(uri => {
-					contentBlockDiagnosticProvider.addToCache(uri);
-					// A new key is now resolvable — clear warnings in open documents
-					VSCode.workspace.textDocuments.forEach(doc => {
-						contentBlockDiagnosticProvider.validateDocument(doc).catch(err => {
-							console.error(
-								"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider create revalidation failed:",
-								err
-							);
-						});
-					});
-				});
-				cbWatcher.onDidDelete(uri => contentBlockDiagnosticProvider.removeFromCache(uri));
-				vscodeContext.registerDisposable(cbWatcher);
-			}
+			});
 
 			// Validate whenever a document is opened
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidOpenTextDocument(doc => {
-					contentBlockDiagnosticProvider.validateDocument(doc).catch(err => {
+					cbProvider.validateDocument(doc).catch(err => {
 						console.error(
 							"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider open validation failed:",
 							err
@@ -844,7 +851,7 @@ class DevToolsExtension {
 			// On save: re-validate the saved document
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidSaveTextDocument(doc => {
-					contentBlockDiagnosticProvider.validateDocument(doc).catch(err => {
+					cbProvider.validateDocument(doc).catch(err => {
 						console.error(
 							"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider save validation failed:",
 							err
@@ -856,7 +863,7 @@ class DevToolsExtension {
 			// Clear diagnostics when a document is closed
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidCloseTextDocument(doc => {
-					contentBlockDiagnosticProvider.clearDocument(doc.uri);
+					cbProvider.clearDocument(doc.uri);
 				})
 			);
 
@@ -888,7 +895,7 @@ class DevToolsExtension {
 						if (success) {
 							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
 							if (doc) {
-								contentBlockDiagnosticProvider.validateDocument(doc).catch(err => {
+								cbProvider.validateDocument(doc).catch(err => {
 									console.error(
 										"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider post-retrieve validation failed:",
 										err

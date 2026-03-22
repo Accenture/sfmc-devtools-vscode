@@ -176,5 +176,5 @@ class ContentBlockLinkProvider implements VSCode.DocumentLinkProvider {
 	}
 }
 
-export { ASSET_CACHE_GLOB };
+export { ASSET_CACHE_GLOB, extractKeyFromUri };
 export default ContentBlockLinkProvider;

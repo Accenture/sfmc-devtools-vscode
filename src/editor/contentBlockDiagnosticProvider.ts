@@ -1,6 +1,6 @@
 import { VSCode } from "@types";
 import { DIAGNOSTIC_SOURCE } from "./relatedItemDiagnosticProvider";
-import { ASSET_CACHE_GLOB } from "./contentBlockLinkProvider";
+import { ASSET_CACHE_GLOB, extractKeyFromUri } from "./contentBlockLinkProvider";
 
 /**
  * Pattern matching ContentBlockByKey() calls with single or double quotes,
@@ -16,33 +16,16 @@ import { ASSET_CACHE_GLOB } from "./contentBlockLinkProvider";
 const CONTENT_BLOCK_REGEX = /ContentBlockByKey\(\s*\\?["']([^"'\\]+)\\?["']\s*\)/g;
 
 /**
- * Matches file paths that belong to the retrieve or deploy top-level folders.
+ * Matches file paths that belong to the retrieve or deploy top-level folders
+ * and have the expected depth: retrieve/<cred>/<bu>/... or deploy/<cred>/<bu>/...
  */
-const SUPPORTED_FOLDER_REGEX = /\/(?:retrieve|deploy)\//;
+const SUPPORTED_FILE_REGEX = /\/(?:retrieve|deploy)\/[^/]+\/[^/]+\//;
 
 /**
  * Diagnostic code value used by both the diagnostic provider and the
  * code-action provider to correlate diagnostics with quick fixes.
  */
 const DIAGNOSTIC_CODE = "warnOnContentBlockByKey";
-
-/**
- * Extracts the content-block key from an asset URI.
- *
- * Example: .../asset/other/MyKey.asset-other-meta.html  →  "MyKey"
- *
- * Asset files use a double extension: <key>.<subtype>.<ext>.
- * We strip both trailing extensions to recover the bare key.
- */
-function extractKeyFromUri(uri: VSCode.Uri): string | undefined {
-	const fileName = uri.path.split("/").pop();
-	if (!fileName) return undefined;
-	const lastDot = fileName.lastIndexOf(".");
-	if (lastDot < 0) return fileName;
-	const secondLastDot = fileName.lastIndexOf(".", lastDot - 1);
-	if (secondLastDot < 0) return fileName.substring(0, lastDot);
-	return fileName.substring(0, secondLastDot);
-}
 
 /**
  * Extracts the "cred/bu" portion from a file path that lives under
@@ -86,6 +69,13 @@ class ContentBlockDiagnosticProvider {
 	 */
 	private readonly keyCache = new Set<string>();
 
+	/**
+	 * Promise that resolves once the initial key cache has been populated.
+	 * All validateDocument() calls wait on this to avoid false-positive
+	 * warnings before the cache is ready.
+	 */
+	private initPromise: Promise<void> | undefined;
+
 	constructor() {
 		this.diagnosticCollection = VSCode.languages.createDiagnosticCollection(`${DIAGNOSTIC_SOURCE}.contentBlock`);
 	}
@@ -93,12 +83,22 @@ class ContentBlockDiagnosticProvider {
 	/**
 	 * Scans the workspace for all content-block asset files matching
 	 * ASSET_CACHE_GLOB and populates the key cache.
-	 * Called once at extension startup (fire-and-forget).
+	 * Called once at extension startup.  The returned promise is stored
+	 * internally so that validateDocument() can await it.
 	 *
 	 * @async
 	 * @returns {Promise<void>}
 	 */
 	async init(): Promise<void> {
+		this.initPromise = this._populateCache();
+		return this.initPromise;
+	}
+
+	/**
+	 * Internal cache population logic separated so that init() can store
+	 * the promise before awaiting it.
+	 */
+	private async _populateCache(): Promise<void> {
 		const files = await VSCode.workspace.findFiles(ASSET_CACHE_GLOB);
 		for (const uri of files) {
 			const key = extractKeyFromUri(uri);
@@ -128,12 +128,10 @@ class ContentBlockDiagnosticProvider {
 	removeFromCache(uri: VSCode.Uri): void {
 		const key = extractKeyFromUri(uri);
 		if (!key) return;
-		VSCode.workspace.findFiles(`retrieve/*/*/asset/{other,block}/${key}.asset-*-meta.*`).then(
+		VSCode.workspace.findFiles(`${ASSET_CACHE_GLOB.replace("*.", `${key}.`)}`).then(
 			files => {
 				if (files.length === 0) {
 					this.keyCache.delete(key);
-					// Key no longer exists anywhere — re-validate open documents
-					// so that any ContentBlockByKey references to it become warnings.
 					VSCode.workspace.textDocuments.forEach(doc => {
 						this.validateDocument(doc).catch(err => {
 							console.error(
@@ -175,22 +173,32 @@ class ContentBlockDiagnosticProvider {
 	 * For each reference whose key is absent from the key cache a Warning
 	 * diagnostic is produced.
 	 *
-	 * This method is a no-op for files outside the retrieve/ or deploy/ folder
-	 * trees, and for .md and .sql files.
+	 * This method waits for the initial cache population to complete before
+	 * scanning, and is a no-op for files that do not match the expected
+	 * retrieve/<cred>/<bu>/... or deploy/<cred>/<bu>/... path structure,
+	 * and for .md and .sql files.
 	 *
 	 * @param document - The document to validate
 	 * @returns Promise that resolves once diagnostics have been updated
 	 */
 	async validateDocument(document: VSCode.TextDocument): Promise<void> {
+		// Wait for the cache to be ready before validating
+		if (this.initPromise) await this.initPromise;
+
 		const filePath = document.uri.path;
 
-		if (!SUPPORTED_FOLDER_REGEX.test(filePath) || filePath.endsWith(".md") || filePath.endsWith(".sql")) {
+		if (!SUPPORTED_FILE_REGEX.test(filePath) || filePath.endsWith(".md") || filePath.endsWith(".sql")) {
+			this.diagnosticCollection.delete(document.uri);
+			return;
+		}
+
+		const credBu = extractCredBuFromPath(filePath);
+		if (!credBu) {
 			this.diagnosticCollection.delete(document.uri);
 			return;
 		}
 
 		const text = document.getText();
-		const credBu = extractCredBuFromPath(filePath) ?? "";
 		const diagnostics: VSCode.Diagnostic[] = [];
 
 		const regex = new RegExp(CONTENT_BLOCK_REGEX.source, "g");
