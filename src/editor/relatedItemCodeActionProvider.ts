@@ -61,11 +61,7 @@ class RelatedItemCodeActionProvider implements VSCode.CodeActionProvider {
 
 		for (const diagnostic of context.diagnostics) {
 			if (diagnostic.source !== DIAGNOSTIC_SOURCE) continue;
-			if (
-				typeof diagnostic.code !== "object" ||
-				diagnostic.code.value !== "warnOnMissingJsonRelation"
-			)
-				continue;
+			if (typeof diagnostic.code !== "object" || diagnostic.code.value !== "warnOnMissingJsonRelation") continue;
 
 			const queryString = diagnostic.code.target.query;
 			const params = new URLSearchParams(queryString);
