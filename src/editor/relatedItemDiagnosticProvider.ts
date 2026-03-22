@@ -40,19 +40,27 @@ const DIAGNOSTIC_SOURCE = "sfmc-devtools-vscode";
  * Extracts path components from a file URI path.
  *
  * @param filePath - POSIX-style file path from VSCode.Uri.path
- * @returns buPrefix ("retrieve/cred/bu"), credPrefix ("retrieve/cred"),
+ * @returns projectPath (everything before the retrieve segment),
+ *          buPrefix ("retrieve/cred/bu"), credPrefix ("retrieve/cred"),
  *          and currentTypeFolder (the immediate metadata-type folder name),
  *          or undefined when the path does not match the expected structure.
  */
-function extractPathInfo(
-	filePath: string
-): { buPrefix: string; credPrefix: string; currentTypeFolder: string } | undefined {
-	const match = filePath.match(/\/(retrieve\/([^/]+)\/[^/]+)\/([^/]+)\//);
+function extractPathInfo(filePath: string):
+	| {
+			projectPath: string;
+			buPrefix: string;
+			credPrefix: string;
+			currentTypeFolder: string;
+	  }
+	| undefined {
+	// Captures: (1) project root, (2) retrieve/cred/bu, (3) cred, (4) typeFolder
+	const match = filePath.match(/^(.*)\/(retrieve\/([^/]+)\/[^/]+)\/([^/]+)\//);
 	if (!match) return undefined;
 	return {
-		buPrefix: match[1],
-		credPrefix: `retrieve/${match[2]}`,
-		currentTypeFolder: match[3]
+		projectPath: match[1], // e.g. "/workspace/my-project"
+		buPrefix: match[2], // "retrieve/cred/bu"
+		credPrefix: `retrieve/${match[3]}`, // "retrieve/cred"
+		currentTypeFolder: match[4] // e.g. "dataExtension"
 	};
 }
 
@@ -78,36 +86,56 @@ function getLeadingValueStart(matchIndex: number, matchStr: string, fieldName: s
  * Diagnostic provider for unresolvable r__TYPE_key / r__type + r__key references
  * in SFMC JSON metadata files.
  *
- * Emits VS Code Error diagnostics for every relation-field value whose target
- * file cannot be found under the same retrieve/cred/bu tree.  Each diagnostic
- * carries a JSON-encoded `code` string with the retrieve coordinates
- * (`credBu`, `type`, `key`) so that {@link RelatedItemCodeActionProvider} can
- * build the "Retrieve type:key from cred/bu" quick-fix without additional
- * look-ups.
+ * Severity rules:
+ *   • If the metadata type folder (`retrieve/cred/bu/<type>/`) does not exist
+ *     at all, a **Warning** is emitted – the type has simply never been retrieved.
+ *   • If the folder exists but the specific key file is absent, an **Error** is
+ *     emitted – the key is definitely not present on the BU.
+ *   • If the caller-supplied `typeFilter` returns false for a given type the
+ *     reference is silently ignored (no diagnostic produced).  The filter is
+ *     used to suppress diagnostics for types that the user has not configured
+ *     for retrieval (not in `metaDataTypes.retrieve` in `.mcdevrc.json`) or
+ *     for which `deploy` is not supported.
  *
- * Resolved paths are cached to avoid repeated filesystem searches; the cache
- * is cleared by the caller (activateLinkProviders) whenever files are added
- * or removed from the retrieve tree, and fresh diagnostics are issued for all
- * currently-open JSON documents.
+ * Resolved paths are cached; both caches are cleared via `clearCache()`.
  *
  * @class RelatedItemDiagnosticProvider
  */
 class RelatedItemDiagnosticProvider {
 	/**
 	 * VS Code diagnostic collection that populates the Problems panel and
-	 * marks files red in the Explorer.
+	 * marks files red/yellow in the Explorer.
 	 */
 	private readonly diagnosticCollection: VSCode.DiagnosticCollection;
 
 	/**
-	 * Cache for resolved file lookups.
+	 * Cache for specific-key file lookups.
 	 * Key format: "buPrefix|type|key" (or "buPrefix|asset|key|in/out")
 	 * Value: true when the file exists, false when it does not.
 	 */
 	private readonly resolvedCache = new Map<string, boolean>();
 
-	constructor() {
+	/**
+	 * Cache for type-folder existence checks.
+	 * Key format: "buPrefix|type"
+	 * Value: true when the type folder contains at least one file.
+	 */
+	private readonly typeFolderCache = new Map<string, boolean>();
+
+	/**
+	 * Optional caller-supplied predicate.
+	 * When provided and returning false for a (type, projectPath) pair, the
+	 * diagnostic provider skips that reference entirely (no diagnostic emitted).
+	 */
+	private readonly typeFilter: (type: string, projectPath: string) => boolean;
+
+	/**
+	 * @param typeFilter - Optional predicate; when it returns false the reference
+	 *   is ignored and no diagnostic is produced.  Defaults to always-true.
+	 */
+	constructor(typeFilter?: (type: string, projectPath: string) => boolean) {
 		this.diagnosticCollection = VSCode.languages.createDiagnosticCollection(DIAGNOSTIC_SOURCE);
+		this.typeFilter = typeFilter ?? (() => true);
 	}
 
 	/**
@@ -129,21 +157,22 @@ class RelatedItemDiagnosticProvider {
 	}
 
 	/**
-	 * Clears the file-resolution cache.
+	 * Clears both the file-resolution and type-folder caches.
 	 * Should be called whenever files are added or removed from the workspace
 	 * retrieve tree so that subsequent validations re-check the filesystem.
 	 */
 	clearCache(): void {
 		this.resolvedCache.clear();
+		this.typeFolderCache.clear();
 	}
 
 	/**
 	 * Validates all r__TYPE_key and r__type/r__key references in a JSON document
 	 * and updates the diagnostic collection accordingly.
 	 *
-	 * Resolves every referenced file in parallel; for each reference that cannot
-	 * be found an Error diagnostic is emitted with the key value as the range.
-	 * When all references resolve, the diagnostics for the document are cleared.
+	 * For each reference whose `typeFilter` passes:
+	 *   • Missing type folder → Warning
+	 *   • Existing type folder but missing key → Error
 	 *
 	 * This method is a no-op for files outside the retrieve/<cred>/<bu>/<type>/
 	 * path structure or for non-JSON files.
@@ -165,7 +194,7 @@ class RelatedItemDiagnosticProvider {
 			return;
 		}
 
-		const { buPrefix, credPrefix, currentTypeFolder } = pathInfo;
+		const { projectPath, buPrefix, credPrefix, currentTypeFolder } = pathInfo;
 		const isInsideAssetFolder = currentTypeFolder === "asset";
 		const text = document.getText();
 
@@ -220,23 +249,40 @@ class RelatedItemDiagnosticProvider {
 		// cred/bu without the leading "retrieve/" prefix
 		const credBu = buPrefix.replace(/^retrieve\//, "");
 
-		// Resolve all in parallel and collect diagnostics for those that fail
+		// Resolve all in parallel and collect diagnostics
 		const results = await Promise.all(
 			pending.map(async ({ type, key, keyStart, keyLength }) => {
-				const exists = await this.resolveExists(type, key, buPrefix, credPrefix, isInsideAssetFolder);
-				if (exists) return null;
+				// Skip if the caller decided this type should not be validated
+				if (!this.typeFilter(type, projectPath)) return null;
 
 				const range = new VSCode.Range(
 					document.positionAt(keyStart),
 					document.positionAt(keyStart + keyLength)
 				);
+
+				// Determine severity: Warning if the type folder is absent,
+				// Error if the folder exists but the specific key is missing.
+				const folderExists = await this.checkTypeFolderExists(type, buPrefix);
+				if (!folderExists) {
+					const diagnostic = new VSCode.Diagnostic(
+						range,
+						`Related item of type '${type}' with key '${key}' cannot be verified: the type folder has not been retrieved yet.`,
+						VSCode.DiagnosticSeverity.Warning
+					);
+					diagnostic.source = DIAGNOSTIC_SOURCE;
+					diagnostic.code = JSON.stringify({ credBu, type, key });
+					return diagnostic;
+				}
+
+				const keyExists = await this.resolveKeyExists(type, key, buPrefix, credPrefix, isInsideAssetFolder);
+				if (keyExists) return null;
+
 				const diagnostic = new VSCode.Diagnostic(
 					range,
 					`Related item of type '${type}' with key '${key}' was not found on the BU.`,
 					VSCode.DiagnosticSeverity.Error
 				);
 				diagnostic.source = DIAGNOSTIC_SOURCE;
-				// Encode the retrieve coordinates for the code-action provider
 				diagnostic.code = JSON.stringify({ credBu, type, key });
 				return diagnostic;
 			})
@@ -247,9 +293,27 @@ class RelatedItemDiagnosticProvider {
 	}
 
 	/**
-	 * Checks whether the target file exists in the workspace.
-	 * Results are cached; false is cached to avoid repeated searches for
-	 * consistently-missing files within the same session.
+	 * Checks whether the type folder contains at least one file.
+	 * Results are cached so subsequent lookups for the same type/BU are instant.
+	 *
+	 * @param type     - metadata type folder name (e.g. "dataExtension")
+	 * @param buPrefix - relative path "retrieve/cred/bu"
+	 * @returns true when the type folder exists and is non-empty
+	 */
+	private async checkTypeFolderExists(type: string, buPrefix: string): Promise<boolean> {
+		const cacheKey = `${buPrefix}|${type}`;
+		if (this.typeFolderCache.has(cacheKey)) {
+			return this.typeFolderCache.get(cacheKey)!;
+		}
+		const files = await VSCode.workspace.findFiles(`${buPrefix}/${type}/**`, undefined, 1);
+		const exists = files.length > 0;
+		this.typeFolderCache.set(cacheKey, exists);
+		return exists;
+	}
+
+	/**
+	 * Checks whether the specific key file exists in the workspace.
+	 * Results are cached; false is cached to avoid repeated searches.
 	 *
 	 * @param type                - metadata type folder name (e.g. "dataExtension")
 	 * @param key                 - item key (e.g. "myKey1")
@@ -258,7 +322,7 @@ class RelatedItemDiagnosticProvider {
 	 * @param isInsideAssetFolder - true when the current file lives in an asset folder
 	 * @returns true when the referenced file can be found in the workspace
 	 */
-	private async resolveExists(
+	private async resolveKeyExists(
 		type: string,
 		key: string,
 		buPrefix: string,

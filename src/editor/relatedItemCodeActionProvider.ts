@@ -19,6 +19,8 @@ interface IRetrieveRelatedItemArgs {
 	type: string;
 	/** Item key (e.g. "myKey1"). */
 	key: string;
+	/** String form of the document URI that triggered the quick fix. */
+	documentUri: string;
 }
 
 /**
@@ -74,7 +76,13 @@ class RelatedItemCodeActionProvider implements VSCode.CodeActionProvider {
 			const action = new VSCode.CodeAction(title, VSCode.CodeActionKind.QuickFix);
 			action.diagnostics = [diagnostic];
 			action.isPreferred = true;
-			const args: IRetrieveRelatedItemArgs = { projectPath, credBu, type, key };
+			const args: IRetrieveRelatedItemArgs = {
+				projectPath,
+				credBu,
+				type,
+				key,
+				documentUri: document.uri.toString()
+			};
 			action.command = {
 				title,
 				command: RETRIEVE_RELATED_ITEM_COMMAND,
