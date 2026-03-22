@@ -329,13 +329,19 @@ class Mcdev {
 		level,
 		path,
 		metadataType,
+		metadataSubKey,
 		filename
 	}: TDevTools.IExecuteFileDetails): TDevTools.IMetadataCommand | undefined {
 		switch (level) {
 			case "mdt_folder":
 				return { metadatatype: metadataType as string, key: "", path };
 			case "file":
-				return { metadatatype: metadataType as string, key: filename || "", path };
+				return {
+					metadatatype: metadataType as string,
+					key: filename || "",
+					...(metadataSubKey ? { subKey: metadataSubKey } : {}),
+					path
+				};
 			default:
 				return undefined;
 		}

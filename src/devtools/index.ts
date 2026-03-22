@@ -12,6 +12,12 @@ import ContentBlockCodeActionProvider, {
 	type IRetrieveContentBlockArgs
 } from "../editor/contentBlockCodeActionProvider";
 import DataExtensionLinkProvider from "../editor/dataExtensionLinkProvider";
+import SqlDiagnosticProvider from "../editor/sqlDiagnosticProvider";
+import SqlDataViewHoverProvider from "../editor/sqlDataViewHoverProvider";
+import SqlCodeActionProvider, {
+	RETRIEVE_SQL_DE_COMMAND,
+	type IRetrieveSqlDataExtensionArgs
+} from "../editor/sqlCodeActionProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
@@ -620,6 +626,18 @@ class DevToolsExtension {
 	 * 7. ContentBlockCodeActionProvider – provides a "Retrieve asset:key from
 	 *    cred/bu" quick fix for each unresolved ContentBlockByKey diagnostic.
 	 *
+	 * 8. SqlDataViewHoverProvider – shows hover-only informational hints for
+	 *    known SFMC system data views (e.g. _Sent) in SQL query files.
+	 *    Controlled by the showSqlDataViewHoverNotice setting (default: true).
+	 *
+	 * 9. SqlDiagnosticProvider – emits VS Code warning diagnostics for SQL
+	 *    query files when data extension names cannot be resolved in the
+	 *    retrieve tree. Controlled by the warnOnMissingSqlDataExtension
+	 *    setting (default: true).
+	 *
+	 * 10. SqlCodeActionProvider – provides a "Retrieve dataExtension:name from
+	 *    cred/bu" quick fix for each unresolved SQL data-extension diagnostic.
+	 *
 	 * @returns {void}
 	 */
 	activateLinkProviders(): void {
@@ -898,6 +916,132 @@ class DevToolsExtension {
 								cbProvider.validateDocument(doc).catch(err => {
 									console.error(
 										"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
+
+		// ── SQL hover + diagnostic + quick-fix providers ──
+		// Provides hover-only data-view hints and warning diagnostics for
+		// unresolvable data-extension references.
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "showSqlDataViewHoverNotice")) {
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerHoverProvider(
+					{ language: "sql", scheme: "file" },
+					new SqlDataViewHoverProvider()
+				)
+			);
+		}
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingSqlDataExtension")) {
+			const sqlDiagnosticProvider = new SqlDiagnosticProvider();
+			vscodeContext.registerDisposable(sqlDiagnosticProvider.getDiagnosticCollection());
+
+			// Watch for dataExtension file changes to invalidate the name cache
+			if (workspaceUri) {
+				const deWatcher = VSCode.workspace.createFileSystemWatcher(
+					new VSCode.RelativePattern(workspaceUri, "**/retrieve/**/dataExtension/*.dataExtension-meta.json")
+				);
+				const revalidateOpenSqlDocs = () => {
+					sqlDiagnosticProvider.clearCache();
+					VSCode.workspace.textDocuments.forEach(doc => {
+						sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] SqlDiagnosticProvider DE-change revalidation failed:",
+								err
+							);
+						});
+					});
+				};
+				deWatcher.onDidCreate(revalidateOpenSqlDocs);
+				deWatcher.onDidDelete(revalidateOpenSqlDocs);
+				deWatcher.onDidChange(revalidateOpenSqlDocs);
+				vscodeContext.registerDisposable(deWatcher);
+			}
+
+			// Validate already-open SQL documents on startup (fire-and-forget)
+			VSCode.workspace.textDocuments.forEach(doc => {
+				sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+						console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider open validation failed:", err);
+					});
+				})
+			);
+
+			// On save: re-validate the saved document
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+						console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider save validation failed:", err);
+					});
+				})
+			);
+
+			// Re-validate on text changes (debounced by VS Code's batching)
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidChangeTextDocument(event => {
+					sqlDiagnosticProvider.validateDocument(event.document).catch(err => {
+						console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider change validation failed:", err);
+					});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					sqlDiagnosticProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for SQL files
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider(
+					{ language: "sql", scheme: "file" },
+					new SqlCodeActionProvider(),
+					{ providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix] }
+				)
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, clear the cache and re-validate
+			// the document that triggered the action.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_SQL_DE_COMMAND,
+					async ({ projectPath, credBu, name, documentUri }: IRetrieveSqlDataExtensionArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/dataExtension/`,
+							credentialsName,
+							businessUnit,
+							metadataType: "dataExtension",
+							metadataSubKey: "name",
+							filename: name
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							sqlDiagnosticProvider.clearCache();
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] SqlDiagnosticProvider post-retrieve validation failed:",
 										err
 									);
 								});

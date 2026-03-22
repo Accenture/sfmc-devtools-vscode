@@ -35,6 +35,8 @@ interface IExecuteFileDetails {
 	credentialsName?: string;
 	businessUnit?: string;
 	metadataType?: string;
+	/** Optional sub-key to filter by a specific field (e.g. "name" for `dataExtension:name:"value"`). */
+	metadataSubKey?: string;
 	filename?: string;
 }
 
@@ -50,6 +52,9 @@ interface ICredentials {
 interface IMetadataCommand {
 	metadatatype: string;
 	key: string;
+	/** Optional sub-key used to filter by a specific field instead of the default key.
+	 *  When set, the command becomes: `-m type:subKey:"key"` (e.g. `-m dataExtension:name:"My DE"`). */
+	subKey?: string;
 	path: string;
 	fromRetrieveFolder?: boolean;
 }
@@ -104,6 +109,7 @@ export {
 	IConfig,
 	IConfigFile,
 	MetadataTypesActions,
+	MetadataTypesActionsMap,
 	IMetadataTypes,
 	IExecuteFileDetails,
 	IExecuteParameters,
