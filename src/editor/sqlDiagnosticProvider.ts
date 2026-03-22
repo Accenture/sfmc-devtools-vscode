@@ -241,9 +241,10 @@ class SqlDiagnosticProvider {
 			// ── Known SFMC data view → informational hint ──
 			const dataViewDescription = DATA_VIEWS.get(lowerName);
 			if (dataViewDescription) {
+				const level = hasEntPrefix ? "at the enterprise level" : "at child BU level";
 				const diagnostic = new VSCode.Diagnostic(
 					range,
-					`System Data View: ${dataViewDescription}`,
+					`System Data View: ${dataViewDescription} (${level})`,
 					VSCode.DiagnosticSeverity.Information
 				);
 				diagnostic.source = DIAGNOSTIC_SOURCE;
