@@ -277,7 +277,7 @@ class DevToolsExtension {
 
 	/**
 	 * Runs 'mcdev explainTypes --json' in the background after initial load and updates
-	 * the metadata types list if new or removed types are detected.
+	 * the metadata types list if any changes to types are detected.
 	 *
 	 * @async
 	 * @returns {Promise<void>}

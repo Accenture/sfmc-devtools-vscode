@@ -161,7 +161,7 @@ class Mcdev {
 
 	/**
 	 * Updates the internal metadata types list with a new set of types.
-	 * Returns true when the list was changed (new or removed types detected).
+	 * Returns true when the list was changed (new, removed, or modified types detected).
 	 *
 	 * @public
 	 * @param {TDevTools.IMetadataTypes[]} types - updated metadata types list
