@@ -192,6 +192,11 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Indicates if recommended extensions popup should be shown to user or not."
+				},
+				"sfmc-devtools-vscode.errorOnMissingJsonRelation": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows inline diagnostics (errors/warnings) in the Problems panel for unresolvable r__TYPE_key relation fields in JSON metadata files, and offers a quick fix to retrieve the missing item."
 				}
 			}
 		}

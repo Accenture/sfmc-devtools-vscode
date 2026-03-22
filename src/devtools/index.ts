@@ -647,119 +647,128 @@ class DevToolsExtension {
 		);
 
 		// ── Diagnostic + quick-fix providers for unresolvable r__ references ──
+		// Only activated when the errorOnMissingJsonRelation feature flag is enabled.
 
-		/**
-		 * Determines whether a given type should produce a diagnostic.
-		 * Returns false (suppress) when:
-		 *   1. The type does not support the deploy action (read-only / not pushable).
-		 *   2. The project's .mcdevrc.json defines metaDataTypes.retrieve and the
-		 *      type is not listed there (user has not configured it for retrieval).
-		 *
-		 * The parsed metaDataTypes.retrieve array is cached per project path so
-		 * that the config file is only read once per project per activation.
-		 */
-		const configuredTypesCache = new Map<string, string[] | null>();
-		const shouldValidateType = (type: string, projectPath: string): boolean => {
-			// Suppress types that do not support deploy
-			if (!this.mcdev.isActionSupportedForType("deploy", type)) return false;
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "errorOnMissingJsonRelation")) {
+			/**
+			 * Determines whether a given type should produce a diagnostic.
+			 * Returns false (suppress) when:
+			 *   1. The type does not support the deploy action (read-only / not pushable).
+			 *   2. The project's .mcdevrc.json defines metaDataTypes.retrieve and the
+			 *      type is not listed there (user has not configured it for retrieval).
+			 *
+			 * The parsed metaDataTypes.retrieve array is cached per project path so
+			 * that the config file is only read once per project per activation.
+			 */
+			const configuredTypesCache = new Map<string, string[] | null>();
+			const shouldValidateType = (type: string, projectPath: string): boolean => {
+				// Suppress types that do not support deploy
+				if (!this.mcdev.isActionSupportedForType("deploy", type)) return false;
 
-			// Suppress types excluded from the project's retrieve configuration
-			if (!configuredTypesCache.has(projectPath)) {
-				try {
-					const configPath = Lib.removeLeadingRootDrivePath(this.mcdev.getConfigFilePath(projectPath));
-					const content = File.readFileSync(configPath);
-					const config = JSON.parse(content) as TDevTools.IConfigFile;
-					configuredTypesCache.set(projectPath, config?.metaDataTypes?.retrieve ?? null);
-				} catch {
-					// Config unreadable → cache null (be permissive)
-					configuredTypesCache.set(projectPath, null);
-				}
-			}
-			const configuredTypes = configuredTypesCache.get(projectPath) ?? null;
-			if (configuredTypes && !configuredTypes.includes(type)) return false;
-			return true;
-		};
-
-		const diagnosticProvider = new RelatedItemDiagnosticProvider(shouldValidateType);
-		vscodeContext.registerDisposable(diagnosticProvider.getDiagnosticCollection());
-
-		// Validate already-open JSON documents on startup (fire-and-forget)
-		VSCode.workspace.textDocuments.forEach(doc => {
-			diagnosticProvider.validateDocument(doc).catch(err => {
-				console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider init validation failed:", err);
-			});
-		});
-
-		// Validate whenever a JSON document is opened
-		vscodeContext.registerDisposable(
-			VSCode.workspace.onDidOpenTextDocument(doc => {
-				diagnosticProvider.validateDocument(doc).catch(err => {
-					console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider open validation failed:", err);
-				});
-			})
-		);
-
-		// On save: clear the resolution cache only for retrieve-tree files (they
-		// may themselves be targets), then re-validate only the saved document.
-		vscodeContext.registerDisposable(
-			VSCode.workspace.onDidSaveTextDocument(doc => {
-				if (doc.uri.path.includes("/retrieve/")) diagnosticProvider.clearCache();
-				diagnosticProvider.validateDocument(doc).catch(err => {
-					console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider save validation failed:", err);
-				});
-			})
-		);
-
-		// Clear diagnostics when a document is closed
-		vscodeContext.registerDisposable(
-			VSCode.workspace.onDidCloseTextDocument(doc => {
-				diagnosticProvider.clearDocument(doc.uri);
-			})
-		);
-
-		// Register the quick-fix code-action provider for JSON files
-		vscodeContext.registerDisposable(
-			VSCode.languages.registerCodeActionsProvider(
-				{ language: "json", scheme: "file" },
-				new RelatedItemCodeActionProvider(),
-				{ providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix] }
-			)
-		);
-
-		// Register the command executed by the quick fix.
-		// After a successful retrieve, clear the cache and re-validate only the
-		// document that triggered the action so diagnostics update immediately.
-		vscodeContext.registerDisposable(
-			VSCode.commands.registerCommand(
-				RETRIEVE_RELATED_ITEM_COMMAND,
-				async ({ projectPath, credBu, type, key, documentUri }: IRetrieveRelatedItemArgs) => {
-					const [credentialsName, businessUnit] = credBu.split("/");
-					const fileDetail: TDevTools.IExecuteFileDetails = {
-						level: "file",
-						projectPath,
-						topFolder: "/retrieve/",
-						path: `${projectPath}/retrieve/${credBu}/${type}/${key}.${type}-meta.json`,
-						credentialsName,
-						businessUnit,
-						metadataType: type,
-						filename: key
-					};
-					const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
-					if (success) {
-						diagnosticProvider.clearCache();
-						const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
-						if (doc) {
-							diagnosticProvider.validateDocument(doc).catch(err => {
-								console.error(
-									"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider post-retrieve validation failed:",
-									err
-								);
-							});
-						}
+				// Suppress types excluded from the project's retrieve configuration
+				if (!configuredTypesCache.has(projectPath)) {
+					try {
+						const configPath = Lib.removeLeadingRootDrivePath(this.mcdev.getConfigFilePath(projectPath));
+						const content = File.readFileSync(configPath);
+						const config = JSON.parse(content) as TDevTools.IConfigFile;
+						configuredTypesCache.set(projectPath, config?.metaDataTypes?.retrieve ?? null);
+					} catch {
+						// Config unreadable → cache null (be permissive)
+						configuredTypesCache.set(projectPath, null);
 					}
 				}
-			)
-		);
+				const configuredTypes = configuredTypesCache.get(projectPath) ?? null;
+				if (configuredTypes && !configuredTypes.includes(type)) return false;
+				return true;
+			};
+
+			const diagnosticProvider = new RelatedItemDiagnosticProvider(shouldValidateType);
+			vscodeContext.registerDisposable(diagnosticProvider.getDiagnosticCollection());
+
+			// Validate already-open JSON documents on startup (fire-and-forget)
+			VSCode.workspace.textDocuments.forEach(doc => {
+				diagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a JSON document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					diagnosticProvider.validateDocument(doc).catch(err => {
+						console.error(
+							"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider open validation failed:",
+							err
+						);
+					});
+				})
+			);
+
+			// On save: clear the resolution cache only for retrieve-tree files (they
+			// may themselves be targets), then re-validate only the saved document.
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					if (doc.uri.path.includes("/retrieve/")) diagnosticProvider.clearCache();
+					diagnosticProvider.validateDocument(doc).catch(err => {
+						console.error(
+							"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider save validation failed:",
+							err
+						);
+					});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					diagnosticProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for JSON files
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider(
+					{ language: "json", scheme: "file" },
+					new RelatedItemCodeActionProvider(),
+					{ providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix] }
+				)
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, clear the cache and re-validate only the
+			// document that triggered the action so diagnostics update immediately.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_RELATED_ITEM_COMMAND,
+					async ({ projectPath, credBu, type, key, documentUri }: IRetrieveRelatedItemArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/${type}/${key}.${type}-meta.json`,
+							credentialsName,
+							businessUnit,
+							metadataType: type,
+							filename: key
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							diagnosticProvider.clearCache();
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								diagnosticProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
 	}
 
 	/**
