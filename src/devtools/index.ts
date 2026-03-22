@@ -6,6 +6,11 @@ import RelatedItemCodeActionProvider, {
 	RETRIEVE_RELATED_ITEM_COMMAND,
 	type IRetrieveRelatedItemArgs
 } from "../editor/relatedItemCodeActionProvider";
+import ContentBlockDiagnosticProvider from "../editor/contentBlockDiagnosticProvider";
+import ContentBlockCodeActionProvider, {
+	RETRIEVE_CONTENT_BLOCK_COMMAND,
+	type IRetrieveContentBlockArgs
+} from "../editor/contentBlockCodeActionProvider";
 import DataExtensionLinkProvider from "../editor/dataExtensionLinkProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
@@ -607,6 +612,14 @@ class DevToolsExtension {
 	 *    cred/bu" quick fix for each unresolved-reference diagnostic.  After
 	 *    the retrieve completes only the triggering document is re-validated.
 	 *
+	 * 6. ContentBlockDiagnosticProvider – emits VS Code diagnostics for every
+	 *    ContentBlockByKey() reference whose key cannot be found in the global
+	 *    asset key cache (retrieve/<cred>/<bu>/asset/{other,block}/).
+	 *    Controlled by the warnOnContentBlockByKey setting (default: true).
+	 *
+	 * 7. ContentBlockCodeActionProvider – provides a "Retrieve asset:key from
+	 *    cred/bu" quick fix for each unresolved ContentBlockByKey diagnostic.
+	 *
 	 * @returns {void}
 	 */
 	activateLinkProviders(): void {
@@ -623,12 +636,49 @@ class DevToolsExtension {
 
 		// Keep the cache live as asset files are added or removed
 		const workspaceUri = vscodeWorkspace.getWorkspaceURI();
+		// contentBlockDiagnosticProvider is conditionally created below so that
+		// the existing watcher can fan out to both the link provider and the
+		// diagnostic provider without duplicating FileSystemWatchers.
+		let contentBlockDiagnosticProvider: ContentBlockDiagnosticProvider | undefined;
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnContentBlockByKey")) {
+			contentBlockDiagnosticProvider = new ContentBlockDiagnosticProvider();
+			vscodeContext.registerDisposable(contentBlockDiagnosticProvider.getDiagnosticCollection());
+
+			// Populate the key cache; validateDocument() internally awaits
+			// this promise so event handlers registered below are safe to
+			// fire before init completes (no false-positive race).
+			contentBlockDiagnosticProvider.init().catch(err => {
+				console.error("[sfmc-devtools-vscode] ContentBlockDiagnosticProvider cache init failed:", err);
+			});
+		}
+
 		if (workspaceUri) {
 			const watcher = VSCode.workspace.createFileSystemWatcher(
 				new VSCode.RelativePattern(workspaceUri, ASSET_CACHE_GLOB)
 			);
-			watcher.onDidCreate(uri => provider.addToCache(uri));
-			watcher.onDidDelete(uri => provider.removeFromCache(uri));
+			watcher.onDidCreate(uri => {
+				provider.addToCache(uri);
+				if (contentBlockDiagnosticProvider) {
+					const cbProvider = contentBlockDiagnosticProvider;
+					cbProvider.addToCache(uri);
+					// A new key is now resolvable — clear warnings in open documents
+					VSCode.workspace.textDocuments.forEach(doc => {
+						cbProvider.validateDocument(doc).catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider create revalidation failed:",
+								err
+							);
+						});
+					});
+				}
+			});
+			watcher.onDidDelete(uri => {
+				provider.removeFromCache(uri);
+				if (contentBlockDiagnosticProvider) {
+					contentBlockDiagnosticProvider.removeFromCache(uri);
+				}
+			});
 			vscodeContext.registerDisposable(watcher);
 		}
 
@@ -760,6 +810,94 @@ class DevToolsExtension {
 								diagnosticProvider.validateDocument(doc).catch(err => {
 									console.error(
 										"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
+
+		// ── ContentBlockByKey diagnostic + quick-fix providers ──
+		// The contentBlockDiagnosticProvider was already created and initialised
+		// above (before the watcher) when the feature flag is enabled.
+
+		if (contentBlockDiagnosticProvider) {
+			const cbProvider = contentBlockDiagnosticProvider;
+
+			// Validate already-open documents on startup (fire-and-forget).
+			// validateDocument() internally awaits the init promise so this is
+			// safe even if the cache is still being populated.
+			VSCode.workspace.textDocuments.forEach(doc => {
+				cbProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] ContentBlockDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					cbProvider.validateDocument(doc).catch(err => {
+						console.error(
+							"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider open validation failed:",
+							err
+						);
+					});
+				})
+			);
+
+			// On save: re-validate the saved document
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					cbProvider.validateDocument(doc).catch(err => {
+						console.error(
+							"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider save validation failed:",
+							err
+						);
+					});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					cbProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for all file types in retrieve/deploy
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider({ scheme: "file" }, new ContentBlockCodeActionProvider(), {
+					providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix]
+				})
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, re-validate the triggering document.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_CONTENT_BLOCK_COMMAND,
+					async ({ projectPath, credBu, key, documentUri }: IRetrieveContentBlockArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/asset/${key}.asset-meta.json`,
+							credentialsName,
+							businessUnit,
+							metadataType: "asset",
+							filename: key
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								cbProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider post-retrieve validation failed:",
 										err
 									);
 								});
