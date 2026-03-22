@@ -31,7 +31,7 @@ const DATA_VIEWS: ReadonlyMap<string, string> = new Map([
 	["_coupon", "Details on coupon codes used in emails."],
 
 	// Subscriber Data Views
-	["_subscribers", "The master list of subscribers at the Enterprise level."],
+	["_subscribers", "The master list of subscribers."],
 	["_enterpriseattribute", "Profile and preference attributes for the Enterprise."],
 	["_listsubscribers", "The relationship between subscribers and specific lists."],
 
@@ -241,10 +241,10 @@ class SqlDiagnosticProvider {
 			// ── Known SFMC data view → informational hint ──
 			const dataViewDescription = DATA_VIEWS.get(lowerName);
 			if (dataViewDescription) {
-				const level = hasEntPrefix ? "at the enterprise level" : "at child BU level";
+				const level = hasEntPrefix ? "At Enterprise level" : "At child BU level";
 				const diagnostic = new VSCode.Diagnostic(
 					range,
-					`System Data View: ${dataViewDescription} (${level})`,
+					`System Data View: ${dataViewDescription} ${level}.`,
 					VSCode.DiagnosticSeverity.Information
 				);
 				diagnostic.source = DIAGNOSTIC_SOURCE;
