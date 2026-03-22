@@ -203,6 +203,11 @@
 					"type": "boolean",
 					"default": true,
 					"description": "When enabled, shows inline warnings in the Problems panel for unresolvable ContentBlockByKey() references in files inside the retrieve/ and deploy/ folders, and offers a quick fix to retrieve the missing content block."
+				},
+				"sfmc-devtools-vscode.warnOnMissingSqlDataExtension": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows inline diagnostics for SQL query files: informational hints for known SFMC system data views (e.g. _Sent, _Open) and warnings for data extension names that cannot be resolved in the retrieve tree, with a quick fix to retrieve them."
 				}
 			}
 		}
