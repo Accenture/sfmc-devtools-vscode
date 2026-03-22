@@ -1,6 +1,11 @@
 import Mcdev from "./mcdev";
 import ContentBlockLinkProvider, { ASSET_CACHE_GLOB } from "../editor/contentBlockLinkProvider";
 import RelatedItemLinkProvider from "../editor/relatedItemLinkProvider";
+import RelatedItemDiagnosticProvider from "../editor/relatedItemDiagnosticProvider";
+import RelatedItemCodeActionProvider, {
+	RETRIEVE_RELATED_ITEM_COMMAND,
+	type IRetrieveRelatedItemArgs
+} from "../editor/relatedItemCodeActionProvider";
 import DataExtensionLinkProvider from "../editor/dataExtensionLinkProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
@@ -589,6 +594,14 @@ class DevToolsExtension {
 	 *    A per-BU name cache is built lazily the first time a query file for
 	 *    that BU is opened.
 	 *
+	 * 4. RelatedItemDiagnosticProvider – emits VS Code Error diagnostics (shown
+	 *    inline, in the Problems panel, and as a red file indicator in the
+	 *    Explorer) for every r__TYPE_key / r__type + r__key reference whose
+	 *    target file cannot be found in the retrieve tree.
+	 *
+	 * 5. RelatedItemCodeActionProvider – provides a "Retrieve type:key from
+	 *    cred/bu" quick fix for each unresolved-reference diagnostic.
+	 *
 	 * @returns {void}
 	 */
 	activateLinkProviders(): void {
@@ -626,6 +639,93 @@ class DevToolsExtension {
 		const dataExtensionProvider = new DataExtensionLinkProvider();
 		vscodeContext.registerDisposable(
 			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, dataExtensionProvider)
+		);
+
+		// ── Diagnostic + quick-fix providers for unresolvable r__ references ──
+
+		const diagnosticProvider = new RelatedItemDiagnosticProvider();
+		vscodeContext.registerDisposable(diagnosticProvider.getDiagnosticCollection());
+
+		// Validate already-open JSON documents on startup (fire-and-forget)
+		VSCode.workspace.textDocuments.forEach(doc => {
+			diagnosticProvider.validateDocument(doc).catch(err => {
+				console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider init validation failed:", err);
+			});
+		});
+
+		// Validate whenever a JSON document is opened or saved
+		vscodeContext.registerDisposable(
+			VSCode.workspace.onDidOpenTextDocument(doc => {
+				diagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider open validation failed:", err);
+				});
+			})
+		);
+		vscodeContext.registerDisposable(
+			VSCode.workspace.onDidSaveTextDocument(doc => {
+				// Only clear the resolution cache when the saved file is inside the
+				// retrieve tree – it may itself be a target that other documents reference.
+				if (doc.uri.path.includes("/retrieve/")) diagnosticProvider.clearCache();
+				diagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider save validation failed:", err);
+				});
+			})
+		);
+
+		// Clear diagnostics when a document is closed
+		vscodeContext.registerDisposable(
+			VSCode.workspace.onDidCloseTextDocument(doc => {
+				diagnosticProvider.clearDocument(doc.uri);
+			})
+		);
+
+		// When retrieve files are added or deleted, clear the resolution cache
+		// and re-validate all open JSON documents so diagnostics stay accurate.
+		if (workspaceUri) {
+			const retrieveWatcher = VSCode.workspace.createFileSystemWatcher(
+				new VSCode.RelativePattern(workspaceUri, "retrieve/**/*.json")
+			);
+			const revalidateOpenDocs = () => {
+				diagnosticProvider.clearCache();
+				VSCode.workspace.textDocuments.forEach(doc => {
+					diagnosticProvider.validateDocument(doc).catch(err => {
+						console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider revalidation failed:", err);
+					});
+				});
+			};
+			retrieveWatcher.onDidCreate(revalidateOpenDocs);
+			retrieveWatcher.onDidDelete(revalidateOpenDocs);
+			vscodeContext.registerDisposable(retrieveWatcher);
+		}
+
+		// Register the quick-fix code-action provider for JSON files
+		vscodeContext.registerDisposable(
+			VSCode.languages.registerCodeActionsProvider(
+				{ language: "json", scheme: "file" },
+				new RelatedItemCodeActionProvider(),
+				{ providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix] }
+			)
+		);
+
+		// Register the command executed by the quick fix
+		vscodeContext.registerDisposable(
+			VSCode.commands.registerCommand(
+				RETRIEVE_RELATED_ITEM_COMMAND,
+				({ projectPath, credBu, type, key }: IRetrieveRelatedItemArgs) => {
+					const [credentialsName, businessUnit] = credBu.split("/");
+					const fileDetail: TDevTools.IExecuteFileDetails = {
+						level: "file",
+						projectPath,
+						topFolder: "/retrieve/",
+						path: `${projectPath}/retrieve/${credBu}/${type}/${key}.${type}-meta.json`,
+						credentialsName,
+						businessUnit,
+						metadataType: type,
+						filename: key
+					};
+					this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+				}
+			)
 		);
 	}
 
