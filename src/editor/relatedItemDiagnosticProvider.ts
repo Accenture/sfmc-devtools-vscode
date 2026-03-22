@@ -89,8 +89,8 @@ function getLeadingValueStart(matchIndex: number, matchStr: string, fieldName: s
  * Severity rules:
  *   • If the metadata type folder (`retrieve/cred/bu/<type>/`) does not exist
  *     at all, a **Warning** is emitted – the type has simply never been retrieved.
- *   • If the folder exists but the specific key file is absent, an **Error** is
- *     emitted – the key is definitely not present on the BU.
+ *   • If the folder exists but the specific key file is absent, a **Warning** is
+ *     also emitted – the key is not locally present but may exist on the BU.
  *   • If the caller-supplied `typeFilter` returns false for a given type the
  *     reference is silently ignored (no diagnostic produced).  The filter is
  *     used to suppress diagnostics for types that the user has not configured
@@ -172,7 +172,7 @@ class RelatedItemDiagnosticProvider {
 	 *
 	 * For each reference whose `typeFilter` passes:
 	 *   • Missing type folder → Warning
-	 *   • Existing type folder but missing key → Error
+	 *   • Existing type folder but missing key → Warning
 	 *
 	 * This method is a no-op for files outside the retrieve/<cred>/<bu>/<type>/
 	 * path structure or for non-JSON files.
@@ -280,7 +280,7 @@ class RelatedItemDiagnosticProvider {
 				const diagnostic = new VSCode.Diagnostic(
 					range,
 					`Related item of type '${type}' with key '${key}' was not found on the BU.`,
-					VSCode.DiagnosticSeverity.Error
+					VSCode.DiagnosticSeverity.Warning
 				);
 				diagnostic.source = DIAGNOSTIC_SOURCE;
 				diagnostic.code = JSON.stringify({ credBu, type, key });

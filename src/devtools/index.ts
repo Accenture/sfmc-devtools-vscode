@@ -599,7 +599,7 @@ class DevToolsExtension {
 	 *    the Explorer) for every r__TYPE_key / r__type + r__key reference
 	 *    whose target file cannot be found in the retrieve tree:
 	 *      • Warning  — when the type folder has never been retrieved.
-	 *      • Error    — when the folder exists but the specific key is absent.
+	 *      • Warning  — when the folder exists but the specific key is absent.
 	 *    Types not listed in metaDataTypes.retrieve in .mcdevrc.json, or
 	 *    types that do not support deploy, are silently ignored.
 	 *
@@ -647,9 +647,9 @@ class DevToolsExtension {
 		);
 
 		// ── Diagnostic + quick-fix providers for unresolvable r__ references ──
-		// Only activated when the errorOnMissingJsonRelation feature flag is enabled.
+		// Only activated when the warnOnMissingJsonRelation feature flag is enabled.
 
-		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "errorOnMissingJsonRelation")) {
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingJsonRelation")) {
 			/**
 			 * Determines whether a given type should produce a diagnostic.
 			 * Returns false (suppress) when:
