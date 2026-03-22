@@ -12,6 +12,12 @@ import ContentBlockCodeActionProvider, {
 	type IRetrieveContentBlockArgs
 } from "../editor/contentBlockCodeActionProvider";
 import DataExtensionLinkProvider from "../editor/dataExtensionLinkProvider";
+import ScriptDataExtensionLinkProvider from "../editor/scriptDataExtensionLinkProvider";
+import ScriptDiagnosticProvider from "../editor/scriptDiagnosticProvider";
+import ScriptCodeActionProvider, {
+	RETRIEVE_SCRIPT_DE_COMMAND,
+	type IRetrieveScriptDataExtensionArgs
+} from "../editor/scriptCodeActionProvider";
 import SqlDiagnosticProvider from "../editor/sqlDiagnosticProvider";
 import SqlDataViewHoverProvider from "../editor/sqlDataViewHoverProvider";
 import SqlCodeActionProvider, {
@@ -638,6 +644,20 @@ class DevToolsExtension {
 	 * 10. SqlCodeActionProvider – provides a "Retrieve dataExtension:name from
 	 *    cred/bu" quick fix for each unresolved SQL data-extension diagnostic.
 	 *
+	 * 11. ScriptDataExtensionLinkProvider – enables Ctrl+Click navigation from
+	 *    dataExtension names referenced in SSJS / AMPscript function calls
+	 *    (e.g. Lookup, LookupRows, InsertData, etc.) in .amp/.ssjs/.html files
+	 *    to the corresponding dataExtension-meta.json file.
+	 *
+	 * 12. ScriptDiagnosticProvider – emits VS Code warning diagnostics for
+	 *    .amp/.ssjs/.html files when data extension names in SSJS / AMPscript
+	 *    function calls cannot be resolved in the retrieve tree. Controlled
+	 *    by the warnOnMissingScriptDataExtension setting (default: true).
+	 *
+	 * 13. ScriptCodeActionProvider – provides a "Retrieve dataExtension:name
+	 *    from cred/bu" quick fix for each unresolved script data-extension
+	 *    diagnostic.
+	 *
 	 * @returns {void}
 	 */
 	activateLinkProviders(): void {
@@ -712,6 +732,12 @@ class DevToolsExtension {
 		const dataExtensionProvider = new DataExtensionLinkProvider();
 		vscodeContext.registerDisposable(
 			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, dataExtensionProvider)
+		);
+
+		// Register on-demand link provider for dataExtension names in SSJS / AMPscript files
+		const scriptDeProvider = new ScriptDataExtensionLinkProvider();
+		vscodeContext.registerDisposable(
+			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, scriptDeProvider)
 		);
 
 		// ── Diagnostic + quick-fix providers for unresolvable r__ references ──
@@ -1042,6 +1068,123 @@ class DevToolsExtension {
 								sqlDiagnosticProvider.validateDocument(doc).catch(err => {
 									console.error(
 										"[sfmc-devtools-vscode] SqlDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
+
+		// ── SSJS / AMPscript diagnostic + quick-fix providers ──
+		// Provides warning diagnostics for unresolvable data-extension references
+		// in .amp, .ssjs, and .html files.
+
+		if (
+			vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingScriptDataExtension")
+		) {
+			const scriptDiagnosticProvider = new ScriptDiagnosticProvider();
+			vscodeContext.registerDisposable(scriptDiagnosticProvider.getDiagnosticCollection());
+
+			// Watch for dataExtension file changes to invalidate the name cache
+			if (workspaceUri) {
+				const scriptDeWatcher = VSCode.workspace.createFileSystemWatcher(
+					new VSCode.RelativePattern(workspaceUri, "**/retrieve/**/dataExtension/*.dataExtension-meta.json")
+				);
+				const revalidateOpenScriptDocs = () => {
+					scriptDiagnosticProvider.clearCache();
+					VSCode.workspace.textDocuments.forEach(doc => {
+						scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ScriptDiagnosticProvider DE-change revalidation failed:",
+								err
+							);
+						});
+					});
+				};
+				scriptDeWatcher.onDidCreate(revalidateOpenScriptDocs);
+				scriptDeWatcher.onDidDelete(revalidateOpenScriptDocs);
+				scriptDeWatcher.onDidChange(revalidateOpenScriptDocs);
+				vscodeContext.registerDisposable(scriptDeWatcher);
+			}
+
+			// Validate already-open script documents on startup (fire-and-forget)
+			VSCode.workspace.textDocuments.forEach(doc => {
+				scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+						console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider open validation failed:", err);
+					});
+				})
+			);
+
+			// On save: re-validate the saved document
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+						console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider save validation failed:", err);
+					});
+				})
+			);
+
+			// Re-validate on text changes (debounced by VS Code's batching)
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidChangeTextDocument(event => {
+					scriptDiagnosticProvider.validateDocument(event.document).catch(err => {
+						console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider change validation failed:", err);
+					});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					scriptDiagnosticProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for script files
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider({ scheme: "file" }, new ScriptCodeActionProvider(), {
+					providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix]
+				})
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, clear the cache and re-validate
+			// the document that triggered the action.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_SCRIPT_DE_COMMAND,
+					async ({ projectPath, credBu, name, documentUri }: IRetrieveScriptDataExtensionArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/dataExtension/`,
+							credentialsName,
+							businessUnit,
+							metadataType: "dataExtension",
+							metadataSubKey: "name",
+							filename: name
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							scriptDiagnosticProvider.clearCache();
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] ScriptDiagnosticProvider post-retrieve validation failed:",
 										err
 									);
 								});
