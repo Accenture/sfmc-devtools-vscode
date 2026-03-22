@@ -13,6 +13,7 @@ import ContentBlockCodeActionProvider, {
 } from "../editor/contentBlockCodeActionProvider";
 import DataExtensionLinkProvider from "../editor/dataExtensionLinkProvider";
 import SqlDiagnosticProvider from "../editor/sqlDiagnosticProvider";
+import SqlDataViewHoverProvider from "../editor/sqlDataViewHoverProvider";
 import SqlCodeActionProvider, {
 	RETRIEVE_SQL_DE_COMMAND,
 	type IRetrieveSqlDataExtensionArgs
@@ -625,13 +626,16 @@ class DevToolsExtension {
 	 * 7. ContentBlockCodeActionProvider – provides a "Retrieve asset:key from
 	 *    cred/bu" quick fix for each unresolved ContentBlockByKey diagnostic.
 	 *
-	 * 8. SqlDiagnosticProvider – emits VS Code diagnostics for SQL query files:
-	 *    informational hints for known SFMC system data views (e.g. _Sent)
-	 *    and warnings for data extension names that cannot be resolved in the
-	 *    retrieve tree.  Controlled by the warnOnMissingSqlDataExtension
+	 * 8. SqlDataViewHoverProvider – shows hover-only informational hints for
+	 *    known SFMC system data views (e.g. _Sent) in SQL query files.
+	 *    Controlled by the showSqlDataViewHoverNotice setting (default: true).
+	 *
+	 * 9. SqlDiagnosticProvider – emits VS Code warning diagnostics for SQL
+	 *    query files when data extension names cannot be resolved in the
+	 *    retrieve tree. Controlled by the warnOnMissingSqlDataExtension
 	 *    setting (default: true).
 	 *
-	 * 9. SqlCodeActionProvider – provides a "Retrieve dataExtension:name from
+	 * 10. SqlCodeActionProvider – provides a "Retrieve dataExtension:name from
 	 *    cred/bu" quick fix for each unresolved SQL data-extension diagnostic.
 	 *
 	 * @returns {void}
@@ -922,9 +926,18 @@ class DevToolsExtension {
 			);
 		}
 
-		// ── SQL data-extension diagnostic + quick-fix providers ──
-		// Validates FROM / JOIN references in SQL query files: informational
-		// hints for data views, warnings for unresolvable data extensions.
+		// ── SQL hover + diagnostic + quick-fix providers ──
+		// Provides hover-only data-view hints and warning diagnostics for
+		// unresolvable data-extension references.
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "showSqlDataViewHoverNotice")) {
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerHoverProvider(
+					{ language: "sql", scheme: "file" },
+					new SqlDataViewHoverProvider()
+				)
+			);
+		}
 
 		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingSqlDataExtension")) {
 			const sqlDiagnosticProvider = new SqlDiagnosticProvider();

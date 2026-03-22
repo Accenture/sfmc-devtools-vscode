@@ -10,9 +10,8 @@ const DIAGNOSTIC_CODE_SQL = "warnOnMissingSqlDataExtension";
 
 /**
  * Known SFMC system data views mapped by their lowercased name to a
- * human-readable description.  These tables exist on every account and
- * cannot be retrieved via mcdev, so we show an informational hint
- * instead of a "missing" warning.
+ * human-readable description. These tables exist on every account and
+ * cannot be retrieved via mcdev.
  */
 const DATA_VIEWS: ReadonlyMap<string, string> = new Map([
 	// Email Data Views
@@ -82,8 +81,8 @@ function extractPathInfo(filePath: string): { buPrefix: string; credPrefix: stri
  * Diagnostic provider for SQL query files inside the retrieve/ folder tree.
  *
  * Scans FROM / JOIN clauses for table name references and classifies each:
- *   • Known SFMC data view (e.g. _Sent, _Open) → Information hint with a
- *     description of what the data view contains.
+ *   • Known SFMC data view (e.g. _Sent, _Open) → ignored here; hover text
+ *     is provided by {@link SqlDataViewHoverProvider}.
  *   • Data extension found in the BU's dataExtension folder → no diagnostic.
  *   • Unresolvable name → Warning diagnostic whose code carries the cred/bu
  *     and name so that {@link SqlCodeActionProvider} can offer a "Retrieve"
@@ -238,17 +237,9 @@ class SqlDiagnosticProvider {
 			const linkEnd = match.index + match[0].length;
 			const range = new VSCode.Range(document.positionAt(linkStart), document.positionAt(linkEnd));
 
-			// ── Known SFMC data view → informational hint ──
+			// ── Known SFMC data view → handled by hover provider ──
 			const dataViewDescription = DATA_VIEWS.get(lowerName);
 			if (dataViewDescription) {
-				const level = hasEntPrefix ? "At Enterprise level" : "At child BU level";
-				const diagnostic = new VSCode.Diagnostic(
-					range,
-					`System Data View: ${dataViewDescription} ${level}.`,
-					VSCode.DiagnosticSeverity.Information
-				);
-				diagnostic.source = DIAGNOSTIC_SOURCE;
-				diagnostics.push(diagnostic);
 				continue;
 			}
 
@@ -284,4 +275,5 @@ class SqlDiagnosticProvider {
 }
 
 export { DIAGNOSTIC_CODE_SQL };
+export { DATA_VIEWS };
 export default SqlDiagnosticProvider;

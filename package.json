@@ -207,7 +207,12 @@
 				"sfmc-devtools-vscode.warnOnMissingSqlDataExtension": {
 					"type": "boolean",
 					"default": true,
-					"description": "When enabled, shows inline diagnostics for SQL query files: informational hints for known SFMC system data views (e.g. _Sent, _Open) and warnings for data extension names that cannot be resolved in the retrieve tree, with a quick fix to retrieve them."
+					"description": "When enabled, shows warning diagnostics for data extension names in SQL query files that cannot be resolved in the retrieve tree, with a quick fix to retrieve them."
+				},
+				"sfmc-devtools-vscode.showSqlDataViewHoverNotice": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows hover-only informational hints for known SFMC system data views (e.g. _Sent, _Open) in SQL query files."
 				}
 			}
 		}
@@ -262,6 +267,9 @@
 	"lint-staged": {
 		"*.js": [
 			"eslint --fix --ext ts"
+		],
+		"*.ts": [
+			"eslint --fix"
 		]
 	}
 }
