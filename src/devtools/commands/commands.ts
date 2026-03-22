@@ -86,8 +86,10 @@ abstract class Commands {
 		// All commands executed have the --skipInteraction flag to avoid user interaction with the terminal
 		const defaultFlags = `${this.retrieveFlag("skipInteraction")} ${this.retrieveFlag("noLogColors")}`;
 
-		const buildMetadataParameter = ({ metadatatype, key }: TDevTools.IMetadataCommand) =>
-			`${this.retrieveAlias("metadata")} ${metadatatype}${key && ":" + '"' + key + '"'}`;
+		const buildMetadataParameter = ({ metadatatype, key, subKey }: TDevTools.IMetadataCommand) =>
+			subKey
+				? `${this.retrieveAlias("metadata")} ${metadatatype}:${subKey}:"${key}"`
+				: `${this.retrieveAlias("metadata")} ${metadatatype}${key && ":" + '"' + key + '"'}`;
 
 		// Builds the metadata part of the command
 		const metadataParameters: string = metadata.map(mdt => buildMetadataParameter(mdt)).join(" ");

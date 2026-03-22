@@ -1014,10 +1014,11 @@ class DevToolsExtension {
 							level: "file",
 							projectPath,
 							topFolder: "/retrieve/",
-							path: `${projectPath}/retrieve/${credBu}/dataExtension/${name}.dataExtension-meta.json`,
+							path: `${projectPath}/retrieve/${credBu}/dataExtension/`,
 							credentialsName,
 							businessUnit,
 							metadataType: "dataExtension",
+							metadataSubKey: "name",
 							filename: name
 						};
 						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
