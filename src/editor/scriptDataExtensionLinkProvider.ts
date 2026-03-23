@@ -294,5 +294,5 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 	}
 }
 
-export { SCRIPT_DE_REGEX, SUPPORTED_SCRIPT_FILE_REGEX, SUPPORTED_EXTENSIONS, findScriptDeReferences };
+export { SCRIPT_DE_REGEX, PROXY_DE_REGEX, SUPPORTED_SCRIPT_FILE_REGEX, SUPPORTED_EXTENSIONS, findScriptDeReferences };
 export default ScriptDataExtensionLinkProvider;

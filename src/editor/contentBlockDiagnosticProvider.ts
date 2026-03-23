@@ -1,19 +1,6 @@
 import { VSCode } from "@types";
 import { DIAGNOSTIC_SOURCE } from "./relatedItemDiagnosticProvider";
-import { ASSET_CACHE_GLOB, extractKeyFromUri } from "./contentBlockLinkProvider";
-
-/**
- * Pattern matching ContentBlockByKey() calls with single or double quotes,
- * optional surrounding whitespace, and optional escaped quotes.
- *
- * Matches:
- *   ContentBlockByKey("key")
- *   ContentBlockByKey( "key" )
- *   ContentBlockByKey('key')
- *   ContentBlockByKey( 'key' )
- *   ContentBlockByKey(\"key\")
- */
-const CONTENT_BLOCK_REGEX = /ContentBlockByKey\(\s*\\?["']([^"'\\]+)\\?["']\s*\)/g;
+import { CONTENT_BLOCK_REGEX, ASSET_CACHE_GLOB, extractKeyFromUri } from "./contentBlockLinkProvider";
 
 /**
  * Matches file paths that belong to the retrieve or deploy top-level folders
@@ -230,5 +217,5 @@ class ContentBlockDiagnosticProvider {
 	}
 }
 
-export { DIAGNOSTIC_CODE };
+export { DIAGNOSTIC_CODE, extractCredBuFromPath };
 export default ContentBlockDiagnosticProvider;

@@ -1,28 +1,5 @@
 import { VSCode } from "@types";
-
-/**
- * Matches "r__TYPE_key": "VALUE" patterns in JSON files.
- *
- * Group 1: TYPE  — the metadata folder name (e.g. "dataExtension", "importFile")
- * Group 2: VALUE — the key of the referenced item (e.g. "myKey1")
- */
-const R_TYPE_KEY_REGEX = /"r__(\w+)_key"\s*:\s*"([^"]+)"/g;
-
-/**
- * Matches automation-style r__type / r__key pairs where r__type appears first.
- *
- * Group 1: type value (e.g. "query")
- * Group 2: key value  (e.g. "ActivityKey1")
- */
-const AUTOMATION_FORWARD_REGEX = /"r__type"\s*:\s*"([^"]+)"[^{}]*?"r__key"\s*:\s*"([^"]+)"/g;
-
-/**
- * Matches automation-style r__key / r__type pairs where r__key appears first.
- *
- * Group 1: key value  (e.g. "ActivityKey1")
- * Group 2: type value (e.g. "query")
- */
-const AUTOMATION_REVERSE_REGEX = /"r__key"\s*:\s*"([^"]+)"[^{}]*?"r__type"\s*:\s*"([^"]+)"/g;
+import { R_TYPE_KEY_REGEX, AUTOMATION_FORWARD_REGEX, AUTOMATION_REVERSE_REGEX } from "./relatedItemLinkProvider";
 
 /**
  * Matches file paths that belong to the retrieve top-level folder and have
@@ -373,5 +350,5 @@ class RelatedItemDiagnosticProvider {
 	}
 }
 
-export { DIAGNOSTIC_SOURCE };
+export { DIAGNOSTIC_SOURCE, extractPathInfo as extractRelatedItemPathInfo };
 export default RelatedItemDiagnosticProvider;

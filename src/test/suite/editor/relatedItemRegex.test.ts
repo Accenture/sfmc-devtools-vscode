@@ -1,12 +1,9 @@
 import * as assert from "assert";
-
-/**
- * Tests for the regex patterns used by relatedItemLinkProvider.ts and
- * relatedItemDiagnosticProvider.ts to match JSON relation references.
- */
-const R_TYPE_KEY_REGEX = /"r__(\w+)_key"\s*:\s*"([^"]+)"/g;
-const AUTOMATION_FORWARD_REGEX = /"r__type"\s*:\s*"([^"]+)"[^{}]*?"r__key"\s*:\s*"([^"]+)"/g;
-const AUTOMATION_REVERSE_REGEX = /"r__key"\s*:\s*"([^"]+)"[^{}]*?"r__type"\s*:\s*"([^"]+)"/g;
+import {
+	R_TYPE_KEY_REGEX,
+	AUTOMATION_FORWARD_REGEX,
+	AUTOMATION_REVERSE_REGEX
+} from "../../../editor/relatedItemLinkProvider";
 
 interface TypeKeyMatch {
 	type: string;

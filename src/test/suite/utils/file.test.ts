@@ -11,12 +11,8 @@ suite("Utils – file.ts", () => {
 			assert.strictEqual(extractFileNameFromPath("/path/to/MyKey.asset-other-meta.json"), "MyKey");
 		});
 
-		test("returns truncated result for single-extension file (uses filePath index)", () => {
-			// Note: for single-extension files, the function uses filePath.substring
-			// with an index computed from the fileName (last segment). This is only
-			// used in practice for double-extension files like key.type-meta.json.
-			const result = extractFileNameFromPath("/path/to/file.txt");
-			assert.strictEqual(result, "/pat");
+		test("extracts key from single-extension file", () => {
+			assert.strictEqual(extractFileNameFromPath("/path/to/file.txt"), "file");
 		});
 
 		test("returns folder name when no dot present", () => {

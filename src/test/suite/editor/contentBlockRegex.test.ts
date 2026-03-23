@@ -1,13 +1,5 @@
 import * as assert from "assert";
-
-/**
- * ContentBlockByKey regex tests.
- *
- * The regex is duplicated in both contentBlockLinkProvider.ts and
- * contentBlockDiagnosticProvider.ts. We test the pattern directly so that
- * changes to the regex do not silently break matching behaviour.
- */
-const CONTENT_BLOCK_REGEX = /ContentBlockByKey\(\s*\\?["']([^"'\\]+)\\?["']\s*\)/g;
+import { CONTENT_BLOCK_REGEX, SUPPORTED_FOLDER_REGEX } from "../../../editor/contentBlockLinkProvider";
 
 /** Helper to collect all captured keys from a text string. */
 function collectKeys(text: string): string[] {
@@ -98,8 +90,6 @@ suite("ContentBlock – CONTENT_BLOCK_REGEX", () => {
 	});
 
 	suite("retrieve and deploy folder regex", () => {
-		const SUPPORTED_FOLDER_REGEX = /\/(?:retrieve|deploy)\//;
-
 		test("matches retrieve path", () => {
 			assert.ok(SUPPORTED_FOLDER_REGEX.test("/workspace/retrieve/cred/bu/asset/other/block.html"));
 		});

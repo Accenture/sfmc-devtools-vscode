@@ -219,5 +219,5 @@ class ScriptDiagnosticProvider {
 	}
 }
 
-export { DIAGNOSTIC_CODE_SCRIPT };
+export { DIAGNOSTIC_CODE_SCRIPT, extractPathInfo as extractScriptPathInfo };
 export default ScriptDiagnosticProvider;

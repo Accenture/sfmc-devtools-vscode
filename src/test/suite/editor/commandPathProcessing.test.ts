@@ -108,6 +108,14 @@ suite("Command path processing", () => {
 			const result = removeSubPathsByParent(paths);
 			assert.strictEqual(result.length, 2);
 		});
+
+		test("does not drop bu10 when bu1 is selected (prefix-collision guard)", () => {
+			const paths = ["/ws/retrieve/cred/bu1", "/ws/retrieve/cred/bu10/query/q1.query-meta.json"];
+			const result = removeSubPathsByParent(paths);
+			assert.strictEqual(result.length, 2);
+			assert.ok(result.includes("/ws/retrieve/cred/bu1"));
+			assert.ok(result.includes("/ws/retrieve/cred/bu10/query/q1.query-meta.json"));
+		});
 	});
 
 	suite("mixed selection", () => {

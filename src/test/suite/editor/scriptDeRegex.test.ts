@@ -1,16 +1,10 @@
 import * as assert from "assert";
-
-/**
- * Tests for the SCRIPT_DE_REGEX and PROXY_DE_REGEX patterns used by
- * scriptDataExtensionLinkProvider.ts and scriptDiagnosticProvider.ts.
- *
- * These match SSJS / AMPscript function calls whose first argument is a DE name.
- */
-const SCRIPT_DE_REGEX =
-	/(?:\bPlatform\s*\.\s*Function\s*\.\s*|\b(?<!\.))(?:ClaimRow(?:Value)?|DataExtension\s*\.\s*Init|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["'](?:(ENT)\s*\.\s*)?([^"'\\]+)\\?["']/gi;
-
-const PROXY_DE_REGEX =
-	/\b[a-zA-Z_$][a-zA-Z0-9_$]*\s*\.\s*retrieve\s*\(\s*\\?["']DataExtensionObject\[([^\]"']+)\]\\?["']/gi;
+import {
+	SCRIPT_DE_REGEX,
+	PROXY_DE_REGEX,
+	SUPPORTED_SCRIPT_FILE_REGEX,
+	SUPPORTED_EXTENSIONS
+} from "../../../editor/scriptDataExtensionLinkProvider";
 
 interface ScriptDeMatch {
 	hasEntPrefix: boolean;
@@ -293,8 +287,6 @@ suite("Script DE – PROXY_DE_REGEX", () => {
 });
 
 suite("Script DE – SUPPORTED_SCRIPT_FILE_REGEX", () => {
-	const SUPPORTED_SCRIPT_FILE_REGEX = /\/(?:retrieve|deploy)\/[^/]+\/[^/]+\//;
-
 	test("matches retrieve path", () => {
 		assert.ok(SUPPORTED_SCRIPT_FILE_REGEX.test("/ws/retrieve/cred/bu/asset/other/file.ssjs"));
 	});
@@ -313,8 +305,6 @@ suite("Script DE – SUPPORTED_SCRIPT_FILE_REGEX", () => {
 });
 
 suite("Script DE – SUPPORTED_EXTENSIONS", () => {
-	const SUPPORTED_EXTENSIONS = [".amp", ".ssjs", ".html", ".js"];
-
 	test("includes .amp", () => {
 		assert.ok(SUPPORTED_EXTENSIONS.includes(".amp"));
 	});

@@ -31,7 +31,7 @@ function removeSubPathsByParent(paths: string[]): string[] {
 	const selectedParentPaths = new Set<string>();
 
 	const removePaths = (currentPath: string) => {
-		const isChild = [...selectedParentPaths].some(parentPath => currentPath.startsWith(`${parentPath}`));
+		const isChild = [...selectedParentPaths].some(parentPath => currentPath.startsWith(`${parentPath}/`));
 		if (isChild) return false;
 
 		selectedParentPaths.add(currentPath);

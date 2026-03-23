@@ -1,15 +1,9 @@
 import * as assert from "assert";
-
-/**
- * SQL DE regex tests for FROM/JOIN clauses.
- *
- * Tests the regex exported by dataExtensionLinkProvider.ts that matches
- * FROM / JOIN clauses with an optional ENT. prefix.
- */
-const SQL_DE_REGEX =
-	/\b(?:FROM|(?:(?:INNER|LEFT|RIGHT|CROSS|FULL)\s+)?(?:OUTER\s+)?JOIN)\s+(?:(ENT)\s*\.\s*)?(?:\[([^\]]+)\]|([A-Za-z_]\w*))/gi;
-
-const SQL_FROM_JOIN_PREFIX_REGEX = /^(?:FROM|(?:(?:INNER|LEFT|RIGHT|CROSS|FULL)\s+)?(?:OUTER\s+)?JOIN)\s+/i;
+import {
+	SQL_DE_REGEX,
+	SQL_FROM_JOIN_PREFIX_REGEX,
+	SUPPORTED_SQL_FILE_REGEX
+} from "../../../editor/dataExtensionLinkProvider";
 
 interface SqlDeMatch {
 	hasEntPrefix: boolean;
@@ -170,7 +164,7 @@ suite("SQL – SQL_DE_REGEX", () => {
 	});
 
 	suite("non-matching inputs", () => {
-		test("does not match SELECT clause", () => {
+		test("only matches FROM/JOIN, not SELECT identifiers", () => {
 			const matches = collectSqlDeMatches("SELECT MyColumn FROM MyDE");
 			assert.strictEqual(matches.length, 1);
 			assert.strictEqual(matches[0].name, "MyDE");
@@ -216,8 +210,6 @@ suite("SQL – SQL_FROM_JOIN_PREFIX_REGEX", () => {
 });
 
 suite("SQL – SUPPORTED_SQL_FILE_REGEX", () => {
-	const SUPPORTED_SQL_FILE_REGEX = /\/retrieve\/[^/]+\/[^/]+\/query\//;
-
 	test("matches retrieve/cred/bu/query/ path", () => {
 		assert.ok(SUPPORTED_SQL_FILE_REGEX.test("/workspace/retrieve/myOrg/myBU/query/myQuery.query-meta.sql"));
 	});
