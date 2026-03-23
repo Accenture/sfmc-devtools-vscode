@@ -1,0 +1,9 @@
+{
+	"mochaExplorer.files": "src/test/suite/**/*.test.ts",
+	"mochaExplorer.env": {
+		"TS_NODE_PROJECT": "tsconfig.test.json"
+	},
+	"mochaExplorer.require": ["ts-node/register", "tsconfig-paths/register"],
+	"mochaExplorer.ui": "tdd",
+	"mochaExplorer.timeout": 20000
+}

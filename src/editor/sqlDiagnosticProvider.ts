@@ -274,6 +274,5 @@ class SqlDiagnosticProvider {
 	}
 }
 
-export { DIAGNOSTIC_CODE_SQL };
-export { DATA_VIEWS };
+export { DIAGNOSTIC_CODE_SQL, DATA_VIEWS, extractPathInfo as extractSqlPathInfo };
 export default SqlDiagnosticProvider;

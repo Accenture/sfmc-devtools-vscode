@@ -37,3 +37,5 @@ jobs:
             - run: npm run lint
 
             - run: npm run lint-ts
+
+            - run: npm run test:unit

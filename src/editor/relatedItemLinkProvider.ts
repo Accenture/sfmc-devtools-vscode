@@ -283,4 +283,5 @@ class RelatedItemLinkProvider implements VSCode.DocumentLinkProvider {
 	}
 }
 
+export { R_TYPE_KEY_REGEX, AUTOMATION_FORWARD_REGEX, AUTOMATION_REVERSE_REGEX };
 export default RelatedItemLinkProvider;
