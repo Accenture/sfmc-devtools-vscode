@@ -646,13 +646,15 @@ class DevToolsExtension {
 	 *
 	 * 11. ScriptDataExtensionLinkProvider – enables Ctrl+Click navigation from
 	 *    dataExtension names referenced in SSJS / AMPscript function calls
-	 *    (e.g. Lookup, LookupRows, InsertData, etc.) in .amp/.ssjs/.html files
-	 *    to the corresponding dataExtension-meta.json file.
+	 *    (e.g. Lookup, LookupRows, InsertData, proxy.retrieve, etc.) in
+	 *    .amp/.ssjs/.html/.js files to the corresponding
+	 *    dataExtension-meta.json file.
 	 *
 	 * 12. ScriptDiagnosticProvider – emits VS Code warning diagnostics for
-	 *    .amp/.ssjs/.html files when data extension names in SSJS / AMPscript
-	 *    function calls cannot be resolved in the retrieve tree. Controlled
-	 *    by the warnOnMissingScriptDataExtension setting (default: true).
+	 *    .amp/.ssjs/.html/.js files when data extension names in SSJS /
+	 *    AMPscript function calls cannot be resolved in the retrieve tree.
+	 *    Controlled by the warnOnMissingScriptDataExtension setting
+	 *    (default: true).
 	 *
 	 * 13. ScriptCodeActionProvider – provides a "Retrieve dataExtension:name
 	 *    from cred/bu" quick fix for each unresolved script data-extension
@@ -1080,7 +1082,7 @@ class DevToolsExtension {
 
 		// ── SSJS / AMPscript diagnostic + quick-fix providers ──
 		// Provides warning diagnostics for unresolvable data-extension references
-		// in .amp, .ssjs, and .html files.
+		// in .amp, .ssjs, .html, and .js files.
 
 		if (
 			vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingScriptDataExtension")

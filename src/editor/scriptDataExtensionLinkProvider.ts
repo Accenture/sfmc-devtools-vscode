@@ -36,6 +36,73 @@ const SCRIPT_DE_REGEX =
 	/\b(?:Platform\s*\.\s*Function\s*\.\s*)?(?:ClaimRow(?:Value)?|DataExtension\s*\.\s*Init|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["'](?:(ENT)\s*\.\s*)?([^"'\\]+)\\?["']/gi;
 
 /**
+ * Matches SSJS proxy.retrieve() calls that reference a DataExtensionObject
+ * by name inside square brackets.
+ *
+ * Pattern (case-insensitive):
+ *   proxy.retrieve('DataExtensionObject[DE Name]', cols, filter)
+ *
+ * Group 1: The dataExtension name (text inside the brackets).
+ *
+ * Examples matched:
+ *   proxy.retrieve('DataExtensionObject[My DE]', cols, filter)
+ *   proxy.retrieve("DataExtensionObject[API_Credentials]", cols, filter)
+ *   proxy.retrieve(\n      'DataExtensionObject[My DE]',\n      cols)
+ */
+const PROXY_DE_REGEX = /\bproxy\s*\.\s*retrieve\s*\(\s*\\?["']DataExtensionObject\[([^\]]+)\]\\?["']/gi;
+
+/**
+ * A dataExtension name reference found in the document text.
+ */
+interface ScriptDeReference {
+	/** The data extension name (without any ENT. prefix). */
+	name: string;
+	/** True when the name had an ENT. prefix (resolve against parent BU). */
+	hasEntPrefix: boolean;
+	/** 0-based character offset of the name start in the document text. */
+	nameStart: number;
+	/** 0-based character offset of the name end in the document text. */
+	nameEnd: number;
+}
+
+/**
+ * Scans the given text for all dataExtension name references using both
+ * {@link SCRIPT_DE_REGEX} (SSJS / AMPscript function calls) and
+ * {@link PROXY_DE_REGEX} (proxy.retrieve with DataExtensionObject).
+ *
+ * @param text - Full document text to scan
+ * @returns Array of all DE name references found
+ */
+function findScriptDeReferences(text: string): ScriptDeReference[] {
+	const refs: ScriptDeReference[] = [];
+
+	// SSJS / AMPscript function calls (group 1 = ENT, group 2 = name)
+	const regex1 = new RegExp(SCRIPT_DE_REGEX.source, "gid");
+	let match: RegExpExecArray | null;
+	while ((match = regex1.exec(text)) !== null) {
+		const name = match[2];
+		if (!name) continue;
+		const nameIndices = match.indices?.[2];
+		const nameStart = nameIndices ? nameIndices[0] : match.index + match[0].lastIndexOf(name);
+		const nameEnd = nameIndices ? nameIndices[1] : nameStart + name.length;
+		refs.push({ name, hasEntPrefix: match[1] !== undefined, nameStart, nameEnd });
+	}
+
+	// proxy.retrieve('DataExtensionObject[DE Name]', ...) (group 1 = name)
+	const regex2 = new RegExp(PROXY_DE_REGEX.source, "gid");
+	while ((match = regex2.exec(text)) !== null) {
+		const name = match[1];
+		if (!name) continue;
+		const nameIndices = match.indices?.[1];
+		const nameStart = nameIndices ? nameIndices[0] : match.index + match[0].lastIndexOf(name);
+		const nameEnd = nameIndices ? nameIndices[1] : nameStart + name.length;
+		refs.push({ name, hasEntPrefix: false, nameStart, nameEnd });
+	}
+
+	return refs;
+}
+
+/**
  * Matches file paths inside a retrieve/<cred>/<bu>/ or deploy/<cred>/<bu>/ folder tree.
  * Uses forward slashes because VSCode URI paths are always POSIX-style.
  */
@@ -44,7 +111,7 @@ const SUPPORTED_SCRIPT_FILE_REGEX = /\/(?:retrieve|deploy)\/[^/]+\/[^/]+\//;
 /**
  * File extensions supported by this provider.
  */
-const SUPPORTED_EXTENSIONS = [".amp", ".ssjs", ".html"];
+const SUPPORTED_EXTENSIONS = [".amp", ".ssjs", ".html", ".js"];
 
 /**
  * Extracts the BU prefix ("retrieve/cred/bu") and credential prefix
@@ -67,10 +134,11 @@ function extractPathInfo(filePath: string): { buPrefix: string; credPrefix: stri
 
 /**
  * Document link provider for dataExtension references inside SSJS / AMPscript
- * files (.amp, .ssjs, .html).
+ * files (.amp, .ssjs, .html, .js).
  *
  * Turns dataExtension names that appear as the first string argument of
- * supported SSJS / AMPscript functions into Ctrl+Click navigation links
+ * supported SSJS / AMPscript functions (or in proxy.retrieve
+ * DataExtensionObject references) into Ctrl+Click navigation links
  * that open the corresponding dataExtension metadata file.
  *
  * Name resolution:
@@ -166,9 +234,10 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 
 	/**
 	 * Provides document links for all dataExtension name references found in
-	 * SSJS / AMPscript function calls.
+	 * SSJS / AMPscript function calls and proxy.retrieve DataExtensionObject
+	 * references.
 	 *
-	 * Returns an empty array for files that are not .amp/.ssjs/.html files
+	 * Returns an empty array for files that are not .amp/.ssjs/.html/.js files
 	 * located inside a retrieve/<cred>/<bu>/ folder.
 	 *
 	 * @param document - The document being scanned
@@ -196,25 +265,15 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 
 		const text = document.getText();
 		const links: VSCode.DocumentLink[] = [];
-		const regex = new RegExp(SCRIPT_DE_REGEX.source, "gid");
-		let match: RegExpExecArray | null;
 
-		while ((match = regex.exec(text)) !== null) {
-			const hasEntPrefix = match[1] !== undefined;
-			const name = match[2];
-			if (!name) continue;
-
+		for (const ref of findScriptDeReferences(text)) {
 			// ENT.-prefixed names resolve against parent BU; plain names against current BU first
-			const uri = hasEntPrefix
-				? parentCache.get(name.toLowerCase())
-				: (buCache.get(name.toLowerCase()) ?? parentCache.get(name.toLowerCase()));
+			const uri = ref.hasEntPrefix
+				? parentCache.get(ref.name.toLowerCase())
+				: (buCache.get(ref.name.toLowerCase()) ?? parentCache.get(ref.name.toLowerCase()));
 			if (!uri) continue;
 
-			// Use match.indices for the precise capture-group position (group 2 = DE name)
-			const nameIndices = match.indices?.[2];
-			const nameStart = nameIndices ? nameIndices[0] : match.index + match[0].lastIndexOf(name);
-			const nameEnd = nameIndices ? nameIndices[1] : nameStart + name.length;
-			const range = new VSCode.Range(document.positionAt(nameStart), document.positionAt(nameEnd));
+			const range = new VSCode.Range(document.positionAt(ref.nameStart), document.positionAt(ref.nameEnd));
 			links.push(new VSCode.DocumentLink(range, uri));
 		}
 
@@ -222,5 +281,5 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 	}
 }
 
-export { SCRIPT_DE_REGEX, SUPPORTED_SCRIPT_FILE_REGEX, SUPPORTED_EXTENSIONS };
+export { SCRIPT_DE_REGEX, PROXY_DE_REGEX, SUPPORTED_SCRIPT_FILE_REGEX, SUPPORTED_EXTENSIONS, findScriptDeReferences };
 export default ScriptDataExtensionLinkProvider;

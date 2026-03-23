@@ -212,7 +212,7 @@
 				"sfmc-devtools-vscode.warnOnMissingScriptDataExtension": {
 					"type": "boolean",
 					"default": true,
-					"description": "When enabled, shows warning diagnostics for data extension names in SSJS / AMPscript function calls (.amp, .ssjs, .html files) that cannot be resolved in the retrieve tree, with a quick fix to retrieve them."
+					"description": "When enabled, shows warning diagnostics for data extension names in SSJS / AMPscript function calls (.amp, .ssjs, .html, .js files) that cannot be resolved in the retrieve tree, with a quick fix to retrieve them."
 				},
 				"sfmc-devtools-vscode.showSqlDataViewHoverNotice": {
 					"type": "boolean",

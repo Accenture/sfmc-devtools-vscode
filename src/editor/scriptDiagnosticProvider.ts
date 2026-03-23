@@ -1,6 +1,10 @@
 import { VSCode } from "@types";
 import { DIAGNOSTIC_SOURCE } from "./relatedItemDiagnosticProvider";
-import { SCRIPT_DE_REGEX, SUPPORTED_SCRIPT_FILE_REGEX, SUPPORTED_EXTENSIONS } from "./scriptDataExtensionLinkProvider";
+import {
+	SUPPORTED_SCRIPT_FILE_REGEX,
+	SUPPORTED_EXTENSIONS,
+	findScriptDeReferences
+} from "./scriptDataExtensionLinkProvider";
 
 /**
  * Diagnostic code value used by both the diagnostic provider and the
@@ -30,11 +34,11 @@ function extractPathInfo(filePath: string): { buPrefix: string; credPrefix: stri
 }
 
 /**
- * Diagnostic provider for SSJS / AMPscript files (.amp, .ssjs, .html)
+ * Diagnostic provider for SSJS / AMPscript files (.amp, .ssjs, .html, .js)
  * inside the retrieve/ folder tree.
  *
- * Scans supported function calls for dataExtension name references and
- * classifies each:
+ * Scans supported function calls and proxy.retrieve DataExtensionObject
+ * references for dataExtension name references and classifies each:
  *   • Data extension found in the BU's dataExtension folder → no diagnostic.
  *   • Unresolvable name → Warning diagnostic whose code carries the cred/bu
  *     and name so that {@link ScriptCodeActionProvider} can offer a "Retrieve"
@@ -177,24 +181,14 @@ class ScriptDiagnosticProvider {
 
 		const text = document.getText();
 		const diagnostics: VSCode.Diagnostic[] = [];
-		const regex = new RegExp(SCRIPT_DE_REGEX.source, "gid");
-		let match: RegExpExecArray | null;
 
-		while ((match = regex.exec(text)) !== null) {
-			const hasEntPrefix = match[1] !== undefined;
-			const name = match[2];
-			if (!name) continue;
+		for (const ref of findScriptDeReferences(text)) {
+			const lowerName = ref.name.toLowerCase();
 
-			const lowerName = name.toLowerCase();
-
-			// Use match.indices for the precise capture-group position (group 2 = DE name)
-			const nameIndices = match.indices?.[2];
-			const nameStart = nameIndices ? nameIndices[0] : match.index + match[0].lastIndexOf(name);
-			const nameEnd = nameIndices ? nameIndices[1] : nameStart + name.length;
-			const range = new VSCode.Range(document.positionAt(nameStart), document.positionAt(nameEnd));
+			const range = new VSCode.Range(document.positionAt(ref.nameStart), document.positionAt(ref.nameEnd));
 
 			// Resolve against both the BU cache and the parent BU cache
-			if (hasEntPrefix) {
+			if (ref.hasEntPrefix) {
 				// ENT.-prefixed names belong to the parent BU
 				if (parentCache.has(lowerName)) continue;
 			} else {
@@ -205,17 +199,17 @@ class ScriptDiagnosticProvider {
 			// Not found → Warning with quickfix metadata
 			// ENT.-prefixed names belong to the parent BU, so the retrieve
 			// should target cred/_ParentBU_ rather than the current BU.
-			const retrieveCredBu = hasEntPrefix ? `${credBu.split("/")[0]}/_ParentBU_` : credBu;
+			const retrieveCredBu = ref.hasEntPrefix ? `${credBu.split("/")[0]}/_ParentBU_` : credBu;
 			const diagnostic = new VSCode.Diagnostic(
 				range,
-				`Data extension '${name}' cannot be resolved: it was not found in the retrieve tree.`,
+				`Data extension '${ref.name}' cannot be resolved: it was not found in the retrieve tree.`,
 				VSCode.DiagnosticSeverity.Warning
 			);
 			diagnostic.source = DIAGNOSTIC_SOURCE;
 			diagnostic.code = {
 				value: DIAGNOSTIC_CODE_SCRIPT,
 				target: VSCode.Uri.parse(
-					`vscode://settings/${DIAGNOSTIC_SOURCE}.${DIAGNOSTIC_CODE_SCRIPT}?credBu=${encodeURIComponent(retrieveCredBu)}&name=${encodeURIComponent(name)}`
+					`vscode://settings/${DIAGNOSTIC_SOURCE}.${DIAGNOSTIC_CODE_SCRIPT}?credBu=${encodeURIComponent(retrieveCredBu)}&name=${encodeURIComponent(ref.name)}`
 				)
 			};
 			diagnostics.push(diagnostic);
