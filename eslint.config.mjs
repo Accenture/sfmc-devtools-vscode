@@ -19,7 +19,6 @@ export default defineConfig([
 
 		rules: {
 			"no-use-before-define": "error",
-			"import/prefer-default-export": "off",
 			"react/prop-types": "off",
 			"no-console": "off",
 			"no-var": "error",
