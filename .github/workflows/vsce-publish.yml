@@ -9,7 +9,7 @@ on:
 
 permissions:
     id-token: write # Required for OIDC
-    contents: read
+    contents: write # Required for uploading release assets
 
 jobs:
     build:
@@ -36,3 +36,8 @@ jobs:
             - run: npm run deploy
               env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
+            - run: npm run package:release
+            - name: Upload vsix to GitHub Release
+              run: gh release upload "${{ github.event.release.tag_name }}" *.vsix
+              env:
+                  GH_TOKEN: ${{ github.token }}
