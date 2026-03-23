@@ -44,20 +44,25 @@ const SCRIPT_DE_REGEX =
 	/(?:\bPlatform\s*\.\s*Function\s*\.\s*|\b(?<!\.))(?:ClaimRow(?:Value)?|DataExtension\s*\.\s*Init|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["'](?:(ENT)\s*\.\s*)?([^"'\\]+)\\?["']/gi;
 
 /**
- * Matches SSJS proxy.retrieve() calls that reference a DataExtensionObject
+ * Matches SSJS WSProxy .retrieve() calls that reference a DataExtensionObject
  * by name inside square brackets.
  *
+ * The WSProxy instance can be stored in any valid JavaScript variable
+ * (e.g. `var proxy = new Script.Util.WSProxy();`), so the pattern accepts
+ * any JS identifier before `.retrieve(...)`.
+ *
  * Pattern (case-insensitive):
- *   proxy.retrieve('DataExtensionObject[DE Name]', cols, filter)
+ *   <varName>.retrieve('DataExtensionObject[DE Name]', cols, filter)
  *
  * Group 1: The dataExtension name (text inside the brackets).
  *
  * Examples matched:
  *   proxy.retrieve('DataExtensionObject[My DE]', cols, filter)
- *   proxy.retrieve("DataExtensionObject[API_Credentials]", cols, filter)
- *   proxy.retrieve(\n      'DataExtensionObject[My DE]',\n      cols)
+ *   ws_proxy.retrieve("DataExtensionObject[API_Credentials]", cols, filter)
+ *   myVar.retrieve(\n      'DataExtensionObject[My DE]',\n      cols)
  */
-const PROXY_DE_REGEX = /\bproxy\s*\.\s*retrieve\s*\(\s*\\?["']DataExtensionObject\[([^\]"']+)\]\\?["']/gi;
+const PROXY_DE_REGEX =
+	/\b[a-zA-Z_$][a-zA-Z0-9_$]*\s*\.\s*retrieve\s*\(\s*\\?["']DataExtensionObject\[([^\]"']+)\]\\?["']/gi;
 
 /**
  * A dataExtension name reference found in the document text.
@@ -76,7 +81,7 @@ interface ScriptDeReference {
 /**
  * Scans the given text for all dataExtension name references using both
  * {@link SCRIPT_DE_REGEX} (SSJS / AMPscript function calls) and
- * {@link PROXY_DE_REGEX} (proxy.retrieve with DataExtensionObject).
+ * {@link PROXY_DE_REGEX} (WSProxy .retrieve with DataExtensionObject).
  *
  * @param text - Full document text to scan
  * @returns Array of all DE name references found
@@ -96,7 +101,7 @@ function findScriptDeReferences(text: string): ScriptDeReference[] {
 		refs.push({ name, hasEntPrefix: match[1] !== undefined, nameStart, nameEnd });
 	}
 
-	// proxy.retrieve('DataExtensionObject[DE Name]', ...) (group 1 = name)
+	// WSProxy .retrieve('DataExtensionObject[DE Name]', ...) (group 1 = name)
 	const regex2 = new RegExp(PROXY_DE_REGEX.source, "gid");
 	while ((match = regex2.exec(text)) !== null) {
 		const name = match[1];
@@ -145,7 +150,7 @@ function extractPathInfo(filePath: string): { buPrefix: string; credPrefix: stri
  * files (.amp, .ssjs, .html, .js).
  *
  * Turns dataExtension names that appear as the first string argument of
- * supported SSJS / AMPscript functions (or in proxy.retrieve
+ * supported SSJS / AMPscript functions (or in WSProxy .retrieve
  * DataExtensionObject references) into Ctrl+Click navigation links
  * that open the corresponding dataExtension metadata file.
  *
