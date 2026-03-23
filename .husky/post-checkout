@@ -6,7 +6,7 @@ if [ -z "$TICKETID" ]
 then
   TICKETID="0"
 fi
-TEMPLATE="#$TICKETID: "
+TEMPLATE="#$TICKETID "
 echo "[POST-CHECKOUT] Setting template commit to '$TEMPLATE'"
 # wrap $TEMPLATE in quotes or else it is trimmed automatically
 echo "$TEMPLATE" > ".git/templatemessage"
