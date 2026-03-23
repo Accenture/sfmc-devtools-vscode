@@ -1089,11 +1089,13 @@ class DevToolsExtension {
 			vscodeContext.registerDisposable(scriptDiagnosticProvider.getDiagnosticCollection());
 
 			// Watch for dataExtension file changes to invalidate the name cache
+			// for both the diagnostic provider and the link provider.
 			if (workspaceUri) {
 				const scriptDeWatcher = VSCode.workspace.createFileSystemWatcher(
 					new VSCode.RelativePattern(workspaceUri, "**/retrieve/**/dataExtension/*.dataExtension-meta.json")
 				);
 				const revalidateOpenScriptDocs = () => {
+					scriptDeProvider.clearCache();
 					scriptDiagnosticProvider.clearCache();
 					VSCode.workspace.textDocuments.forEach(doc => {
 						scriptDiagnosticProvider.validateDocument(doc).catch(err => {
@@ -1179,6 +1181,7 @@ class DevToolsExtension {
 						};
 						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
 						if (success) {
+							scriptDeProvider.clearCache();
 							scriptDiagnosticProvider.clearCache();
 							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
 							if (doc) {

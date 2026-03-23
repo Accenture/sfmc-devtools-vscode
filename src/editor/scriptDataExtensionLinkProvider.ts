@@ -96,7 +96,18 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 	private readonly cachePromises = new Map<string, Promise<Map<string, VSCode.Uri>>>();
 
 	/**
+	 * Clears the per-BU name caches so that subsequent link resolutions
+	 * re-scan the file system.  Should be called when dataExtension files
+	 * are added, removed, or modified in the workspace.
+	 */
+	clearCache(): void {
+		this.cachePromises.clear();
+	}
+
+	/**
 	 * Returns the name→URI map for the given BU, building it on first access.
+	 * If a previous build failed (rejected promise), the failed entry is
+	 * removed so the next call triggers a fresh scan.
 	 *
 	 * @param buPrefix - relative path "retrieve/cred/bu" or similar
 	 * @returns Promise resolving to the name→URI map for that BU
@@ -105,7 +116,11 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 		const existing = this.cachePromises.get(buPrefix);
 		if (existing) return existing;
 
-		const promise = this.buildCacheForBU(buPrefix);
+		const promise = this.buildCacheForBU(buPrefix).catch(err => {
+			// Don't permanently cache a failed scan — allow retry on next access
+			this.cachePromises.delete(buPrefix);
+			throw err;
+		});
 		this.cachePromises.set(buPrefix, promise);
 		return promise;
 	}
@@ -181,7 +196,7 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 
 		const text = document.getText();
 		const links: VSCode.DocumentLink[] = [];
-		const regex = new RegExp(SCRIPT_DE_REGEX.source, "gi");
+		const regex = new RegExp(SCRIPT_DE_REGEX.source, "gid");
 		let match: RegExpExecArray | null;
 
 		while ((match = regex.exec(text)) !== null) {
@@ -195,12 +210,11 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 				: (buCache.get(name.toLowerCase()) ?? parentCache.get(name.toLowerCase()));
 			if (!uri) continue;
 
-			// Make the DE name (inside the quotes) clickable
-			const nameOffset = match.index + match[0].indexOf(name);
-			const range = new VSCode.Range(
-				document.positionAt(nameOffset),
-				document.positionAt(nameOffset + name.length)
-			);
+			// Use match.indices for the precise capture-group position (group 2 = DE name)
+			const nameIndices = match.indices?.[2];
+			const nameStart = nameIndices ? nameIndices[0] : match.index + match[0].lastIndexOf(name);
+			const nameEnd = nameIndices ? nameIndices[1] : nameStart + name.length;
+			const range = new VSCode.Range(document.positionAt(nameStart), document.positionAt(nameEnd));
 			links.push(new VSCode.DocumentLink(range, uri));
 		}
 

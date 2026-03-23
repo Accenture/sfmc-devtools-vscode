@@ -67,6 +67,8 @@ class ScriptDiagnosticProvider {
 
 	/**
 	 * Returns the name-set for the given BU, building it on first access.
+	 * If a previous build failed (rejected promise), the failed entry is
+	 * removed so the next call triggers a fresh scan.
 	 *
 	 * @param buPrefix - relative path "retrieve/cred/bu" or similar
 	 * @returns Promise resolving to a Set of lowercased DE names
@@ -75,7 +77,11 @@ class ScriptDiagnosticProvider {
 		const existing = this.cachePromises.get(buPrefix);
 		if (existing) return existing;
 
-		const promise = this.buildCacheForBU(buPrefix);
+		const promise = this.buildCacheForBU(buPrefix).catch(err => {
+			// Don't permanently cache a failed scan — allow retry on next access
+			this.cachePromises.delete(buPrefix);
+			throw err;
+		});
 		this.cachePromises.set(buPrefix, promise);
 		return promise;
 	}
@@ -171,7 +177,7 @@ class ScriptDiagnosticProvider {
 
 		const text = document.getText();
 		const diagnostics: VSCode.Diagnostic[] = [];
-		const regex = new RegExp(SCRIPT_DE_REGEX.source, "gi");
+		const regex = new RegExp(SCRIPT_DE_REGEX.source, "gid");
 		let match: RegExpExecArray | null;
 
 		while ((match = regex.exec(text)) !== null) {
@@ -181,12 +187,11 @@ class ScriptDiagnosticProvider {
 
 			const lowerName = name.toLowerCase();
 
-			// Make the range cover only the DE name inside the quotes
-			const nameOffset = match.index + match[0].indexOf(name);
-			const range = new VSCode.Range(
-				document.positionAt(nameOffset),
-				document.positionAt(nameOffset + name.length)
-			);
+			// Use match.indices for the precise capture-group position (group 2 = DE name)
+			const nameIndices = match.indices?.[2];
+			const nameStart = nameIndices ? nameIndices[0] : match.index + match[0].lastIndexOf(name);
+			const nameEnd = nameIndices ? nameIndices[1] : nameStart + name.length;
+			const range = new VSCode.Range(document.positionAt(nameStart), document.positionAt(nameEnd));
 
 			// Resolve against both the BU cache and the parent BU cache
 			if (hasEntPrefix) {
