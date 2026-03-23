@@ -49,7 +49,7 @@ const SCRIPT_DE_REGEX =
  *   proxy.retrieve("DataExtensionObject[API_Credentials]", cols, filter)
  *   proxy.retrieve(\n      'DataExtensionObject[My DE]',\n      cols)
  */
-const PROXY_DE_REGEX = /\bproxy\s*\.\s*retrieve\s*\(\s*\\?["']DataExtensionObject\[([^\]]+)\]\\?["']/gi;
+const PROXY_DE_REGEX = /\bproxy\s*\.\s*retrieve\s*\(\s*\\?["']DataExtensionObject\[([^\]"']+)\]\\?["']/gi;
 
 /**
  * A dataExtension name reference found in the document text.
@@ -281,5 +281,5 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 	}
 }
 
-export { SCRIPT_DE_REGEX, PROXY_DE_REGEX, SUPPORTED_SCRIPT_FILE_REGEX, SUPPORTED_EXTENSIONS, findScriptDeReferences };
+export { SCRIPT_DE_REGEX, SUPPORTED_SCRIPT_FILE_REGEX, SUPPORTED_EXTENSIONS, findScriptDeReferences };
 export default ScriptDataExtensionLinkProvider;
