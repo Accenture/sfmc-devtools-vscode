@@ -1,9 +1,13 @@
 import { defineConfig } from "@vscode/test-cli";
 
 export default defineConfig({
-	files: "out/test/suite/**/*.test.js",
+	files: "src/test/suite/**/*.test.ts",
+	env: {
+		TS_NODE_PROJECT: "tsconfig.test.json"
+	},
 	mocha: {
 		ui: "tdd",
-		timeout: 20000
+		timeout: 20000,
+		require: ["ts-node/register", "tsconfig-paths/register"]
 	}
 });
