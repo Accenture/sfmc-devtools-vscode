@@ -7,13 +7,18 @@ import { VSCode } from "@types";
  * Handles (case-insensitive):
  *   - Optional `Platform.Function.` prefix (SSJS full-qualified form)
  *   - AMPscript / SSJS functions:
- *       ClaimRow, ClaimRowValue, DataExtensionRowCount,
+ *       ClaimRow, ClaimRowValue, DataExtension.Init,
+ *       DataExtensionRowCount,
  *       DeleteData, DeleteDE, InsertData, InsertDE,
  *       Lookup, LookupOrderedRows, LookupOrderedRowsCS,
  *       LookupRows, LookupRowsCS,
  *       UpdateData, UpdateDE, UpsertData, UpsertDE
+ *   - Optional `ENT.` prefix on the DE name (resolved against parent BU)
+ *   - Multi-line calls (linebreaks after opening paren, before/after commas)
+ *   - Both single-quotes and double-quotes
  *
- * Group 1: The dataExtension name (content between the first pair of quotes).
+ * Group 1: "ENT" when the ENT. prefix is present (case-insensitive).
+ * Group 2: The dataExtension name (without the ENT. prefix).
  *
  * Examples matched:
  *   Platform.Function.Lookup("MyDE", "Column", "Key", value)
@@ -23,9 +28,12 @@ import { VSCode } from "@types";
  *   platform.function.insertData("MyDE", "Col", val)
  *   InsertDE("MyDE", "Col", val)
  *   ClaimRow("MyDE", "Col", "Key", val)
+ *   DataExtension.Init("MyDE")
+ *   Lookup("ENT.MyDE", "Col", "Key", val)
+ *   LookupRows(\n      'My DE',\n      'Col', val)
  */
 const SCRIPT_DE_REGEX =
-	/\b(?:Platform\s*\.\s*Function\s*\.\s*)?(?:ClaimRow(?:Value)?|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["']([^"'\\]+)\\?["']/gi;
+	/\b(?:Platform\s*\.\s*Function\s*\.\s*)?(?:ClaimRow(?:Value)?|DataExtension\s*\.\s*Init|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["'](?:(ENT)\s*\.\s*)?([^"'\\]+)\\?["']/gi;
 
 /**
  * Matches file paths inside a retrieve/<cred>/<bu>/ folder tree.
@@ -175,11 +183,14 @@ class ScriptDataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 		let match: RegExpExecArray | null;
 
 		while ((match = regex.exec(text)) !== null) {
-			const name = match[1];
+			const hasEntPrefix = match[1] !== undefined;
+			const name = match[2];
 			if (!name) continue;
 
-			// Try current BU first, then parent BU
-			const uri = buCache.get(name.toLowerCase()) ?? parentCache.get(name.toLowerCase());
+			// ENT.-prefixed names resolve against parent BU; plain names against current BU first
+			const uri = hasEntPrefix
+				? parentCache.get(name.toLowerCase())
+				: (buCache.get(name.toLowerCase()) ?? parentCache.get(name.toLowerCase()));
 			if (!uri) continue;
 
 			// Make the DE name (inside the quotes) clickable

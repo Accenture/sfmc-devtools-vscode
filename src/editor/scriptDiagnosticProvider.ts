@@ -172,7 +172,8 @@ class ScriptDiagnosticProvider {
 		let match: RegExpExecArray | null;
 
 		while ((match = regex.exec(text)) !== null) {
-			const name = match[1];
+			const hasEntPrefix = match[1] !== undefined;
+			const name = match[2];
 			if (!name) continue;
 
 			const lowerName = name.toLowerCase();
@@ -185,10 +186,18 @@ class ScriptDiagnosticProvider {
 			);
 
 			// Resolve against both the BU cache and the parent BU cache
-			if (buCache.has(lowerName)) continue;
-			if (parentCache.has(lowerName)) continue;
+			if (hasEntPrefix) {
+				// ENT.-prefixed names belong to the parent BU
+				if (parentCache.has(lowerName)) continue;
+			} else {
+				if (buCache.has(lowerName)) continue;
+				if (parentCache.has(lowerName)) continue;
+			}
 
 			// Not found → Warning with quickfix metadata
+			// ENT.-prefixed names belong to the parent BU, so the retrieve
+			// should target cred/_ParentBU_ rather than the current BU.
+			const retrieveCredBu = hasEntPrefix ? `${credBu.split("/")[0]}/_ParentBU_` : credBu;
 			const diagnostic = new VSCode.Diagnostic(
 				range,
 				`Data extension '${name}' cannot be resolved: it was not found in the retrieve tree.`,
@@ -198,7 +207,7 @@ class ScriptDiagnosticProvider {
 			diagnostic.code = {
 				value: DIAGNOSTIC_CODE_SCRIPT,
 				target: VSCode.Uri.parse(
-					`vscode://settings/${DIAGNOSTIC_SOURCE}.${DIAGNOSTIC_CODE_SCRIPT}?credBu=${encodeURIComponent(credBu)}&name=${encodeURIComponent(name)}`
+					`vscode://settings/${DIAGNOSTIC_SOURCE}.${DIAGNOSTIC_CODE_SCRIPT}?credBu=${encodeURIComponent(retrieveCredBu)}&name=${encodeURIComponent(name)}`
 				)
 			};
 			diagnostics.push(diagnostic);
