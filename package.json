@@ -29,6 +29,7 @@
 		"ide",
 		"marketing cloud",
 		"mc",
+		"mcdev",
 		"package manager",
 		"salesforce",
 		"server-side javascript",
@@ -192,6 +193,31 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Indicates if recommended extensions popup should be shown to user or not."
+				},
+				"sfmc-devtools-vscode.warnOnMissingJsonRelation": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows inline warnings in the Problems panel for unresolvable r__TYPE_key relation fields in JSON metadata files, and offers a quick fix to retrieve the missing item."
+				},
+				"sfmc-devtools-vscode.warnOnContentBlockByKey": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows inline warnings in the Problems panel for unresolvable ContentBlockByKey() references in files inside the retrieve/ and deploy/ folders, and offers a quick fix to retrieve the missing content block."
+				},
+				"sfmc-devtools-vscode.warnOnMissingSqlDataExtension": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows warning diagnostics for data extension names in SQL query files that cannot be resolved in the retrieve tree, with a quick fix to retrieve them."
+				},
+				"sfmc-devtools-vscode.warnOnMissingScriptDataExtension": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows warning diagnostics for data extension names in SSJS / AMPscript function calls (.amp, .ssjs, .html, .js files) that cannot be resolved in the retrieve tree, with a quick fix to retrieve them."
+				},
+				"sfmc-devtools-vscode.showSqlDataViewHoverNotice": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows hover-only informational hints for known SFMC system data views (e.g. _Sent, _Open) in SQL query files."
 				}
 			}
 		}
@@ -206,9 +232,10 @@
 		"package:test-vsix": "npx @vscode/vsce package --pre-release -o sfmc-devtools-vscode-test.vsix",
 		"package:release": "npx @vscode/vsce package",
 		"deploy": "vsce publish",
-		"lint": "eslint src --ext ts",
-		"test": "npm run lint",
-		"lint:fix": "eslint --fix src --ext ts",
+		"lint": "eslint ./src --ext .ts",
+		"test": "npm run lint && npm run test:unit",
+		"test:unit": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha",
+		"lint:fix": "eslint --fix ./src --ext .ts",
 		"lint-ts": "tsc -p tsconfig.npmScripts.json",
 		"prepare": "husky",
 		"prepare-release:audit-fix": "npm audit fix",
@@ -220,21 +247,26 @@
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.5",
-		"@eslint/js": "^9.39.4",
+		"@eslint/js": "^10.0.1",
+		"@types/mocha": "^10.0.10",
 		"@types/node": "^25.3.5",
 		"@types/vscode": "^1.109.0",
 		"@typescript-eslint/parser": "^8.56.1",
+		"@vscode/test-cli": "^0.0.12",
 		"@vscode/vsce": "^3.7.1",
-		"eslint": "^9.39.4",
+		"cross-env": "^10.1.0",
+		"eslint": "^10.1.0",
 		"eslint-config-prettier": "10.1.8",
-		"eslint-plugin-import": "^2.32.0",
 		"eslint-plugin-prettier": "5.5.5",
 		"globals": "^17.4.0",
 		"husky": "^9.1.7",
-		"lint-staged": "^16.3.3",
+		"lint-staged": "^16.4.0",
+		"mocha": "^11.7.5",
 		"npm-run-all": "^4.1.5",
 		"prettier": "3.8.1",
 		"ts-loader": "^9.5.4",
+		"ts-node": "^10.9.2",
+		"tsconfig-paths": "^4.2.0",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.57.0",
 		"webpack": "^5.105.4",
@@ -244,8 +276,7 @@
 		"@vscode/codicons": "^0.0.44"
 	},
 	"lint-staged": {
-		"*.js": [
-			"eslint --fix --ext ts"
-		]
+		"*.js": "eslint --fix",
+		"*.ts": "eslint --fix --ext .ts"
 	}
 }

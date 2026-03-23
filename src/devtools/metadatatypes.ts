@@ -83,7 +83,7 @@ class MetadataTypes {
 
 	/**
 	 * Updates the metadata types list with the provided types.
-	 * Returns true if any new or removed types were detected.
+	 * Returns true if any change is detected: new types, removed types, or modified properties of existing types.
 	 *
 	 * @param {TDevTools.IMetadataTypes[]} types - updated list of metadata types
 	 * @returns {boolean} true if the list changed, false otherwise
@@ -95,7 +95,22 @@ class MetadataTypes {
 		const hasNewTypes = types.some(t => !currentApiNames.has(t.apiName));
 		const hasRemovedTypes = this.metadataTypes.some(t => !newApiNames.has(t.apiName));
 
-		if (hasNewTypes || hasRemovedTypes) {
+		const currentMap = new Map(this.metadataTypes.map(t => [t.apiName, t]));
+		const hasChangedTypes = types.some(t => {
+			const current = currentMap.get(t.apiName);
+			if (current === undefined) return false;
+			if (current.name !== t.name || current.description !== t.description) return true;
+			const curRBD = current.retrieveByDefault;
+			const newRBD = t.retrieveByDefault;
+			if (Array.isArray(curRBD) !== Array.isArray(newRBD)) return true;
+			if (Array.isArray(curRBD) && Array.isArray(newRBD)) {
+				if (curRBD.length !== newRBD.length || curRBD.some((v, i) => v !== newRBD[i])) return true;
+			} else if (curRBD !== newRBD) return true;
+			const supportsKeys = Object.keys(current.supports) as (keyof TDevTools.MetadataTypesActionsMap)[];
+			return supportsKeys.some(k => current.supports[k] !== t.supports[k]);
+		});
+
+		if (hasNewTypes || hasRemovedTypes || hasChangedTypes) {
 			this.metadataTypes = types;
 			return true;
 		}

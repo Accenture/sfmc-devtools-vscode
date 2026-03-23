@@ -217,4 +217,5 @@ class DataExtensionLinkProvider implements VSCode.DocumentLinkProvider {
 	}
 }
 
+export { SQL_DE_REGEX, SQL_FROM_JOIN_PREFIX_REGEX, SUPPORTED_SQL_FILE_REGEX };
 export default DataExtensionLinkProvider;

@@ -161,7 +161,7 @@ class Mcdev {
 
 	/**
 	 * Updates the internal metadata types list with a new set of types.
-	 * Returns true when the list was changed (new or removed types detected).
+	 * Returns true when the list was changed (new, removed, or modified types detected).
 	 *
 	 * @public
 	 * @param {TDevTools.IMetadataTypes[]} types - updated metadata types list
@@ -329,13 +329,19 @@ class Mcdev {
 		level,
 		path,
 		metadataType,
+		metadataSubKey,
 		filename
 	}: TDevTools.IExecuteFileDetails): TDevTools.IMetadataCommand | undefined {
 		switch (level) {
 			case "mdt_folder":
 				return { metadatatype: metadataType as string, key: "", path };
 			case "file":
-				return { metadatatype: metadataType as string, key: filename || "", path };
+				return {
+					metadatatype: metadataType as string,
+					key: filename || "",
+					...(metadataSubKey ? { subKey: metadataSubKey } : {}),
+					path
+				};
 			default:
 				return undefined;
 		}

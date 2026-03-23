@@ -1,0 +1,28 @@
+{
+	"include": ["src/**/*.ts"],
+	"exclude": ["node_modules"],
+	"compilerOptions": {
+		"module": "CommonJS",
+		"target": "es2023",
+		"lib": ["es2023", "DOM"],
+		"noEmit": true,
+		"rootDir": ".",
+		"baseUrl": ".",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"forceConsistentCasingInFileNames": true,
+		"paths": {
+			"@types": ["./src/types/index"],
+			"@enums": ["./src/enums/index"],
+			"@config": ["./src/config/index"],
+			"@messages": ["./src/messages/index"],
+			"utils": ["./src/utils/index"],
+			"vscode": ["./src/test/mock/vscode"]
+		}
+	}
+}
