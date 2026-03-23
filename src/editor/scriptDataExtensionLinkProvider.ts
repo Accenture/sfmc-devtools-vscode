@@ -17,6 +17,10 @@ import { VSCode } from "@types";
  *   - Multi-line calls (linebreaks after opening paren, before/after commas)
  *   - Both single-quotes and double-quotes
  *
+ * The prefix alternation `(\bPlatform.Function. | \b(?<!\.))` ensures that
+ * method calls on arbitrary objects (e.g. `Rows.Lookup(...)`) are NOT
+ * matched, while `Platform.Function.Lookup(...)` and bare `Lookup(...)` are.
+ *
  * Group 1: "ENT" when the ENT. prefix is present (case-insensitive).
  * Group 2: The dataExtension name (without the ENT. prefix).
  *
@@ -31,9 +35,13 @@ import { VSCode } from "@types";
  *   DataExtension.Init("MyDE")
  *   Lookup("ENT.MyDE", "Col", "Key", val)
  *   LookupRows(\n      'My DE',\n      'Col', val)
+ *
+ * Examples NOT matched (false-positive exclusions):
+ *   Rows.Lookup("Purpose", purpose)   — method on Rows object
+ *   result.Lookup("Field", value)     — method on arbitrary object
  */
 const SCRIPT_DE_REGEX =
-	/\b(?:Platform\s*\.\s*Function\s*\.\s*)?(?:ClaimRow(?:Value)?|DataExtension\s*\.\s*Init|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["'](?:(ENT)\s*\.\s*)?([^"'\\]+)\\?["']/gi;
+	/(?:\bPlatform\s*\.\s*Function\s*\.\s*|\b(?<!\.))(?:ClaimRow(?:Value)?|DataExtension\s*\.\s*Init|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["'](?:(ENT)\s*\.\s*)?([^"'\\]+)\\?["']/gi;
 
 /**
  * Matches SSJS proxy.retrieve() calls that reference a DataExtensionObject
