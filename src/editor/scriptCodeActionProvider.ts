@@ -54,8 +54,10 @@ class ScriptCodeActionProvider implements VSCode.CodeActionProvider {
 
 		const filePath = document.uri.path;
 		const retrieveIdx = filePath.indexOf("/retrieve/");
-		if (retrieveIdx < 0) return actions;
-		const projectPath = filePath.substring(0, retrieveIdx);
+		const deployIdx = filePath.indexOf("/deploy/");
+		const splitIdx = retrieveIdx >= 0 ? retrieveIdx : deployIdx;
+		if (splitIdx < 0) return actions;
+		const projectPath = filePath.substring(0, splitIdx);
 
 		for (const diagnostic of context.diagnostics) {
 			if (diagnostic.source !== DIAGNOSTIC_SOURCE) continue;

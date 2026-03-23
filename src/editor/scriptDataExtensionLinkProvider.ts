@@ -36,10 +36,10 @@ const SCRIPT_DE_REGEX =
 	/\b(?:Platform\s*\.\s*Function\s*\.\s*)?(?:ClaimRow(?:Value)?|DataExtension\s*\.\s*Init|DataExtensionRowCount|Delete(?:Data|DE)|Insert(?:Data|DE)|Lookup(?:OrderedRows(?:CS)?|Rows(?:CS)?)?|Update(?:Data|DE)|Upsert(?:Data|DE))\s*\(\s*\\?["'](?:(ENT)\s*\.\s*)?([^"'\\]+)\\?["']/gi;
 
 /**
- * Matches file paths inside a retrieve/<cred>/<bu>/ folder tree.
+ * Matches file paths inside a retrieve/<cred>/<bu>/ or deploy/<cred>/<bu>/ folder tree.
  * Uses forward slashes because VSCode URI paths are always POSIX-style.
  */
-const SUPPORTED_SCRIPT_FILE_REGEX = /\/retrieve\/[^/]+\/[^/]+\//;
+const SUPPORTED_SCRIPT_FILE_REGEX = /\/(?:retrieve|deploy)\/[^/]+\/[^/]+\//;
 
 /**
  * File extensions supported by this provider.
@@ -48,18 +48,20 @@ const SUPPORTED_EXTENSIONS = [".amp", ".ssjs", ".html"];
 
 /**
  * Extracts the BU prefix ("retrieve/cred/bu") and credential prefix
- * ("retrieve/cred") from a file URI path.
+ * ("retrieve/cred") from a file URI path.  Accepts both retrieve/ and deploy/
+ * paths but always returns a retrieve/-based buPrefix because the
+ * dataExtension metadata files live under retrieve/.
  *
  * @param filePath - POSIX-style file path from VSCode.Uri.path
  * @returns buPrefix and credPrefix, or undefined when the path does not match
- *          the expected retrieve/<cred>/<bu>/... structure.
+ *          the expected retrieve/<cred>/<bu>/... or deploy/<cred>/<bu>/... structure.
  */
 function extractPathInfo(filePath: string): { buPrefix: string; credPrefix: string } | undefined {
-	const match = filePath.match(/\/(retrieve\/([^/]+)\/[^/]+)\/[^/]+\//);
+	const match = filePath.match(/\/(?:retrieve|deploy)\/([^/]+)\/([^/]+)\/[^/]+\//);
 	if (!match) return undefined;
 	return {
-		buPrefix: match[1], // "retrieve/cred/bu"
-		credPrefix: `retrieve/${match[2]}` // "retrieve/cred"
+		buPrefix: `retrieve/${match[1]}/${match[2]}`, // always "retrieve/cred/bu"
+		credPrefix: `retrieve/${match[1]}` // "retrieve/cred"
 	};
 }
 

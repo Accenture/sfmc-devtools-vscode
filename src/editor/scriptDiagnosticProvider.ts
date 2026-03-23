@@ -10,19 +10,22 @@ const DIAGNOSTIC_CODE_SCRIPT = "warnOnMissingScriptDataExtension";
 
 /**
  * Extracts the BU prefix ("retrieve/cred/bu"), credential prefix
- * ("retrieve/cred"), and "cred/bu" from a file URI path.
+ * ("retrieve/cred"), and "cred/bu" from a file URI path.  Accepts both
+ * retrieve/ and deploy/ paths but always returns a retrieve/-based buPrefix
+ * because the dataExtension metadata files live under retrieve/.
  *
  * @param filePath - POSIX-style file path from VSCode.Uri.path
  * @returns buPrefix, credPrefix, and credBu, or undefined when the path
- *          does not match the expected retrieve/<cred>/<bu>/... structure.
+ *          does not match the expected retrieve/<cred>/<bu>/... or
+ *          deploy/<cred>/<bu>/... structure.
  */
 function extractPathInfo(filePath: string): { buPrefix: string; credPrefix: string; credBu: string } | undefined {
-	const match = filePath.match(/\/(retrieve\/([^/]+\/[^/]+))\/[^/]+\//);
+	const match = filePath.match(/\/(?:retrieve|deploy)\/([^/]+\/[^/]+)\/[^/]+\//);
 	if (!match) return undefined;
 	return {
-		buPrefix: match[1], // "retrieve/cred/bu"
-		credPrefix: `retrieve/${match[2].split("/")[0]}`, // "retrieve/cred"
-		credBu: match[2] // "cred/bu"
+		buPrefix: `retrieve/${match[1]}`, // always "retrieve/cred/bu"
+		credPrefix: `retrieve/${match[1].split("/")[0]}`, // "retrieve/cred"
+		credBu: match[1] // "cred/bu"
 	};
 }
 
