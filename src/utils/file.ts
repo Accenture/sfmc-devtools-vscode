@@ -30,7 +30,7 @@ function extractFileNameFromPath(filePath: string): string {
 	// if it's a file in format filename.asset-asset-meta.ext
 	const lastDotIndex = fileName.lastIndexOf(".");
 	const secondLastDotIndex = fileName.lastIndexOf(".", fileName.lastIndexOf(".") - 1);
-	if (secondLastDotIndex < 0) return filePath.substring(0, lastDotIndex);
+	if (secondLastDotIndex < 0) return fileName.substring(0, lastDotIndex);
 	return fileName.substring(0, secondLastDotIndex);
 }
 

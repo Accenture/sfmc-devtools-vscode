@@ -8,6 +8,13 @@ const credentialPrompt = "Please select the credential you would like to use:";
 const businessUnitsPrompt = "Please select the business unit you would like to use:";
 const metaDataTypePrompt = "Please select the metadata types you would like to use:";
 const copyToBuPrompt = "Please select the action you would like to perform:";
+const changeKeyMethodPrompt = "Please select how you would like to change the key:";
+const changeKeyMixedTypesError = (metadataTypes: string[]) =>
+	`Please select files of the same metadata type to use Change Key by field. Selected types: ${metadataTypes.join(", ")}`;
+const changeKeyFieldListPrompt = "Please select the field to use as the new key:";
+const changeKeyFieldPrompt =
+	"Please enter the field name to use as the new key (must match exact spelling, including casing):";
+const changeKeyValuePrompt = "Please enter the new key value:";
 const noCredentialFound = "No credentials were found in the configuration file. Please check the configuration file.";
 const deleteConfirmation = (items: string[]) =>
 	`Are you sure you want to delete the selected item${items.length > 1 ? "s" : ""} from the server?\n\n${items
@@ -31,6 +38,11 @@ export {
 	businessUnitsPrompt,
 	metaDataTypePrompt,
 	copyToBuPrompt,
+	changeKeyMethodPrompt,
+	changeKeyMixedTypesError,
+	changeKeyFieldListPrompt,
+	changeKeyFieldPrompt,
+	changeKeyValuePrompt,
 	noCredentialFound,
 	deleteConfirmation,
 	noBusinessUnitsFound,

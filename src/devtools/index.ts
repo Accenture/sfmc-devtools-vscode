@@ -1,9 +1,35 @@
 import Mcdev from "./mcdev";
+import ContentBlockLinkProvider, { ASSET_CACHE_GLOB } from "../editor/contentBlockLinkProvider";
+import RelatedItemLinkProvider from "../editor/relatedItemLinkProvider";
+import RelatedItemDiagnosticProvider from "../editor/relatedItemDiagnosticProvider";
+import RelatedItemCodeActionProvider, {
+	RETRIEVE_RELATED_ITEM_COMMAND,
+	type IRetrieveRelatedItemArgs
+} from "../editor/relatedItemCodeActionProvider";
+import ContentBlockDiagnosticProvider from "../editor/contentBlockDiagnosticProvider";
+import ContentBlockCodeActionProvider, {
+	RETRIEVE_CONTENT_BLOCK_COMMAND,
+	type IRetrieveContentBlockArgs
+} from "../editor/contentBlockCodeActionProvider";
+import DataExtensionLinkProvider from "../editor/dataExtensionLinkProvider";
+import ScriptDataExtensionLinkProvider from "../editor/scriptDataExtensionLinkProvider";
+import ScriptDiagnosticProvider from "../editor/scriptDiagnosticProvider";
+import ScriptCodeActionProvider, {
+	RETRIEVE_SCRIPT_DE_COMMAND,
+	type IRetrieveScriptDataExtensionArgs
+} from "../editor/scriptCodeActionProvider";
+import SqlDiagnosticProvider from "../editor/sqlDiagnosticProvider";
+import SqlDataViewHoverProvider from "../editor/sqlDataViewHoverProvider";
+import SqlCodeActionProvider, {
+	RETRIEVE_SQL_DE_COMMAND,
+	type IRetrieveSqlDataExtensionArgs
+} from "../editor/sqlCodeActionProvider";
+import { SETTING_LABELS, StatusBarTooltipProvider } from "../editor/statusBarTooltipProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
-import { TDevTools, TEditor, TUtils } from "@types";
-import { Lib, VsceLogger } from "utils";
+import { TDevTools, TEditor, TUtils, VSCode } from "@types";
+import { Lib, File, VsceLogger } from "utils";
 
 /**
  * DevTools Extension class
@@ -26,6 +52,13 @@ class DevToolsExtension {
 	 * @type {Mcdev}
 	 */
 	private mcdev: Mcdev;
+	/**
+	 * Tooltip provider for the status bar hover overlay.
+	 *
+	 * @private
+	 * @type {StatusBarTooltipProvider}
+	 */
+	private tooltipProvider: StatusBarTooltipProvider;
 
 	/**
 	 * Creates an instance of DevToolsExtension.
@@ -36,6 +69,7 @@ class DevToolsExtension {
 	constructor(context: TEditor.IExtensionContext) {
 		this.vscodeEditor = new TEditor.VSCodeEditor(context);
 		this.mcdev = new Mcdev();
+		this.tooltipProvider = new StatusBarTooltipProvider(ConfigExtension.extensionName);
 	}
 
 	/**
@@ -91,6 +125,8 @@ class DevToolsExtension {
 				this.activateContainers();
 				// activate menu commands
 				this.activateMenuCommands();
+				// activate document link providers
+				this.activateLinkProviders();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
 				// refresh metadata types in background from mcdev
@@ -215,12 +251,14 @@ class DevToolsExtension {
 		console.log("== Activate Containers ==");
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		const vscodeCommands = this.vscodeEditor.getCommands();
+		const vscodeContext = this.vscodeEditor.getContext();
+		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
 		const packageName = this.mcdev.getPackageName();
 
 		// Sets the command when the status bar is clicked
 		const statusBarCommand = `${ConfigExtension.extensionName}.openOutputChannel`;
-		// Sets the default status bar icon and name
-		const statusBarTitle = `$(${EnumsExtension.StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
+		// Start with a loading spinner – caches are about to be populated
+		const statusBarTitle = `$(loading~spin) ${this.mcdev.getPackageName()}`;
 
 		// Registers the status bar command to display the Ouput Channel when clicked
 		vscodeCommands.registerCommand({
@@ -231,6 +269,54 @@ class DevToolsExtension {
 		// Creates and displays the Status Bar Item
 		vscodeWindow.createStatusBarItem(statusBarCommand, statusBarTitle, packageName);
 		vscodeWindow.displayStatusBarItem(packageName);
+
+		// Bind tooltip provider to the status bar item and render initial tooltip
+		const statusBarItem = vscodeWindow.getStatusBarItem(packageName);
+		this.tooltipProvider.setStatusBarItem(statusBarItem);
+		this.tooltipProvider.update();
+
+		// Toggle the status bar icon between a loading spinner and the idle icon
+		// whenever the aggregate caching state changes.
+		this.tooltipProvider.setLoadingStateCallback((isLoading: boolean) => {
+			const icon = isLoading ? "loading~spin" : EnumsExtension.StatusBarIcon.success;
+			this.updateStatusBar(packageName, this.getStatusBarTitle(icon, packageName), "");
+		});
+
+		// Register the command to toggle a user-level boolean setting
+		vscodeContext.registerDisposable(
+			VSCode.commands.registerCommand(`${ConfigExtension.extensionName}.toggleSetting`, (settingKey: string) => {
+				const current = vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, settingKey);
+				const nextValue = !current;
+				const label = SETTING_LABELS[settingKey] ?? settingKey;
+				VSCode.window.setStatusBarMessage(`${packageName}: Toggling ${label}...`, 1500);
+				vscodeWorkspace.setConfigurationKey(ConfigExtension.extensionName, settingKey, nextValue);
+				this.tooltipProvider.update();
+			})
+		);
+
+		// Refresh the tooltip whenever settings change
+		vscodeContext.registerDisposable(
+			VSCode.workspace.onDidChangeConfiguration(e => {
+				if (e.affectsConfiguration(ConfigExtension.extensionName)) {
+					this.tooltipProvider.update();
+
+					for (const [settingKey, label] of Object.entries(SETTING_LABELS)) {
+						if (!e.affectsConfiguration(`${ConfigExtension.extensionName}.${settingKey}`)) continue;
+						const enabled = vscodeWorkspace.isConfigurationKeyEnabled(
+							ConfigExtension.extensionName,
+							settingKey
+						);
+						const state = enabled ? "enabled" : "disabled";
+						VSCode.window.setStatusBarMessage(`${packageName}: ${label} ${state}.`, 2500);
+						this.writeLog(
+							packageName,
+							`Setting '${label}' changed to ${state}.`,
+							EnumsExtension.LoggerLevel.INFO
+						);
+					}
+				}
+			})
+		);
 	}
 
 	/**
@@ -262,12 +348,17 @@ class DevToolsExtension {
 
 	/**
 	 * Runs 'mcdev explainTypes --json' in the background after initial load and updates
-	 * the metadata types list if new or removed types are detected.
+	 * the metadata types list if any changes to types are detected.
 	 *
 	 * @async
 	 * @returns {Promise<void>}
 	 */
 	async refreshMetadataTypesInBackground(): Promise<void> {
+		const packageName = this.mcdev.getPackageName();
+		this.tooltipProvider.addCacheEntry("metadataTypes", "Metadata Types");
+		this.tooltipProvider.setCacheLoading("metadataTypes");
+		this.tooltipProvider.update();
+		this.writeLog(packageName, "Caching metadata types...", EnumsExtension.LoggerLevel.INFO);
 		try {
 			const workspace = this.vscodeEditor.getWorkspace();
 			const workspacePath = workspace.getWorkspaceFsPath();
@@ -307,10 +398,13 @@ class DevToolsExtension {
 			sessionLogger.endSession(success);
 		} catch (error) {
 			this.writeLog(
-				this.mcdev.getPackageName(),
+				packageName,
 				`[index_refreshMetadataTypesInBackground]: ${error}`,
 				EnumsExtension.LoggerLevel.WARN
 			);
+		} finally {
+			this.tooltipProvider.setCacheDone("metadataTypes");
+			this.writeLog(packageName, "Caching metadata types done", EnumsExtension.LoggerLevel.INFO);
 		}
 	}
 
@@ -434,6 +528,18 @@ class DevToolsExtension {
 		if (Array.isArray(userAnswer)) return userAnswer.map(answer => answer.label);
 		// Returns the selected option as a string if only one option can be selected
 		return userAnswer.label;
+	}
+
+	/**
+	 * Prompts the user to enter free-form text and returns their input.
+	 *
+	 * @param {string} prompt - The message shown below the input field.
+	 * @param {string} [placeHolder] - Optional placeholder text shown inside the input field.
+	 * @returns {Promise<string | undefined>} The value entered by the user, or undefined if cancelled.
+	 */
+	async requestInputText(prompt: string, placeHolder?: string): Promise<string | undefined> {
+		const window = this.vscodeEditor.getWindow();
+		return window.showInputBox(prompt, placeHolder);
 	}
 
 	/**
@@ -573,6 +679,691 @@ class DevToolsExtension {
 	}
 
 	/**
+	 * Registers document link providers for the extension.
+	 *
+	 * 1. ContentBlockLinkProvider – enables Ctrl+Click navigation from
+	 *    ContentBlockByKey() references to the corresponding asset file.
+	 *    A key cache is pre-built by scanning retrieve/<cred>/<bu>/asset/{other,block}
+	 *    files on startup (fire-and-forget) and kept live via a FileSystemWatcher.
+	 *
+	 * 2. RelatedItemLinkProvider – enables Ctrl+Click navigation from
+	 *    r__TYPE_key values (and automation r__type / r__key pairs) in JSON
+	 *    metadata files to the corresponding metadata file in the same BU tree.
+	 *    Links are resolved on demand and cached after the first lookup.
+	 *
+	 * 3. DataExtensionLinkProvider – enables Ctrl+Click navigation from
+	 *    dataExtension names referenced in FROM / JOIN clauses of SQL query
+	 *    files (retrieve/<cred>/<bu>/query/*.sql) to the corresponding
+	 *    dataExtension-meta.json file.  Names prefixed with "ENT." (case-
+	 *    insensitive) are resolved against the parent BU folder instead.
+	 *    A per-BU name cache is built lazily the first time a query file for
+	 *    that BU is opened.
+	 *
+	 * 4. RelatedItemDiagnosticProvider – emits VS Code diagnostics (shown
+	 *    inline, in the Problems panel, and as a coloured file indicator in
+	 *    the Explorer) for every r__TYPE_key / r__type + r__key reference
+	 *    whose target file cannot be found in the retrieve tree:
+	 *      • Warning  — when the type folder has never been retrieved.
+	 *      • Warning  — when the folder exists but the specific key is absent.
+	 *    Types not listed in metaDataTypes.retrieve in .mcdevrc.json, or
+	 *    types that do not support deploy, are silently ignored.
+	 *
+	 * 5. RelatedItemCodeActionProvider – provides a "Retrieve type:key from
+	 *    cred/bu" quick fix for each unresolved-reference diagnostic.  After
+	 *    the retrieve completes only the triggering document is re-validated.
+	 *
+	 * 6. ContentBlockDiagnosticProvider – emits VS Code diagnostics for every
+	 *    ContentBlockByKey() reference whose key cannot be found in the global
+	 *    asset key cache (retrieve/<cred>/<bu>/asset/{other,block}/).
+	 *    Controlled by the warnOnContentBlockByKey setting (default: true).
+	 *
+	 * 7. ContentBlockCodeActionProvider – provides a "Retrieve asset:key from
+	 *    cred/bu" quick fix for each unresolved ContentBlockByKey diagnostic.
+	 *
+	 * 8. SqlDataViewHoverProvider – shows hover-only informational hints for
+	 *    known SFMC system data views (e.g. _Sent) in SQL query files.
+	 *    Controlled by the showSqlDataViewHoverNotice setting (default: true).
+	 *
+	 * 9. SqlDiagnosticProvider – emits VS Code warning diagnostics for SQL
+	 *    query files when data extension names cannot be resolved in the
+	 *    retrieve tree. Controlled by the warnOnMissingSqlDataExtension
+	 *    setting (default: true).
+	 *
+	 * 10. SqlCodeActionProvider – provides a "Retrieve dataExtension:name from
+	 *    cred/bu" quick fix for each unresolved SQL data-extension diagnostic.
+	 *
+	 * 11. ScriptDataExtensionLinkProvider – enables Ctrl+Click navigation from
+	 *    dataExtension names referenced in SSJS / AMPscript function calls
+	 *    (e.g. Lookup, LookupRows, InsertData, proxy.retrieve, etc.) in
+	 *    .amp/.ssjs/.html/.js files to the corresponding
+	 *    dataExtension-meta.json file.
+	 *
+	 * 12. ScriptDiagnosticProvider – emits VS Code warning diagnostics for
+	 *    .amp/.ssjs/.html/.js files when data extension names in SSJS /
+	 *    AMPscript function calls cannot be resolved in the retrieve tree.
+	 *    Controlled by the warnOnMissingScriptDataExtension setting
+	 *    (default: true).
+	 *
+	 * 13. ScriptCodeActionProvider – provides a "Retrieve dataExtension:name
+	 *    from cred/bu" quick fix for each unresolved script data-extension
+	 *    diagnostic.
+	 *
+	 * @returns {void}
+	 */
+	activateLinkProviders(): void {
+		console.log("== Activate Link Providers ==");
+		const vscodeContext = this.vscodeEditor.getContext();
+		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
+		const packageName = this.mcdev.getPackageName();
+
+		const provider = new ContentBlockLinkProvider();
+
+		// Register and track ContentBlock key cache in tooltip
+		this.tooltipProvider.addCacheEntry("contentBlockKeys", "Content Block Keys");
+		this.tooltipProvider.update();
+		this.writeLog(packageName, "Caching Content Block keys...", EnumsExtension.LoggerLevel.INFO);
+
+		// Populate the key cache in the background; links resolve instantly once ready
+		provider
+			.init()
+			.then(() => {
+				this.tooltipProvider.setCacheDone("contentBlockKeys");
+				this.writeLog(packageName, "Caching Content Block keys done", EnumsExtension.LoggerLevel.INFO);
+			})
+			.catch(err => {
+				console.error("[sfmc-devtools-vscode] ContentBlockLinkProvider cache init failed:", err);
+				this.tooltipProvider.setCacheDone("contentBlockKeys");
+				this.writeLog(
+					packageName,
+					`Caching Content Block keys failed: ${err}`,
+					EnumsExtension.LoggerLevel.WARN
+				);
+			});
+
+		// Keep the cache live as asset files are added or removed
+		const workspaceUri = vscodeWorkspace.getWorkspaceURI();
+		// contentBlockDiagnosticProvider is conditionally created below so that
+		// the existing watcher can fan out to both the link provider and the
+		// diagnostic provider without duplicating FileSystemWatchers.
+		let contentBlockDiagnosticProvider: ContentBlockDiagnosticProvider | undefined;
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnContentBlockByKey")) {
+			contentBlockDiagnosticProvider = new ContentBlockDiagnosticProvider();
+			vscodeContext.registerDisposable(contentBlockDiagnosticProvider.getDiagnosticCollection());
+
+			// Populate the key cache; validateDocument() internally awaits
+			// this promise so event handlers registered below are safe to
+			// fire before init completes (no false-positive race).
+			contentBlockDiagnosticProvider.init().catch(err => {
+				console.error("[sfmc-devtools-vscode] ContentBlockDiagnosticProvider cache init failed:", err);
+			});
+		}
+
+		if (workspaceUri) {
+			const watcher = VSCode.workspace.createFileSystemWatcher(
+				new VSCode.RelativePattern(workspaceUri, ASSET_CACHE_GLOB)
+			);
+			watcher.onDidCreate(uri => {
+				provider.addToCache(uri);
+				if (contentBlockDiagnosticProvider) {
+					const cbProvider = contentBlockDiagnosticProvider;
+					cbProvider.addToCache(uri);
+					// A new key is now resolvable — clear warnings in open documents
+					VSCode.workspace.textDocuments.forEach(doc => {
+						cbProvider.validateDocument(doc).catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider create revalidation failed:",
+								err
+							);
+						});
+					});
+				}
+			});
+			watcher.onDidDelete(uri => {
+				provider.removeFromCache(uri);
+				if (contentBlockDiagnosticProvider) {
+					contentBlockDiagnosticProvider.removeFromCache(uri);
+				}
+			});
+			vscodeContext.registerDisposable(watcher);
+		}
+
+		vscodeContext.registerDisposable(VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, provider));
+
+		// Register on-demand link provider for r__TYPE_key relation fields in JSON files
+		const relatedItemProvider = new RelatedItemLinkProvider();
+		vscodeContext.registerDisposable(
+			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, relatedItemProvider)
+		);
+
+		// Register on-demand link provider for dataExtension names in SQL query files
+		const dataExtensionProvider = new DataExtensionLinkProvider();
+		vscodeContext.registerDisposable(
+			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, dataExtensionProvider)
+		);
+
+		// Register on-demand link provider for dataExtension names in SSJS / AMPscript files
+		const scriptDeProvider = new ScriptDataExtensionLinkProvider();
+		vscodeContext.registerDisposable(
+			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, scriptDeProvider)
+		);
+
+		// Register on-demand caching entries in the tooltip
+		this.tooltipProvider.addCacheEntry("relatedItems", "JSON Relation Lookup (on open/save)");
+		this.tooltipProvider.addCacheEntry("sqlDataExtensions", "SQL Data Extension Lookup (on open/save)");
+		this.tooltipProvider.addCacheEntry("scriptDataExtensions", "Script Data Extension Lookup (on open/save)");
+		// On-demand entries start as done since they activate per-file
+		this.tooltipProvider.setCacheDone("relatedItems");
+		this.tooltipProvider.setCacheDone("sqlDataExtensions");
+		this.tooltipProvider.setCacheDone("scriptDataExtensions");
+		this.writeLog(
+			packageName,
+			"Registered on-demand link providers (JSON relations, SQL data extensions, script data extensions)",
+			EnumsExtension.LoggerLevel.INFO
+		);
+
+		// ── Diagnostic + quick-fix providers for unresolvable r__ references ──
+		// Only activated when the warnOnMissingJsonRelation feature flag is enabled.
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingJsonRelation")) {
+			/**
+			 * Determines whether a given type should produce a diagnostic.
+			 * Returns false (suppress) when:
+			 *   1. The type does not support the deploy action (read-only / not pushable).
+			 *   2. The project's .mcdevrc.json defines metaDataTypes.retrieve and the
+			 *      type is not listed there (user has not configured it for retrieval).
+			 *
+			 * The parsed metaDataTypes.retrieve array is cached per project path so
+			 * that the config file is only read once per project per activation.
+			 */
+			const configuredTypesCache = new Map<string, string[] | null>();
+			const shouldValidateType = (type: string, projectPath: string): boolean => {
+				// Suppress types that do not support deploy
+				if (!this.mcdev.isActionSupportedForType("deploy", type)) return false;
+
+				// Suppress types excluded from the project's retrieve configuration
+				if (!configuredTypesCache.has(projectPath)) {
+					try {
+						const configPath = Lib.removeLeadingRootDrivePath(this.mcdev.getConfigFilePath(projectPath));
+						const content = File.readFileSync(configPath);
+						const config = JSON.parse(content) as TDevTools.IConfigFile;
+						configuredTypesCache.set(projectPath, config?.metaDataTypes?.retrieve ?? null);
+					} catch {
+						// Config unreadable → cache null (be permissive)
+						configuredTypesCache.set(projectPath, null);
+					}
+				}
+				const configuredTypes = configuredTypesCache.get(projectPath) ?? null;
+				if (configuredTypes && !configuredTypes.includes(type)) return false;
+				return true;
+			};
+
+			const diagnosticProvider = new RelatedItemDiagnosticProvider(shouldValidateType);
+			vscodeContext.registerDisposable(diagnosticProvider.getDiagnosticCollection());
+
+			// Validate already-open JSON documents on startup (fire-and-forget)
+			VSCode.workspace.textDocuments.forEach(doc => {
+				diagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] RelatedItemDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a JSON document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					this.tooltipProvider.setCacheLoading("relatedItems");
+					diagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider open validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("relatedItems");
+						});
+				})
+			);
+
+			// On save: clear the resolution cache only for retrieve-tree files (they
+			// may themselves be targets), then re-validate only the saved document.
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					if (doc.uri.path.includes("/retrieve/")) diagnosticProvider.clearCache();
+					this.tooltipProvider.setCacheLoading("relatedItems");
+					diagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider save validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("relatedItems");
+						});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					diagnosticProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for JSON files
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider(
+					{ language: "json", scheme: "file" },
+					new RelatedItemCodeActionProvider(),
+					{ providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix] }
+				)
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, clear the cache and re-validate only the
+			// document that triggered the action so diagnostics update immediately.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_RELATED_ITEM_COMMAND,
+					async ({ projectPath, credBu, type, key, documentUri }: IRetrieveRelatedItemArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/${type}/${key}.${type}-meta.json`,
+							credentialsName,
+							businessUnit,
+							metadataType: type,
+							filename: key
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							diagnosticProvider.clearCache();
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								diagnosticProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
+
+		// ── ContentBlockByKey diagnostic + quick-fix providers ──
+		// The contentBlockDiagnosticProvider was already created and initialised
+		// above (before the watcher) when the feature flag is enabled.
+
+		if (contentBlockDiagnosticProvider) {
+			const cbProvider = contentBlockDiagnosticProvider;
+
+			// Validate already-open documents on startup (fire-and-forget).
+			// validateDocument() internally awaits the init promise so this is
+			// safe even if the cache is still being populated.
+			VSCode.workspace.textDocuments.forEach(doc => {
+				cbProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] ContentBlockDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					cbProvider.validateDocument(doc).catch(err => {
+						console.error(
+							"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider open validation failed:",
+							err
+						);
+					});
+				})
+			);
+
+			// On save: re-validate the saved document
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					cbProvider.validateDocument(doc).catch(err => {
+						console.error(
+							"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider save validation failed:",
+							err
+						);
+					});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					cbProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for all file types in retrieve/deploy
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider({ scheme: "file" }, new ContentBlockCodeActionProvider(), {
+					providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix]
+				})
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, re-validate the triggering document.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_CONTENT_BLOCK_COMMAND,
+					async ({ projectPath, credBu, key, documentUri }: IRetrieveContentBlockArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/asset/${key}.asset-meta.json`,
+							credentialsName,
+							businessUnit,
+							metadataType: "asset",
+							filename: key
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								cbProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] ContentBlockDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
+
+		// ── SQL hover + diagnostic + quick-fix providers ──
+		// Provides hover-only data-view hints and warning diagnostics for
+		// unresolvable data-extension references.
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "showSqlDataViewHoverNotice")) {
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerHoverProvider(
+					{ language: "sql", scheme: "file" },
+					new SqlDataViewHoverProvider()
+				)
+			);
+		}
+
+		if (vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingSqlDataExtension")) {
+			const sqlDiagnosticProvider = new SqlDiagnosticProvider();
+			vscodeContext.registerDisposable(sqlDiagnosticProvider.getDiagnosticCollection());
+
+			// Watch for dataExtension file changes to invalidate the name cache
+			if (workspaceUri) {
+				const deWatcher = VSCode.workspace.createFileSystemWatcher(
+					new VSCode.RelativePattern(workspaceUri, "**/retrieve/**/dataExtension/*.dataExtension-meta.json")
+				);
+				const revalidateOpenSqlDocs = () => {
+					sqlDiagnosticProvider.clearCache();
+					VSCode.workspace.textDocuments.forEach(doc => {
+						sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] SqlDiagnosticProvider DE-change revalidation failed:",
+								err
+							);
+						});
+					});
+				};
+				deWatcher.onDidCreate(revalidateOpenSqlDocs);
+				deWatcher.onDidDelete(revalidateOpenSqlDocs);
+				deWatcher.onDidChange(revalidateOpenSqlDocs);
+				vscodeContext.registerDisposable(deWatcher);
+			}
+
+			// Validate already-open SQL documents on startup (fire-and-forget)
+			VSCode.workspace.textDocuments.forEach(doc => {
+				sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					this.tooltipProvider.setCacheLoading("sqlDataExtensions");
+					sqlDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider open validation failed:", err);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("sqlDataExtensions");
+						});
+				})
+			);
+
+			// On save: re-validate the saved document
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					this.tooltipProvider.setCacheLoading("sqlDataExtensions");
+					sqlDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider save validation failed:", err);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("sqlDataExtensions");
+						});
+				})
+			);
+
+			// Re-validate on text changes (debounced by VS Code's batching)
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidChangeTextDocument(event => {
+					sqlDiagnosticProvider.validateDocument(event.document).catch(err => {
+						console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider change validation failed:", err);
+					});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					sqlDiagnosticProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for SQL files
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider(
+					{ language: "sql", scheme: "file" },
+					new SqlCodeActionProvider(),
+					{ providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix] }
+				)
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, clear the cache and re-validate
+			// the document that triggered the action.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_SQL_DE_COMMAND,
+					async ({ projectPath, credBu, name, documentUri }: IRetrieveSqlDataExtensionArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/dataExtension/`,
+							credentialsName,
+							businessUnit,
+							metadataType: "dataExtension",
+							metadataSubKey: "name",
+							filename: name
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							sqlDiagnosticProvider.clearCache();
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								sqlDiagnosticProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] SqlDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
+
+		// ── SSJS / AMPscript diagnostic + quick-fix providers ──
+		// Provides warning diagnostics for unresolvable data-extension references
+		// in .amp, .ssjs, .html, and .js files.
+
+		if (
+			vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "warnOnMissingScriptDataExtension")
+		) {
+			const scriptDiagnosticProvider = new ScriptDiagnosticProvider();
+			vscodeContext.registerDisposable(scriptDiagnosticProvider.getDiagnosticCollection());
+
+			// Watch for dataExtension file changes to invalidate the name cache
+			// for both the diagnostic provider and the link provider.
+			if (workspaceUri) {
+				const scriptDeWatcher = VSCode.workspace.createFileSystemWatcher(
+					new VSCode.RelativePattern(workspaceUri, "**/retrieve/**/dataExtension/*.dataExtension-meta.json")
+				);
+				const revalidateOpenScriptDocs = () => {
+					scriptDeProvider.clearCache();
+					scriptDiagnosticProvider.clearCache();
+					VSCode.workspace.textDocuments.forEach(doc => {
+						scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ScriptDiagnosticProvider DE-change revalidation failed:",
+								err
+							);
+						});
+					});
+				};
+				scriptDeWatcher.onDidCreate(revalidateOpenScriptDocs);
+				scriptDeWatcher.onDidDelete(revalidateOpenScriptDocs);
+				scriptDeWatcher.onDidChange(revalidateOpenScriptDocs);
+				vscodeContext.registerDisposable(scriptDeWatcher);
+			}
+
+			// Validate already-open script documents on startup (fire-and-forget)
+			VSCode.workspace.textDocuments.forEach(doc => {
+				scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+					console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider init validation failed:", err);
+				});
+			});
+
+			// Validate whenever a document is opened
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidOpenTextDocument(doc => {
+					this.tooltipProvider.setCacheLoading("scriptDataExtensions");
+					scriptDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ScriptDiagnosticProvider open validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("scriptDataExtensions");
+						});
+				})
+			);
+
+			// On save: re-validate the saved document
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidSaveTextDocument(doc => {
+					this.tooltipProvider.setCacheLoading("scriptDataExtensions");
+					scriptDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ScriptDiagnosticProvider save validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("scriptDataExtensions");
+						});
+				})
+			);
+
+			// Re-validate on text changes (debounced by VS Code's batching)
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidChangeTextDocument(event => {
+					scriptDiagnosticProvider.validateDocument(event.document).catch(err => {
+						console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider change validation failed:", err);
+					});
+				})
+			);
+
+			// Clear diagnostics when a document is closed
+			vscodeContext.registerDisposable(
+				VSCode.workspace.onDidCloseTextDocument(doc => {
+					scriptDiagnosticProvider.clearDocument(doc.uri);
+				})
+			);
+
+			// Register the quick-fix code-action provider for script files
+			vscodeContext.registerDisposable(
+				VSCode.languages.registerCodeActionsProvider({ scheme: "file" }, new ScriptCodeActionProvider(), {
+					providedCodeActionKinds: [VSCode.CodeActionKind.QuickFix]
+				})
+			);
+
+			// Register the command executed by the quick fix.
+			// After a successful retrieve, clear the cache and re-validate
+			// the document that triggered the action.
+			vscodeContext.registerDisposable(
+				VSCode.commands.registerCommand(
+					RETRIEVE_SCRIPT_DE_COMMAND,
+					async ({ projectPath, credBu, name, documentUri }: IRetrieveScriptDataExtensionArgs) => {
+						const [credentialsName, businessUnit] = credBu.split("/");
+						const fileDetail: TDevTools.IExecuteFileDetails = {
+							level: "file",
+							projectPath,
+							topFolder: "/retrieve/",
+							path: `${projectPath}/retrieve/${credBu}/dataExtension/`,
+							credentialsName,
+							businessUnit,
+							metadataType: "dataExtension",
+							metadataSubKey: "name",
+							filename: name
+						};
+						const success = await this.executeCommand("retrieve", { filesDetails: [fileDetail] });
+						if (success) {
+							scriptDeProvider.clearCache();
+							scriptDiagnosticProvider.clearCache();
+							const doc = VSCode.workspace.textDocuments.find(d => d.uri.toString() === documentUri);
+							if (doc) {
+								scriptDiagnosticProvider.validateDocument(doc).catch(err => {
+									console.error(
+										"[sfmc-devtools-vscode] ScriptDiagnosticProvider post-retrieve validation failed:",
+										err
+									);
+								});
+							}
+						}
+					}
+				)
+			);
+		}
+	}
+
+	/**
 	 * Executes the Menu Command by command name
 	 *
 	 * @param {string} command - command name
@@ -585,6 +1376,7 @@ class DevToolsExtension {
 
 		// menu commands handlers
 		const menuCommandsHandlers: { [key: string]: () => void } = {
+			changekey: () => this.handleChangeKeyCommand(selectedFiles),
 			copytobu: () => this.handleCopyToBUCommand(selectedFiles),
 			delete: () => this.handleDeleteCommand(selectedFiles),
 			deploy: () => this.handleDeployCommand(selectedFiles),
@@ -710,6 +1502,122 @@ class DevToolsExtension {
 		const supportedFiles = this.filterSupportedFiles(files, "deploy");
 		if (!supportedFiles.length) return;
 		this.executeCommand("deploy", { filesDetails: supportedFiles });
+	}
+
+	/**
+	 * Reads a JSON file and returns its top-level attribute names.
+	 * When the given path is not a .json file, the method looks for a sibling .json file
+	 * with the same base name (e.g. myEmail.amp → myEmail.json) so that clicking on a
+	 * related file still surfaces the correct field list.
+	 * Returns an empty array when no readable JSON object can be found.
+	 *
+	 * @private
+	 * @param {string} filePath - absolute path to the file
+	 * @returns {string[]} sorted top-level keys, or [] on error
+	 */
+	private readJsonTopLevelKeys(filePath: string): string[] {
+		try {
+			let jsonPath = filePath;
+			if (!filePath.endsWith(".json")) {
+				// Derive the related .json path by replacing the last extension
+				const lastDotIndex = filePath.lastIndexOf(".");
+				const basePathWithoutExt = lastDotIndex > -1 ? filePath.substring(0, lastDotIndex) : filePath;
+				const candidatePath = `${basePathWithoutExt}.json`;
+				if (File.fileExists(candidatePath).length > 0) {
+					jsonPath = candidatePath;
+				} else if (filePath.endsWith("-doc.md")) {
+					const candidatePath = `${filePath.split("-doc.md")[0]}-meta.json`;
+					if (File.fileExists(candidatePath).length > 0) {
+						jsonPath = candidatePath;
+					}
+				}
+			}
+			const content = File.readFileSync(Lib.removeLeadingRootDrivePath(jsonPath));
+			const parsed = JSON.parse(content);
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				return Object.keys(parsed).sort();
+			}
+		} catch {
+			// File is not JSON or cannot be read; caller will fall back to free-text input
+		}
+		return [];
+	}
+
+	/**
+	 * Handles the Menu Command 'changekey'.
+	 * Prompts the user for the key-change method (field name or custom value) and
+	 * runs `mcdev deploy ... --changeKeyField` or `--changeKeyValue` accordingly.
+	 * Only works with files from the retrieve folder.
+	 *
+	 * @async
+	 * @param {TDevTools.IExecuteFileDetails[]} files - selected files
+	 * @returns {Promise<void>}
+	 */
+	async handleChangeKeyCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		// Filter out metadata types that do not support changeKey
+		const supportedFiles = this.filterSupportedFiles(files, "changekey");
+		if (!supportedFiles.length) return;
+
+		let changeKeyField: string | undefined;
+		let changeKeyValue: string | undefined;
+
+		if (supportedFiles.length > 1) {
+			// Multiple files selected: all must share the same metadata type for "change key by field".
+			const distinctTypes = [...new Set(supportedFiles.map(f => f.metadataType).filter(Boolean))] as string[];
+			if (distinctTypes.length > 1) {
+				this.showInformationMessage("error", MessagesEditor.changeKeyMixedTypesError(distinctTypes), []);
+				return;
+			}
+			// All files share the same type: scan the first file and show the same
+			// type-to-filter QuickPick as in single-file "Field" mode.
+			const jsonKeys = this.readJsonTopLevelKeys(supportedFiles[0].path);
+			if (jsonKeys.length) {
+				changeKeyField = (await this.requestInputWithOptions(
+					jsonKeys,
+					MessagesEditor.changeKeyFieldListPrompt,
+					false
+				)) as string | undefined;
+			} else {
+				changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+			}
+			if (!changeKeyField) return;
+		} else {
+			// Single file selected: ask the user to choose between field or custom value
+			const method = (await this.requestInputWithOptions(
+				Object.keys(EnumsDevTools.ChangeKeyOptions),
+				MessagesEditor.changeKeyMethodPrompt,
+				false
+			)) as string | undefined;
+			if (!method) return;
+
+			// QuickPick returns the option key as a label (e.g. "Field"); lowercasing it
+			// matches the enum value (e.g. ChangeKeyOptions.Field = "field") – same pattern
+			// as CopyToBUOptions comparisons in this file.
+			if (method.toLowerCase() === EnumsDevTools.ChangeKeyOptions.Field) {
+				// Try to populate the QuickPick from the file's JSON top-level keys so the
+				// user can start typing to filter; fall back to free-text when unavailable.
+				const jsonKeys = this.readJsonTopLevelKeys(supportedFiles[0].path);
+				if (jsonKeys.length) {
+					changeKeyField = (await this.requestInputWithOptions(
+						jsonKeys,
+						MessagesEditor.changeKeyFieldListPrompt,
+						false
+					)) as string | undefined;
+				} else {
+					changeKeyField = await this.requestInputText(MessagesEditor.changeKeyFieldPrompt);
+				}
+				if (!changeKeyField) return;
+			} else {
+				changeKeyValue = await this.requestInputText(MessagesEditor.changeKeyValuePrompt);
+				if (!changeKeyValue) return;
+			}
+		}
+
+		const executeParams: TDevTools.IExecuteParameters = { filesDetails: supportedFiles };
+		if (changeKeyField) executeParams.changeKeyField = changeKeyField;
+		else if (changeKeyValue) executeParams.changeKeyValue = changeKeyValue;
+
+		this.executeCommand("changekey", executeParams);
 	}
 
 	/**
@@ -860,10 +1768,11 @@ class DevToolsExtension {
 	 * @returns The formatted status bar title string.
 	 */
 	getStatusBarTitle(iconName: string, name: string): string {
-		// Get the status bar icon based on the icon name
-		const statusBarIcon = EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon];
-		// Codicon names consist only of letters, digits, and hyphens; emoji/unicode chars are used directly
-		const iconText = /^[a-zA-Z0-9-]+$/.test(statusBarIcon) ? `$(${statusBarIcon})` : statusBarIcon;
+		// Get the status bar icon based on the icon name (fall back to the raw name for ad-hoc codicons)
+		const statusBarIcon =
+			EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon] || iconName;
+		// Codicon names consist only of letters, digits, hyphens, and tildes; emoji/unicode chars are used directly
+		const iconText = /^[a-zA-Z0-9~-]+$/.test(statusBarIcon) ? `$(${statusBarIcon})` : statusBarIcon;
 		return `${iconText} ${name}`;
 	}
 
@@ -935,7 +1844,10 @@ class DevToolsExtension {
 			if (info && trimmedInfo.startsWith(runningPrefix)) {
 				lastRunCommand = trimmedInfo.slice(runningPrefix.length).trimEnd();
 				if (progressReporter) {
-					const displayCommand = lastRunCommand.replace(/ --noLogColors/g, "").trimEnd();
+					const displayCommand = lastRunCommand
+						.replace(/ --noLogColors/g, "")
+						.replace(/ --y/g, "")
+						.trimEnd();
 					progressReporter.report({ message: `Running ${displayCommand}` });
 				}
 			}

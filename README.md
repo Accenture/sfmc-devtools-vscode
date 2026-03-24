@@ -22,20 +22,15 @@ npm install -g mcdev
 - A `mcddev` button should display at the bottom bar
 
 ### Initialize SFMC DevTools Project
+
 If you are starting a completely new SFMC DevTools project
+
 - Go to Terminal and click on New Terminal
 - Enter the command `mcdev init` and follow the interactive instructions to initialize a new project. For more guidance, consult the official SFMC DevTools documentation [here](https://github.com/Accenture/sfmc-devtools/wiki/06.a-~-Admin-Commands#init)
-
 
 ### Wiki
 
 Consult the [Wiki](https://github.com/Accenture/sfmc-devtools-vscode/wiki) for a complete guide on how to use the SFMC DevTools Vscode Extension.
-
-
-### Currently Supported Accenture SFMC DevTools commands
-
-- [Retrieve](https://github.com/Accenture/sfmc-devtools/wiki/06.b-~-Standard-Commands#retrieve)
-- [Deploy](https://github.com/Accenture/sfmc-devtools/wiki/06.b-~-Standard-Commands#deploy)
 
 ### Features
 
@@ -48,4 +43,4 @@ Consult the [Wiki](https://github.com/Accenture/sfmc-devtools-vscode/wiki) for a
 
 ### Copyright
 
-Copyright (c) 2024 Accenture. [MIT licensed](https://github.com/Accenture/sfmc-devtools-vscode/blob/main/LICENSE).
+Copyright (c) 2026 Accenture. [MIT licensed](https://github.com/Accenture/sfmc-devtools-vscode/blob/main/LICENSE).

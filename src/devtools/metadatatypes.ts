@@ -10,7 +10,8 @@ import { TDevTools } from "@types";
 const MetadataTypesSupportedActions: { [action: string]: TDevTools.MetadataTypesActions[] } = {
 	retrieve: ["retrieve"],
 	deploy: ["create", "update"],
-	delete: ["delete"]
+	delete: ["delete"],
+	changekey: ["changeKey"]
 };
 
 /**
@@ -82,7 +83,7 @@ class MetadataTypes {
 
 	/**
 	 * Updates the metadata types list with the provided types.
-	 * Returns true if any new or removed types were detected.
+	 * Returns true if any change is detected: new types, removed types, or modified properties of existing types.
 	 *
 	 * @param {string} types - updated list of metadata types
 	 * @returns {boolean} true if the list changed, false otherwise

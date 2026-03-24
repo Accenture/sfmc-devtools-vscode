@@ -132,7 +132,7 @@ class Mcdev {
 
 	/**
 	 * Updates the internal metadata types list with a new set of types.
-	 * Returns true when the list was changed (new or removed types detected).
+	 * Returns true when the list was changed (new, removed, or modified types detected).
 	 *
 	 * @public
 	 * @param {TDevTools.IMetadataTypes[]} jsonMetadataTypes - updated metadata types list
@@ -304,13 +304,19 @@ class Mcdev {
 		level,
 		path,
 		metadataType,
+		metadataSubKey,
 		filename
 	}: TDevTools.IExecuteFileDetails): TDevTools.IMetadataCommand | undefined {
 		switch (level) {
 			case "mdt_folder":
 				return { metadatatype: metadataType as string, key: "", path };
 			case "file":
-				return { metadatatype: metadataType as string, key: filename || "", path };
+				return {
+					metadatatype: metadataType as string,
+					key: filename || "",
+					...(metadataSubKey ? { subKey: metadataSubKey } : {}),
+					path
+				};
 			default:
 				return undefined;
 		}
@@ -384,6 +390,13 @@ class Mcdev {
 		const commandResults: boolean[] = [];
 
 		const commandConfig = mcdevCommand.run(command, commandParameters);
+
+		// If the command carries a pre-run informational message (e.g. because the delete
+		// command was split into multiple invocations due to command-line length limits),
+		// log it once before executing any of the chunks.
+		if (commandConfig.preRunInfo) {
+			commandHandler({ info: `${commandConfig.preRunInfo}\n` });
+		}
 
 		for (const [parameters, projectPath] of commandConfig.config) {
 			if (cancellationToken?.isCancellationRequested) break;

@@ -1,5 +1,6 @@
 import Commands from "./commands";
 import { TDevTools } from "@types";
+import { MessagesDevTools } from "@messages";
 
 /**
  * Standard Commands Alias
@@ -27,17 +28,20 @@ class StandardCommands extends Commands {
 	 */
 	commandsList(): string[] {
 		console.log("== StandardCommands: commandsList ==");
-		return Object.keys(StandardCommandsAlias);
+		// "changekey" is listed separately because it reuses the deploy ("d") alias at runtime
+		// but requires its own build logic (adds --fromRetrieve, --skipValidation and a
+		// changeKey flag); adding it as a duplicate enum key is not possible in TypeScript.
+		return [...Object.keys(StandardCommandsAlias), "changekey"];
 	}
 
 	/**
 	 * Runs a command
 	 *
-	 * @param {keyof typeof StandardCommandsAlias} name - admin command name
+	 * @param {string} name - standard command name
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} configuration after running a specific command
 	 */
-	run(name: keyof typeof StandardCommandsAlias, parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+	run(name: string, parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		console.log("== StandardCommands: Run ==");
 		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
 		switch (name) {
@@ -49,6 +53,9 @@ class StandardCommands extends Commands {
 				break;
 			case "delete":
 				config = this.delete(parameters);
+				break;
+			case "changekey":
+				config = this.changekey(parameters);
 				break;
 		}
 		return config;
@@ -136,15 +143,80 @@ class StandardCommands extends Commands {
 
 			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
 
+			// Split each parameter set into chunks that fit within the OS command-line
+			// length limit, then build the config entries for every chunk.
+			const deleteConfig: string[][] = [];
+			for (const parameter of fileParameters) {
+				const chunks = this.splitParametersByCommandLength(parameter);
+				for (const chunk of chunks) {
+					deleteConfig.push([this.configureParameters(chunk), chunk.projectPath]);
+				}
+			}
+
+			// If chunking produced more entries than the original number of file parameters,
+			// attach a one-time info message so the caller can notify the user before starting.
+			const preRunInfo =
+				deleteConfig.length > fileParameters.length
+					? MessagesDevTools.mcdevDeleteCommandSplit(deleteConfig.length)
+					: undefined;
+
+			return { alias: deleteAlias, config: deleteConfig, preRunInfo };
+		}
+		throw new Error(`[standard_delete]: The property 'files' is missing from parameters.`);
+	}
+
+	/**
+	 * Standard Command 'changekey' execution
+	 *
+	 * @param {TDevTools.ICommandParameters} parameters - command parameters
+	 * @returns {TDevTools.ICommandConfig} command configuration
+	 */
+	changekey(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		console.log("== StandardCommands: ChangeKey ==");
+
+		if ("files" in parameters) {
+			// changekey runs as a deploy command with --fromRetrieve and a changeKey flag
+			const deployAlias = StandardCommandsAlias.deploy;
+
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+
+			// Require exactly one changeKey parameter before proceeding
+			const hasChangeKeyField = "changeKeyField" in parameters;
+			const hasChangeKeyValue = "changeKeyValue" in parameters;
+			if (!hasChangeKeyField && !hasChangeKeyValue) {
+				throw new Error(
+					`[standard_changekey]: Either 'changeKeyField' or 'changeKeyValue' must be provided in parameters.`
+				);
+			}
+
+			// Build the flags assigned to ICommandFileParameters.optional:
+			// always --fromRetrieve and --skipValidation, plus either --changeKeyField or --changeKeyValue.
+			const optionalFlags: string[] = [this.retrieveFlag("fromRetrieve"), this.retrieveFlag("skipValidation")];
+			if (hasChangeKeyField) {
+				optionalFlags.push(`${this.retrieveFlag("changeKeyField")} "${parameters.changeKeyField}"`);
+			} else {
+				optionalFlags.push(`${this.retrieveFlag("changeKeyValue")} "${parameters.changeKeyValue}"`);
+			}
+
+			// Only include files that have a key (specific files, not folder-level);
+			// create new parameter objects to avoid mutating the input array.
+			const filteredParameters = fileParameters
+				.map(parameter => ({
+					...parameter,
+					metadata: parameter.metadata.filter(({ key }: TDevTools.IMetadataCommand) => key && key !== ""),
+					optional: optionalFlags
+				}))
+				.filter(param => param.metadata.length > 0);
+
 			// command parameters configuration
-			const deleteConfig = fileParameters.map(parameter => [
+			const changeKeyConfig = filteredParameters.map(parameter => [
 				this.configureParameters(parameter),
 				parameter.projectPath
 			]);
 
-			return { alias: deleteAlias, config: deleteConfig };
+			return { alias: deployAlias, config: changeKeyConfig };
 		}
-		throw new Error(`[standard_delete]: The property 'files' is missing from parameters.`);
+		throw new Error(`[standard_changekey]: The property 'files' is missing from parameters.`);
 	}
 }
 
