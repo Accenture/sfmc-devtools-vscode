@@ -61,10 +61,8 @@ suite("StatusBarTooltipProvider", () => {
 			provider.setCacheDone("test");
 			const tooltip = item.tooltip as { value: string };
 			assert.ok(tooltip.value.includes("Test Cache"), "tooltip should contain cache label");
-			assert.ok(tooltip.value.includes("$(check)"), "tooltip should show check mark");
-			// The loading spinner should not be present for this entry
-			// But $(check) is also used in settings, so check the caching section specifically
 			const cachingSection = tooltip.value.split("**Caching**")[1]?.split("---")[0] ?? "";
+			assert.ok(cachingSection.includes("$(check)"), "caching section should show check mark");
 			assert.ok(!cachingSection.includes("$(loading~spin)"), "caching section should not show loading spinner");
 		});
 
@@ -94,6 +92,84 @@ suite("StatusBarTooltipProvider", () => {
 		});
 	});
 
+	suite("isAnyCacheLoading", () => {
+		test("returns false when no entries exist", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			assert.strictEqual(provider.isAnyCacheLoading(), false);
+		});
+
+		test("returns true when an entry is loading", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			provider.addCacheEntry("a", "Cache A");
+			assert.strictEqual(provider.isAnyCacheLoading(), true);
+		});
+
+		test("returns false when all entries are done", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			provider.addCacheEntry("a", "Cache A");
+			provider.addCacheEntry("b", "Cache B");
+			const item = createMockStatusBarItem();
+			provider.setStatusBarItem(item as never);
+			provider.setCacheDone("a");
+			provider.setCacheDone("b");
+			assert.strictEqual(provider.isAnyCacheLoading(), false);
+		});
+
+		test("returns true when at least one entry is loading", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			provider.addCacheEntry("a", "Cache A");
+			provider.addCacheEntry("b", "Cache B");
+			const item = createMockStatusBarItem();
+			provider.setStatusBarItem(item as never);
+			provider.setCacheDone("a");
+			assert.strictEqual(provider.isAnyCacheLoading(), true);
+		});
+	});
+
+	suite("loading state callback", () => {
+		test("callback fires with false when all caches become done", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			const states: boolean[] = [];
+			provider.setLoadingStateCallback(s => states.push(s));
+			provider.addCacheEntry("a", "A");
+			const item = createMockStatusBarItem();
+			provider.setStatusBarItem(item as never);
+			provider.setCacheDone("a");
+			assert.deepStrictEqual(states, [false]);
+		});
+
+		test("callback fires with true when a cache becomes loading", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			const states: boolean[] = [];
+			provider.addCacheEntry("a", "A");
+			const item = createMockStatusBarItem();
+			provider.setStatusBarItem(item as never);
+			provider.setCacheDone("a");
+			provider.setLoadingStateCallback(s => states.push(s));
+			provider.setCacheLoading("a");
+			assert.deepStrictEqual(states, [true]);
+		});
+
+		test("callback does not fire duplicate states", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			const states: boolean[] = [];
+			provider.addCacheEntry("a", "A");
+			provider.addCacheEntry("b", "B");
+			const item = createMockStatusBarItem();
+			provider.setStatusBarItem(item as never);
+			provider.setLoadingStateCallback(s => states.push(s));
+			// Both loading → set one done: still loading → first emission is true
+			provider.setCacheDone("a");
+			// Set second done: all done → emits false
+			provider.setCacheDone("b");
+			// Re-mark one as loading → emits true
+			provider.setCacheLoading("a");
+			// Mark it loading again → already emitted true, no duplicate
+			provider.setCacheLoading("a");
+			assert.deepStrictEqual(states, [true, false, true]);
+		});
+	});
+
 	suite("tooltip content", () => {
 		test("tooltip contains output channel link", () => {
 			const provider = new StatusBarTooltipProvider(EXT_NAME);
@@ -117,13 +193,36 @@ suite("StatusBarTooltipProvider", () => {
 			assert.ok(tooltip.value.includes("**Settings**"), "tooltip should contain Settings header");
 		});
 
-		test("tooltip contains cog icon for settings", () => {
+		test("tooltip contains cog icon next to settings header", () => {
 			const provider = new StatusBarTooltipProvider(EXT_NAME);
 			const item = createMockStatusBarItem();
 			provider.setStatusBarItem(item as never);
 			provider.update();
 			const tooltip = item.tooltip as { value: string };
-			assert.ok(tooltip.value.includes("$(gear)"), "tooltip should contain gear icon");
+			assert.ok(tooltip.value.includes("$(gear)"), "tooltip should contain gear icon next to Settings header");
+		});
+
+		test("tooltip has open-settings link on header gear icon", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			const item = createMockStatusBarItem();
+			provider.setStatusBarItem(item as never);
+			provider.update();
+			const tooltip = item.tooltip as { value: string };
+			assert.ok(
+				tooltip.value.includes("command:workbench.action.openSettings"),
+				"tooltip should contain open settings command on header"
+			);
+		});
+
+		test("tooltip does not contain per-setting gear icons", () => {
+			const provider = new StatusBarTooltipProvider(EXT_NAME);
+			const item = createMockStatusBarItem();
+			provider.setStatusBarItem(item as never);
+			provider.update();
+			const tooltip = item.tooltip as { value: string };
+			// The gear icon should appear exactly once (on the header line)
+			const gearCount = (tooltip.value.match(/\$\(gear\)/g) || []).length;
+			assert.strictEqual(gearCount, 1, "gear icon should appear only once (on the Settings header)");
 		});
 
 		test("tooltip contains toggle command links for settings", () => {
@@ -138,15 +237,16 @@ suite("StatusBarTooltipProvider", () => {
 			);
 		});
 
-		test("tooltip contains open settings command links", () => {
+		test("settings use checkbox icons (pass-filled / circle-large-outline)", () => {
 			const provider = new StatusBarTooltipProvider(EXT_NAME);
 			const item = createMockStatusBarItem();
 			provider.setStatusBarItem(item as never);
 			provider.update();
 			const tooltip = item.tooltip as { value: string };
+			// Default mock returns true for all settings so all should be pass-filled
 			assert.ok(
-				tooltip.value.includes("command:workbench.action.openSettings"),
-				"tooltip should contain open settings command"
+				tooltip.value.includes("$(pass-filled)"),
+				"tooltip should use $(pass-filled) for enabled settings"
 			);
 		});
 

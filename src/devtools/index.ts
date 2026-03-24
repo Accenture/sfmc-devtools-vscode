@@ -257,8 +257,8 @@ class DevToolsExtension {
 
 		// Sets the command when the status bar is clicked
 		const statusBarCommand = `${ConfigExtension.extensionName}.openOutputChannel`;
-		// Sets the default status bar icon and name
-		const statusBarTitle = `$(${EnumsExtension.StatusBarIcon.success}) ${this.mcdev.getPackageName()}`;
+		// Start with a loading spinner – caches are about to be populated
+		const statusBarTitle = `$(loading~spin) ${this.mcdev.getPackageName()}`;
 
 		// Registers the status bar command to display the Ouput Channel when clicked
 		vscodeCommands.registerCommand({
@@ -274,6 +274,13 @@ class DevToolsExtension {
 		const statusBarItem = vscodeWindow.getStatusBarItem(packageName);
 		this.tooltipProvider.setStatusBarItem(statusBarItem);
 		this.tooltipProvider.update();
+
+		// Toggle the status bar icon between a loading spinner and the idle icon
+		// whenever the aggregate caching state changes.
+		this.tooltipProvider.setLoadingStateCallback((isLoading: boolean) => {
+			const icon = isLoading ? "loading~spin" : EnumsExtension.StatusBarIcon.success;
+			this.updateStatusBar(packageName, this.getStatusBarTitle(icon, packageName), "");
+		});
 
 		// Register the command to toggle a user-level boolean setting
 		vscodeContext.registerDisposable(
@@ -328,13 +335,14 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async refreshMetadataTypesInBackground(): Promise<void> {
+		const packageName = this.mcdev.getPackageName();
 		this.tooltipProvider.addCacheEntry("metadataTypes", "Metadata Types");
 		this.tooltipProvider.setCacheLoading("metadataTypes");
 		this.tooltipProvider.update();
+		this.writeLog(packageName, "Caching metadata types...", EnumsExtension.LoggerLevel.INFO);
 		try {
 			const workspace = this.vscodeEditor.getWorkspace();
 			const workspacePath = workspace.getWorkspaceFsPath();
-			const packageName = this.mcdev.getPackageName();
 
 			const types = await this.mcdev.runExplainTypes(workspacePath);
 			if (!types) return;
@@ -349,12 +357,13 @@ class DevToolsExtension {
 			}
 		} catch (error) {
 			this.writeLog(
-				this.mcdev.getPackageName(),
+				packageName,
 				`[index_refreshMetadataTypesInBackground]: ${error}`,
 				EnumsExtension.LoggerLevel.WARN
 			);
 		} finally {
 			this.tooltipProvider.setCacheDone("metadataTypes");
+			this.writeLog(packageName, "Caching metadata types done", EnumsExtension.LoggerLevel.INFO);
 		}
 	}
 
@@ -704,22 +713,30 @@ class DevToolsExtension {
 		console.log("== Activate Link Providers ==");
 		const vscodeContext = this.vscodeEditor.getContext();
 		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
+		const packageName = this.mcdev.getPackageName();
 
 		const provider = new ContentBlockLinkProvider();
 
 		// Register and track ContentBlock key cache in tooltip
 		this.tooltipProvider.addCacheEntry("contentBlockKeys", "Content Block Keys");
 		this.tooltipProvider.update();
+		this.writeLog(packageName, "Caching Content Block keys...", EnumsExtension.LoggerLevel.INFO);
 
 		// Populate the key cache in the background; links resolve instantly once ready
 		provider
 			.init()
 			.then(() => {
 				this.tooltipProvider.setCacheDone("contentBlockKeys");
+				this.writeLog(packageName, "Caching Content Block keys done", EnumsExtension.LoggerLevel.INFO);
 			})
 			.catch(err => {
 				console.error("[sfmc-devtools-vscode] ContentBlockLinkProvider cache init failed:", err);
 				this.tooltipProvider.setCacheDone("contentBlockKeys");
+				this.writeLog(
+					packageName,
+					`Caching Content Block keys failed: ${err}`,
+					EnumsExtension.LoggerLevel.WARN
+				);
 			});
 
 		// Keep the cache live as asset files are added or removed
@@ -798,6 +815,11 @@ class DevToolsExtension {
 		this.tooltipProvider.setCacheDone("relatedItems");
 		this.tooltipProvider.setCacheDone("sqlDataExtensions");
 		this.tooltipProvider.setCacheDone("scriptDataExtensions");
+		this.writeLog(
+			packageName,
+			"Registered on-demand link providers (JSON relations, SQL data extensions, script data extensions)",
+			EnumsExtension.LoggerLevel.INFO
+		);
 
 		// ── Diagnostic + quick-fix providers for unresolvable r__ references ──
 		// Only activated when the warnOnMissingJsonRelation feature flag is enabled.
@@ -1072,9 +1094,15 @@ class DevToolsExtension {
 			// Validate whenever a document is opened
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidOpenTextDocument(doc => {
-					sqlDiagnosticProvider.validateDocument(doc).catch(err => {
-						console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider open validation failed:", err);
-					});
+					this.tooltipProvider.setCacheLoading("sqlDataExtensions");
+					sqlDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider open validation failed:", err);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("sqlDataExtensions");
+						});
 				})
 			);
 
@@ -1199,9 +1227,18 @@ class DevToolsExtension {
 			// Validate whenever a document is opened
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidOpenTextDocument(doc => {
-					scriptDiagnosticProvider.validateDocument(doc).catch(err => {
-						console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider open validation failed:", err);
-					});
+					this.tooltipProvider.setCacheLoading("scriptDataExtensions");
+					scriptDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ScriptDiagnosticProvider open validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("scriptDataExtensions");
+						});
 				})
 			);
 
@@ -1690,10 +1727,11 @@ class DevToolsExtension {
 	 * @returns The formatted status bar title string.
 	 */
 	getStatusBarTitle(iconName: string, name: string): string {
-		// Get the status bar icon based on the icon name
-		const statusBarIcon = EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon];
-		// Codicon names consist only of letters, digits, and hyphens; emoji/unicode chars are used directly
-		const iconText = /^[a-zA-Z0-9-]+$/.test(statusBarIcon) ? `$(${statusBarIcon})` : statusBarIcon;
+		// Get the status bar icon based on the icon name (fall back to the raw name for ad-hoc codicons)
+		const statusBarIcon =
+			EnumsExtension.StatusBarIcon[iconName as keyof typeof EnumsExtension.StatusBarIcon] || iconName;
+		// Codicon names consist only of letters, digits, hyphens, and tildes; emoji/unicode chars are used directly
+		const iconText = /^[a-zA-Z0-9~-]+$/.test(statusBarIcon) ? `$(${statusBarIcon})` : statusBarIcon;
 		return `${iconText} ${name}`;
 	}
 

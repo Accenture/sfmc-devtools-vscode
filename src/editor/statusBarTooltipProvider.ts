@@ -16,6 +16,13 @@ interface ICacheEntry {
 }
 
 /**
+ * Callback invoked whenever the aggregate loading state changes.
+ * Receives `true` when at least one cache entry is loading,
+ * `false` when all entries are done.
+ */
+type LoadingStateCallback = (isLoading: boolean) => void;
+
+/**
  * Maps setting keys to human-readable labels shown in the tooltip.
  */
 const SETTING_LABELS: Record<string, string> = {
@@ -34,7 +41,10 @@ const SETTING_LABELS: Record<string, string> = {
  * 1. A link that opens the extension output channel.
  * 2. Caching status with live indicators.
  * 3. User-level boolean settings with toggle checkboxes and a gear icon
- *    to jump to the specific setting.
+ *    to jump to the extension settings page.
+ *
+ * Also tracks the aggregate loading state and notifies a callback so the
+ * status bar icon can be toggled between a loading spinner and the idle icon.
  *
  * @class StatusBarTooltipProvider
  */
@@ -47,6 +57,12 @@ class StatusBarTooltipProvider {
 
 	/** Map of cache-entry id → entry. */
 	private readonly cacheEntries = new Map<string, ICacheEntry>();
+
+	/** Optional callback invoked when the aggregate loading state changes. */
+	private onLoadingStateChanged: LoadingStateCallback | null = null;
+
+	/** Tracks the last emitted aggregate loading state to avoid duplicate callbacks. */
+	private lastEmittedLoading: boolean | null = null;
 
 	/**
 	 * Creates an instance of StatusBarTooltipProvider.
@@ -65,6 +81,28 @@ class StatusBarTooltipProvider {
 	 */
 	setStatusBarItem(item: VSCode.StatusBarItem): void {
 		this.statusBarItem = item;
+	}
+
+	/**
+	 * Registers a callback that is invoked whenever the aggregate loading
+	 * state changes (any cache loading → true, all caches done → false).
+	 *
+	 * @param callback - The callback to invoke.
+	 */
+	setLoadingStateCallback(callback: LoadingStateCallback): void {
+		this.onLoadingStateChanged = callback;
+	}
+
+	/**
+	 * Returns true when at least one cache entry is in "loading" state.
+	 *
+	 * @returns Whether any cache is currently loading.
+	 */
+	isAnyCacheLoading(): boolean {
+		for (const entry of this.cacheEntries.values()) {
+			if (entry.status === "loading") return true;
+		}
+		return false;
 	}
 
 	/**
@@ -87,6 +125,7 @@ class StatusBarTooltipProvider {
 		if (entry) {
 			entry.status = "done";
 			this.update();
+			this.emitLoadingState();
 		}
 	}
 
@@ -100,6 +139,7 @@ class StatusBarTooltipProvider {
 		if (entry) {
 			entry.status = "loading";
 			this.update();
+			this.emitLoadingState();
 		}
 	}
 
@@ -109,6 +149,18 @@ class StatusBarTooltipProvider {
 	update(): void {
 		if (!this.statusBarItem) return;
 		this.statusBarItem.tooltip = this.buildTooltip();
+	}
+
+	/**
+	 * Emits the loading-state callback when the aggregate state changes.
+	 */
+	private emitLoadingState(): void {
+		if (!this.onLoadingStateChanged) return;
+		const isLoading = this.isAnyCacheLoading();
+		if (isLoading !== this.lastEmittedLoading) {
+			this.lastEmittedLoading = isLoading;
+			this.onLoadingStateChanged(isLoading);
+		}
 	}
 
 	/**
