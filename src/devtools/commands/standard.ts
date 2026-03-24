@@ -1,5 +1,6 @@
 import Commands from "./commands";
 import { TDevTools } from "@types";
+import { MessagesDevTools } from "@messages";
 
 /**
  * Standard Commands Alias
@@ -152,7 +153,14 @@ class StandardCommands extends Commands {
 				}
 			}
 
-			return { alias: deleteAlias, config: deleteConfig };
+			// If chunking produced more entries than the original number of file parameters,
+			// attach a one-time info message so the caller can notify the user before starting.
+			const preRunInfo =
+				deleteConfig.length > fileParameters.length
+					? MessagesDevTools.mcdevDeleteCommandSplit(deleteConfig.length)
+					: undefined;
+
+			return { alias: deleteAlias, config: deleteConfig, preRunInfo };
 		}
 		throw new Error(`[standard_delete]: The property 'files' is missing from parameters.`);
 	}

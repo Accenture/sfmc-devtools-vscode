@@ -78,6 +78,8 @@ interface ICredentialsFileMap {
 interface ICommandConfig {
 	alias: string;
 	config: string[][];
+	/** Optional message logged once to the user before the first command invocation. */
+	preRunInfo?: string;
 }
 
 interface IConfigFileCredentials {

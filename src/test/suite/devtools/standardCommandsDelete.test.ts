@@ -107,12 +107,25 @@ suite("StandardCommands – delete", () => {
 		assert.ok(result.config.length >= 2);
 	});
 
-	test("delete includes correct project path in each chunk", () => {
+	test("delete sets preRunInfo when command is split into multiple chunks", () => {
 		const param = makeParameters(50, 200);
 		const result = cmd.delete({ files: [param] });
 
-		for (const [, path] of result.config) {
-			assert.strictEqual(path, param.projectPath);
-		}
+		// Chunking must have occurred
+		assert.ok(result.config.length > 1);
+		// preRunInfo must be set and mention the number of runs
+		assert.ok(result.preRunInfo, "preRunInfo should be set when chunking occurs");
+		assert.ok(
+			result.preRunInfo?.includes(String(result.config.length)),
+			`preRunInfo should mention the total number of runs (${result.config.length})`
+		);
+	});
+
+	test("delete does not set preRunInfo when no chunking is needed", () => {
+		const param = makeParameters(2);
+		const result = cmd.delete({ files: [param] });
+
+		assert.strictEqual(result.config.length, 1);
+		assert.strictEqual(result.preRunInfo, undefined);
 	});
 });

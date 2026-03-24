@@ -416,6 +416,13 @@ class Mcdev {
 
 		const commandConfig = mcdevCommand.run(command, commandParameters);
 
+		// If the command carries a pre-run informational message (e.g. because the delete
+		// command was split into multiple invocations due to command-line length limits),
+		// log it once before executing any of the chunks.
+		if (commandConfig.preRunInfo) {
+			commandHandler({ info: `${commandConfig.preRunInfo}\n` });
+		}
+
 		for (const [parameters, projectPath] of commandConfig.config) {
 			if (cancellationToken?.isCancellationRequested) break;
 

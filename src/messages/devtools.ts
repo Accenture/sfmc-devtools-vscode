@@ -8,6 +8,9 @@ const mcdevRunningCommand = "Running DevTools Command:";
 const mcdevUnsupportedMetadataTypes = (action: string, metadataTypes: string[]): string =>
 	`Currently DevTools doesn't support ${action} action for the following metadata types: ${metadataTypes.join(", ")}`;
 
+const mcdevDeleteCommandSplit = (totalRuns: number): string =>
+	`Selected files exceed the maximum command-line length. The delete command will be executed ${totalRuns} times to process all files.`;
+
 export {
 	noMcdevInstalled,
 	mcdevInstallLoading,
@@ -15,5 +18,6 @@ export {
 	mcdevInstallError,
 	mcdevConfigFile,
 	mcdevRunningCommand,
-	mcdevUnsupportedMetadataTypes
+	mcdevUnsupportedMetadataTypes,
+	mcdevDeleteCommandSplit
 };
