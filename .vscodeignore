@@ -15,3 +15,4 @@ prepare-release.js
 webpack.config.js
 .git
 .gitattributes
+changelog.md
