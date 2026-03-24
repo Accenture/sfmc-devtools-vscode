@@ -1,3 +1,17 @@
 **/*.ts
 node_modules
 src
+.github
+.husky
+.fork
+.gitignore
+.mocharc.cjs
+.vscode-test.mjs
+eslint.config.mjs
+tsconfig.json
+tsconfig.npmScripts.json
+tsconfig.test.json
+prepare-release.js
+webpack.config.js
+.git
+.gitattributes
