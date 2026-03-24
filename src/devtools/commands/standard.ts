@@ -1,5 +1,6 @@
 import Commands from "./commands";
 import { TDevTools } from "@types";
+import { MessagesDevTools } from "@messages";
 
 /**
  * Standard Commands Alias
@@ -142,13 +143,24 @@ class StandardCommands extends Commands {
 
 			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
 
-			// command parameters configuration
-			const deleteConfig = fileParameters.map(parameter => [
-				this.configureParameters(parameter),
-				parameter.projectPath
-			]);
+			// Split each parameter set into chunks that fit within the OS command-line
+			// length limit, then build the config entries for every chunk.
+			const deleteConfig: string[][] = [];
+			for (const parameter of fileParameters) {
+				const chunks = this.splitParametersByCommandLength(parameter);
+				for (const chunk of chunks) {
+					deleteConfig.push([this.configureParameters(chunk), chunk.projectPath]);
+				}
+			}
 
-			return { alias: deleteAlias, config: deleteConfig };
+			// If chunking produced more entries than the original number of file parameters,
+			// attach a one-time info message so the caller can notify the user before starting.
+			const preRunInfo =
+				deleteConfig.length > fileParameters.length
+					? MessagesDevTools.mcdevDeleteCommandSplit(deleteConfig.length)
+					: undefined;
+
+			return { alias: deleteAlias, config: deleteConfig, preRunInfo };
 		}
 		throw new Error(`[standard_delete]: The property 'files' is missing from parameters.`);
 	}
