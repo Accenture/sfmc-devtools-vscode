@@ -848,12 +848,18 @@ class DevToolsExtension {
 			// Validate whenever a JSON document is opened
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidOpenTextDocument(doc => {
-					diagnosticProvider.validateDocument(doc).catch(err => {
-						console.error(
-							"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider open validation failed:",
-							err
-						);
-					});
+					this.tooltipProvider.setCacheLoading("relatedItems");
+					diagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider open validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("relatedItems");
+						});
 				})
 			);
 

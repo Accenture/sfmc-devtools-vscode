@@ -146,13 +146,10 @@ class StatusBarTooltipProvider {
 		const config = VSCode.workspace.getConfiguration(extName);
 		for (const [key, label] of Object.entries(SETTING_LABELS)) {
 			const enabled = Boolean(config.get(key, true));
-			const checkIcon = enabled ? "$(check)" : "&nbsp;&nbsp;&nbsp;&nbsp;";
+			const checkboxIcon = enabled ? "$(pass-filled)" : "$(circle-large-outline)";
 			const toggleArgs = encodeURIComponent(JSON.stringify(key));
 			const toggleUri = `command:${extName}.toggleSetting?${toggleArgs}`;
-			const settingUri = `command:workbench.action.openSettings?${encodeURIComponent(JSON.stringify(`${extName}.${key}`))}`;
-			md.appendMarkdown(
-				`[${checkIcon}](${toggleUri} "Toggle ${label}") ${label} &nbsp;[$(gear)](${settingUri} "Open Setting")\n\n`
-			);
+			md.appendMarkdown(`[${checkboxIcon}](${toggleUri} "Toggle ${label}") ${label}\n\n`);
 		}
 
 		return md;
