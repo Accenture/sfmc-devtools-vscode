@@ -271,24 +271,40 @@ class DevToolsExtension {
 		try {
 			const workspace = this.vscodeEditor.getWorkspace();
 			const workspacePath = workspace.getWorkspaceFsPath();
-			// const packageName = this.mcdev.getPackageName();
+			const packageName = this.mcdev.getPackageName();
+			const sessionLogger = new VsceLogger();
 
-			const onResult = ({ output }: TUtils.IOutputLogger): void => {
+			// Start a dedicated log session for this background operation so that any relevant logs are captured in the VSCE log file
+			sessionLogger.startSession(workspacePath);
+
+			// Handler function to process the output of the 'explainTypes' command execution
+			const onResult = ({ output, error }: TUtils.IOutputLogger): void => {
 				if (output) this.mcdev.updateMetadataTypes(output);
+				if (error) {
+					this.writeLog(
+						packageName,
+						`[index_refreshMetadataTypesInBackground]: Command ExplainTypes returned an error.`,
+						EnumsExtension.LoggerLevel.ERROR,
+						sessionLogger
+					);
+				}
 			};
+
+			// Executes the 'explainTypes' command and updates metadata types if there are changes; logs any errors encountered
 			const { success } = await this.mcdev.execute("explainTypes", onResult, {
 				projectPath: workspacePath
 			});
-			if (!success) return;
 
-			// const updated = this.mcdev.updateMetadataTypes(types);
-			// if (updated) {
-			// 	this.writeLog(
-			// 		packageName,
-			// 		`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
-			// 		EnumsExtension.LoggerLevel.INFO
-			// 	);
-			// }
+			// Writes an error log if the command execution failed
+			if (!success) {
+				this.writeLog(
+					packageName,
+					`[index_refreshMetadataTypesInBackground]: Error occurred while executing mcdev explainTypes.`,
+					EnumsExtension.LoggerLevel.ERROR,
+					sessionLogger
+				);
+			}
+			sessionLogger.endSession(success);
 		} catch (error) {
 			this.writeLog(
 				this.mcdev.getPackageName(),

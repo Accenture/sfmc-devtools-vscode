@@ -100,6 +100,7 @@ export {
 	IConfig,
 	IConfigFile,
 	MetadataTypesActions,
+	MetadataTypesActionsMap,
 	IMetadataTypes,
 	IExecuteFileDetails,
 	IExecuteParameters,

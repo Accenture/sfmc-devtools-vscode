@@ -131,35 +131,6 @@ class Mcdev {
 	}
 
 	/**
-	 * Runs 'mcdev explainTypes --json' asynchronously and returns the parsed type list.
-	 * Returns null if the command fails or the output cannot be parsed.
-	 *
-	 * @public
-	 * @param {string} projectPath - working directory path for mcdev
-	 * @returns {Promise<TDevTools.IMetadataTypes[] | null>} parsed metadata types or null on failure
-	 */
-	public async runExplainTypes(projectPath: string): Promise<TDevTools.IMetadataTypes[] | null> {
-		try {
-			const result = await Terminal.executeTerminalCommandCapture({
-				command: this.packageName,
-				commandArgs: ["et", "--json"],
-				commandCwd: projectPath
-			});
-
-			if (!result.success || !result.stdStreams.output) return null;
-
-			// The output may include non-JSON lines before the JSON array; extract the JSON portion
-			const jsonStart = result.stdStreams.output.indexOf("[");
-			if (jsonStart === -1) return null;
-			const jsonOutput = result.stdStreams.output.slice(jsonStart);
-
-			return JSON.parse(jsonOutput) as TDevTools.IMetadataTypes[];
-		} catch {
-			return null;
-		}
-	}
-
-	/**
 	 * Updates the internal metadata types list with a new set of types.
 	 * Returns true when the list was changed (new or removed types detected).
 	 *
