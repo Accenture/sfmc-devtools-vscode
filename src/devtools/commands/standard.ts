@@ -142,11 +142,15 @@ class StandardCommands extends Commands {
 
 			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
 
-			// command parameters configuration
-			const deleteConfig = fileParameters.map(parameter => [
-				this.configureParameters(parameter),
-				parameter.projectPath
-			]);
+			// Split each parameter set into chunks that fit within the OS command-line
+			// length limit, then build the config entries for every chunk.
+			const deleteConfig: string[][] = [];
+			for (const parameter of fileParameters) {
+				const chunks = this.splitParametersByCommandLength(parameter);
+				for (const chunk of chunks) {
+					deleteConfig.push([this.configureParameters(chunk), chunk.projectPath]);
+				}
+			}
 
 			return { alias: deleteAlias, config: deleteConfig };
 		}
