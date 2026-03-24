@@ -24,6 +24,7 @@ import SqlCodeActionProvider, {
 	RETRIEVE_SQL_DE_COMMAND,
 	type IRetrieveSqlDataExtensionArgs
 } from "../editor/sqlCodeActionProvider";
+import { StatusBarTooltipProvider } from "../editor/statusBarTooltipProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
@@ -51,6 +52,13 @@ class DevToolsExtension {
 	 * @type {Mcdev}
 	 */
 	private mcdev: Mcdev;
+	/**
+	 * Tooltip provider for the status bar hover overlay.
+	 *
+	 * @private
+	 * @type {StatusBarTooltipProvider}
+	 */
+	private tooltipProvider: StatusBarTooltipProvider;
 
 	/**
 	 * Creates an instance of DevToolsExtension.
@@ -61,6 +69,7 @@ class DevToolsExtension {
 	constructor(context: TEditor.IExtensionContext) {
 		this.vscodeEditor = new TEditor.VSCodeEditor(context);
 		this.mcdev = new Mcdev();
+		this.tooltipProvider = new StatusBarTooltipProvider(ConfigExtension.extensionName);
 	}
 
 	/**
@@ -242,6 +251,8 @@ class DevToolsExtension {
 		console.log("== Activate Containers ==");
 		const vscodeWindow = this.vscodeEditor.getWindow();
 		const vscodeCommands = this.vscodeEditor.getCommands();
+		const vscodeContext = this.vscodeEditor.getContext();
+		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
 		const packageName = this.mcdev.getPackageName();
 
 		// Sets the command when the status bar is clicked
@@ -258,6 +269,28 @@ class DevToolsExtension {
 		// Creates and displays the Status Bar Item
 		vscodeWindow.createStatusBarItem(statusBarCommand, statusBarTitle, packageName);
 		vscodeWindow.displayStatusBarItem(packageName);
+
+		// Bind tooltip provider to the status bar item and render initial tooltip
+		const statusBarItem = vscodeWindow.getStatusBarItem(packageName);
+		this.tooltipProvider.setStatusBarItem(statusBarItem);
+		this.tooltipProvider.update();
+
+		// Register the command to toggle a user-level boolean setting
+		vscodeContext.registerDisposable(
+			VSCode.commands.registerCommand(`${ConfigExtension.extensionName}.toggleSetting`, (settingKey: string) => {
+				const current = vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, settingKey);
+				vscodeWorkspace.setConfigurationKey(ConfigExtension.extensionName, settingKey, !current);
+			})
+		);
+
+		// Refresh the tooltip whenever settings change
+		vscodeContext.registerDisposable(
+			VSCode.workspace.onDidChangeConfiguration(e => {
+				if (e.affectsConfiguration(ConfigExtension.extensionName)) {
+					this.tooltipProvider.update();
+				}
+			})
+		);
 	}
 
 	/**
@@ -295,6 +328,9 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async refreshMetadataTypesInBackground(): Promise<void> {
+		this.tooltipProvider.addCacheEntry("metadataTypes", "Metadata Types");
+		this.tooltipProvider.setCacheLoading("metadataTypes");
+		this.tooltipProvider.update();
 		try {
 			const workspace = this.vscodeEditor.getWorkspace();
 			const workspacePath = workspace.getWorkspaceFsPath();
@@ -317,6 +353,8 @@ class DevToolsExtension {
 				`[index_refreshMetadataTypesInBackground]: ${error}`,
 				EnumsExtension.LoggerLevel.WARN
 			);
+		} finally {
+			this.tooltipProvider.setCacheDone("metadataTypes");
 		}
 	}
 
@@ -669,10 +707,20 @@ class DevToolsExtension {
 
 		const provider = new ContentBlockLinkProvider();
 
+		// Register and track ContentBlock key cache in tooltip
+		this.tooltipProvider.addCacheEntry("contentBlockKeys", "Content Block Keys");
+		this.tooltipProvider.update();
+
 		// Populate the key cache in the background; links resolve instantly once ready
-		provider.init().catch(err => {
-			console.error("[sfmc-devtools-vscode] ContentBlockLinkProvider cache init failed:", err);
-		});
+		provider
+			.init()
+			.then(() => {
+				this.tooltipProvider.setCacheDone("contentBlockKeys");
+			})
+			.catch(err => {
+				console.error("[sfmc-devtools-vscode] ContentBlockLinkProvider cache init failed:", err);
+				this.tooltipProvider.setCacheDone("contentBlockKeys");
+			});
 
 		// Keep the cache live as asset files are added or removed
 		const workspaceUri = vscodeWorkspace.getWorkspaceURI();
@@ -742,6 +790,15 @@ class DevToolsExtension {
 			VSCode.languages.registerDocumentLinkProvider({ scheme: "file" }, scriptDeProvider)
 		);
 
+		// Register on-demand caching entries in the tooltip
+		this.tooltipProvider.addCacheEntry("relatedItems", "JSON Relation Lookup (on open/save)");
+		this.tooltipProvider.addCacheEntry("sqlDataExtensions", "SQL Data Extension Lookup (on open/save)");
+		this.tooltipProvider.addCacheEntry("scriptDataExtensions", "Script Data Extension Lookup (on open/save)");
+		// On-demand entries start as done since they activate per-file
+		this.tooltipProvider.setCacheDone("relatedItems");
+		this.tooltipProvider.setCacheDone("sqlDataExtensions");
+		this.tooltipProvider.setCacheDone("scriptDataExtensions");
+
 		// ── Diagnostic + quick-fix providers for unresolvable r__ references ──
 		// Only activated when the warnOnMissingJsonRelation feature flag is enabled.
 
@@ -805,12 +862,18 @@ class DevToolsExtension {
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidSaveTextDocument(doc => {
 					if (doc.uri.path.includes("/retrieve/")) diagnosticProvider.clearCache();
-					diagnosticProvider.validateDocument(doc).catch(err => {
-						console.error(
-							"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider save validation failed:",
-							err
-						);
-					});
+					this.tooltipProvider.setCacheLoading("relatedItems");
+					diagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] RelatedItemDiagnosticProvider save validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("relatedItems");
+						});
 				})
 			);
 
@@ -1012,9 +1075,15 @@ class DevToolsExtension {
 			// On save: re-validate the saved document
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidSaveTextDocument(doc => {
-					sqlDiagnosticProvider.validateDocument(doc).catch(err => {
-						console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider save validation failed:", err);
-					});
+					this.tooltipProvider.setCacheLoading("sqlDataExtensions");
+					sqlDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error("[sfmc-devtools-vscode] SqlDiagnosticProvider save validation failed:", err);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("sqlDataExtensions");
+						});
 				})
 			);
 
@@ -1133,9 +1202,18 @@ class DevToolsExtension {
 			// On save: re-validate the saved document
 			vscodeContext.registerDisposable(
 				VSCode.workspace.onDidSaveTextDocument(doc => {
-					scriptDiagnosticProvider.validateDocument(doc).catch(err => {
-						console.error("[sfmc-devtools-vscode] ScriptDiagnosticProvider save validation failed:", err);
-					});
+					this.tooltipProvider.setCacheLoading("scriptDataExtensions");
+					scriptDiagnosticProvider
+						.validateDocument(doc)
+						.catch(err => {
+							console.error(
+								"[sfmc-devtools-vscode] ScriptDiagnosticProvider save validation failed:",
+								err
+							);
+						})
+						.finally(() => {
+							this.tooltipProvider.setCacheDone("scriptDataExtensions");
+						});
 				})
 			);
 

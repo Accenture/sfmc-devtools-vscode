@@ -175,6 +175,27 @@ class DiagnosticCollection {
 	}
 }
 
+class MarkdownString {
+	value: string;
+	isTrusted?: boolean;
+	supportThemeIcons?: boolean;
+
+	constructor(value = "", supportThemeIcons = false) {
+		this.value = value;
+		this.supportThemeIcons = supportThemeIcons;
+	}
+
+	appendMarkdown(value: string): MarkdownString {
+		this.value += value;
+		return this;
+	}
+
+	appendText(value: string): MarkdownString {
+		this.value += value;
+		return this;
+	}
+}
+
 const languages = {
 	createDiagnosticCollection: (): DiagnosticCollection => new DiagnosticCollection()
 };
@@ -184,7 +205,10 @@ const workspace = {
 	textDocuments: [] as TextDocument[],
 	fs: {
 		readFile: async (): Promise<Uint8Array> => new Uint8Array()
-	}
+	},
+	getConfiguration: (): Record<string, unknown> & { get: (key: string, defaultValue?: unknown) => unknown } => ({
+		get: (_key: string, defaultValue?: unknown) => defaultValue
+	})
 };
 
 const commands = {
@@ -234,6 +258,7 @@ export {
 	CodeAction,
 	CodeActionKind,
 	DiagnosticCollection,
+	MarkdownString,
 	languages,
 	workspace,
 	commands,
