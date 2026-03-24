@@ -239,6 +239,7 @@ const window = {
 	showInformationMessage: async (): Promise<string | undefined> => undefined,
 	showWarningMessage: async (): Promise<string | undefined> => undefined,
 	showErrorMessage: async (): Promise<string | undefined> => undefined,
+	setStatusBarMessage: (): { dispose: () => void } => ({ dispose: () => {} }),
 	createOutputChannel: () => ({
 		appendLine: () => {},
 		show: () => {},

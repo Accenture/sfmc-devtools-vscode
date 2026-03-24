@@ -192,17 +192,10 @@ class StatusBarTooltipProvider {
 
 		// ── Section 3: User settings ──
 		md.appendMarkdown("---\n\n");
-		const settingsCommandUri = `command:workbench.action.openSettings?${encodeURIComponent(JSON.stringify(extName))}`;
-		md.appendMarkdown(`**Settings** &nbsp;[$(gear)](${settingsCommandUri} "Open mcdev Settings")\n\n`);
-
-		const config = VSCode.workspace.getConfiguration(extName);
-		for (const [key, label] of Object.entries(SETTING_LABELS)) {
-			const enabled = Boolean(config.get(key, true));
-			const checkboxIcon = enabled ? "$(pass-filled)" : "$(circle-large-outline)";
-			const toggleArgs = encodeURIComponent(JSON.stringify(key));
-			const toggleUri = `command:${extName}.toggleSetting?${toggleArgs}`;
-			md.appendMarkdown(`[${checkboxIcon}](${toggleUri} "Toggle ${label}") ${label}\n\n`);
-		}
+		const settingsCommandUri = `command:workbench.action.openSettings?${encodeURIComponent(JSON.stringify(`@ext:Accenture-oss.${extName}`))}`;
+		md.appendMarkdown(
+			`[**Settings**](${settingsCommandUri} "Open mcdev Settings") &nbsp;[$(gear)](${settingsCommandUri} "Open mcdev Settings")\n\n`
+		);
 
 		return md;
 	}

@@ -225,40 +225,16 @@ suite("StatusBarTooltipProvider", () => {
 			assert.strictEqual(gearCount, 1, "gear icon should appear only once (on the Settings header)");
 		});
 
-		test("tooltip contains toggle command links for settings", () => {
+		test("Settings header is clickable and opens settings", () => {
 			const provider = new StatusBarTooltipProvider(EXT_NAME);
 			const item = createMockStatusBarItem();
 			provider.setStatusBarItem(item as never);
 			provider.update();
 			const tooltip = item.tooltip as { value: string };
 			assert.ok(
-				tooltip.value.includes(`command:${EXT_NAME}.toggleSetting`),
-				"tooltip should contain toggle command"
+				tooltip.value.includes(`[**Settings**](command:workbench.action.openSettings`),
+				"Settings header should be clickable"
 			);
-		});
-
-		test("settings use checkbox icons (pass-filled / circle-large-outline)", () => {
-			const provider = new StatusBarTooltipProvider(EXT_NAME);
-			const item = createMockStatusBarItem();
-			provider.setStatusBarItem(item as never);
-			provider.update();
-			const tooltip = item.tooltip as { value: string };
-			// Default mock returns true for all settings so all should be pass-filled
-			assert.ok(
-				tooltip.value.includes("$(pass-filled)"),
-				"tooltip should use $(pass-filled) for enabled settings"
-			);
-		});
-
-		test("tooltip contains all setting labels", () => {
-			const provider = new StatusBarTooltipProvider(EXT_NAME);
-			const item = createMockStatusBarItem();
-			provider.setStatusBarItem(item as never);
-			provider.update();
-			const tooltip = item.tooltip as { value: string };
-			for (const label of Object.values(SETTING_LABELS)) {
-				assert.ok(tooltip.value.includes(label), `tooltip should contain setting label: ${label}`);
-			}
 		});
 
 		test("tooltip has caching section header when entries exist", () => {

@@ -24,7 +24,7 @@ import SqlCodeActionProvider, {
 	RETRIEVE_SQL_DE_COMMAND,
 	type IRetrieveSqlDataExtensionArgs
 } from "../editor/sqlCodeActionProvider";
-import { StatusBarTooltipProvider } from "../editor/statusBarTooltipProvider";
+import { SETTING_LABELS, StatusBarTooltipProvider } from "../editor/statusBarTooltipProvider";
 import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
@@ -286,7 +286,11 @@ class DevToolsExtension {
 		vscodeContext.registerDisposable(
 			VSCode.commands.registerCommand(`${ConfigExtension.extensionName}.toggleSetting`, (settingKey: string) => {
 				const current = vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, settingKey);
-				vscodeWorkspace.setConfigurationKey(ConfigExtension.extensionName, settingKey, !current);
+				const nextValue = !current;
+				const label = SETTING_LABELS[settingKey] ?? settingKey;
+				VSCode.window.setStatusBarMessage(`${packageName}: Toggling ${label}...`, 1500);
+				vscodeWorkspace.setConfigurationKey(ConfigExtension.extensionName, settingKey, nextValue);
+				this.tooltipProvider.update();
 			})
 		);
 
@@ -295,6 +299,21 @@ class DevToolsExtension {
 			VSCode.workspace.onDidChangeConfiguration(e => {
 				if (e.affectsConfiguration(ConfigExtension.extensionName)) {
 					this.tooltipProvider.update();
+
+					for (const [settingKey, label] of Object.entries(SETTING_LABELS)) {
+						if (!e.affectsConfiguration(`${ConfigExtension.extensionName}.${settingKey}`)) continue;
+						const enabled = vscodeWorkspace.isConfigurationKeyEnabled(
+							ConfigExtension.extensionName,
+							settingKey
+						);
+						const state = enabled ? "enabled" : "disabled";
+						VSCode.window.setStatusBarMessage(`${packageName}: ${label} ${state}.`, 2500);
+						this.writeLog(
+							packageName,
+							`Setting '${label}' changed to ${state}.`,
+							EnumsExtension.LoggerLevel.INFO
+						);
+					}
 				}
 			})
 		);
