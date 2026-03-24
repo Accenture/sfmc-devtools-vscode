@@ -33,10 +33,10 @@ jobs:
                   node-version: 24
                   registry-url: https://registry.npmjs.org/
             - run: npm ci --ignore-scripts
-            - run: npm run deploy
+            - run: npm run package:release
+            - run: npx @vscode/vsce publish --packagePath *.vsix
               env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
-            - run: npm run package:release
             - name: Upload vsix to GitHub Release
               run: gh release upload "${{ github.event.release.tag_name }}" *.vsix
               env:
