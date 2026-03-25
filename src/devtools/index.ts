@@ -354,6 +354,7 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async refreshMetadataTypesInBackground(): Promise<void> {
+		const sessionLogger = new VsceLogger();
 		const packageName = this.mcdev.getPackageName();
 		this.tooltipProvider.addCacheEntry("metadataTypes", "Metadata Types");
 		this.tooltipProvider.setCacheLoading("metadataTypes");
@@ -362,24 +363,51 @@ class DevToolsExtension {
 		try {
 			const workspace = this.vscodeEditor.getWorkspace();
 			const workspacePath = workspace.getWorkspaceFsPath();
+			const packageName = this.mcdev.getPackageName();
 
-			const types = await this.mcdev.runExplainTypes(workspacePath);
-			if (!types) return;
+			// Start a dedicated log session for this background operation so that any relevant logs are captured in the VSCE log file
+			sessionLogger.startSession(workspacePath);
 
-			const updated = this.mcdev.updateMetadataTypes(types);
-			if (updated) {
+			// Handler function to process the output of the 'explainTypes' command execution
+			const onResult = ({ output, error }: TUtils.IOutputLogger): void => {
+				if (output) {
+					console.log(`[index_refreshMetadataTypesInBackground]: Command ExplainTypes output: ${output}`);
+					this.mcdev.updateMetadataTypes(output);
+				}
+				if (error) {
+					this.writeLog(
+						packageName,
+						`[index_refreshMetadataTypesInBackground]: Command ExplainTypes returned an error: ${error}`,
+						EnumsExtension.LoggerLevel.ERROR,
+						sessionLogger
+					);
+				}
+			};
+
+			// Executes the 'explainTypes' command and updates metadata types if there are changes; logs any errors encountered
+			const { success } = await this.mcdev.execute("explainTypes", onResult, {
+				projectPath: workspacePath
+			});
+
+			// Writes an error log if the command execution failed
+			if (!success) {
 				this.writeLog(
 					packageName,
-					`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
-					EnumsExtension.LoggerLevel.INFO
+					`[index_refreshMetadataTypesInBackground]: Error occurred while executing mcdev explainTypes.`,
+					EnumsExtension.LoggerLevel.ERROR,
+					sessionLogger
 				);
 			}
+			// End the log session, keeping the log file if there were errors (success = false) or if any logs were written; otherwise discard the log file
+			sessionLogger.endSession(success);
 		} catch (error) {
 			this.writeLog(
 				packageName,
 				`[index_refreshMetadataTypesInBackground]: ${error}`,
 				EnumsExtension.LoggerLevel.WARN
 			);
+			// End the log session, keeping the log file since an error was logged
+			sessionLogger.endSession(false);
 		} finally {
 			this.tooltipProvider.setCacheDone("metadataTypes");
 			this.writeLog(packageName, "Caching metadata types done", EnumsExtension.LoggerLevel.INFO);
