@@ -642,7 +642,8 @@ class DevToolsExtension {
 				command: `${ConfigExtension.extensionName}.${command}`,
 				callbackAction: (files: string[]) => {
 					const activeTabFilePath = this.getActiveTabFilePath();
-					// When the menu command is done from the file tab it requires the active open file path
+					// Fallback for editor/context (right-click inside the editor body): VS Code does not
+					// pass the file URI to the command, so we use the currently active text editor path.
 					if (!files.length && activeTabFilePath) files = [activeTabFilePath];
 					if (files.length) this.executeMenuCommand(command, files);
 				}
