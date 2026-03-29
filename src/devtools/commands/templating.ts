@@ -7,7 +7,8 @@ import { TDevTools } from "@types";
  * @enum {string}
  */
 enum TemplatingCommandsAlias {
-	clone = "clone"
+	clone = "clone",
+	build = "build"
 }
 
 /**
@@ -24,26 +25,24 @@ class TemplatingCommands extends Commands {
 	 * @returns {string[]} templating commands list
 	 */
 	commandsList(): string[] {
-		console.log("== TemplatingCommands: commandsList ==");
 		return Object.keys(TemplatingCommandsAlias);
 	}
 
 	/**
 	 * Runs a command
 	 *
-	 * @param {keyof typeof TemplatingCommandsAlias} name - admin command name
+	 * @param {string} name - templating command name
 	 * @param {TDevTools.ICommandParameters[]} parameters - command parameters
 	 * @returns {TDevTools.ICommandConfig} configuration after running a specific command
 	 */
-	run(
-		name: keyof typeof TemplatingCommandsAlias,
-		parameters: TDevTools.ICommandParameters
-	): TDevTools.ICommandConfig {
-		console.log("== TemplatingCommands: Run ==");
+	run(name: string, parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
 		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
 		switch (name) {
 			case "clone":
 				config = this.clone(parameters);
+				break;
+			case "build":
+				config = this.build(parameters);
 				break;
 		}
 		return config;
@@ -56,7 +55,6 @@ class TemplatingCommands extends Commands {
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
 	clone(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
-		console.log("== Templating Commands: Clone ==");
 		const buFromFlag = this.retrieveAlias("buFrom");
 		const buTargetFlag = this.retrieveAlias("buTarget");
 
@@ -83,6 +81,41 @@ class TemplatingCommands extends Commands {
 			return { alias: cloneAlias, config: cloneConfig };
 		}
 		throw new Error(`[templating_clone]: The property 'files' is missing from parameters.`);
+	}
+
+	build(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if (
+			"files" in parameters &&
+			"buFrom" in parameters &&
+			"marketFrom" in parameters &&
+			"buTo" in parameters &&
+			"marketTo" in parameters
+		) {
+			const alias = TemplatingCommandsAlias.build;
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const buFromFlag = this.retrieveAlias("buFrom");
+			const buTargetFlag = this.retrieveAlias("buTarget");
+			const optional: string[] = [];
+			if ("dependencies" in parameters && parameters.dependencies) optional.push("--dependencies");
+			if ("retrieve" in parameters && parameters.retrieve) optional.push("--retrieve");
+			if ("skipValidation" in parameters && parameters.skipValidation)
+				optional.push(this.retrieveFlag("skipValidation"));
+			const buFromVal = parameters.buFrom as string;
+			const buToVal = parameters.buTo as string;
+			const marketFromVal = parameters.marketFrom as string;
+			const marketToVal = parameters.marketTo as string;
+			const config = fileParameters.map(p => {
+				const credential = `${buFromFlag} ${buFromVal} ${buTargetFlag} ${buToVal} --marketFrom ${marketFromVal} --marketTo ${marketToVal}`;
+				return [
+					this.configureParameters({ ...p, credential, optional: [...(p.optional || []), ...optional] }),
+					p.projectPath
+				];
+			});
+			return { alias, config };
+		}
+		throw new Error(
+			`[templating_build]: Required properties (files, buFrom, marketFrom, buTo, marketTo) are missing from parameters.`
+		);
 	}
 }
 

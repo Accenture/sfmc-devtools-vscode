@@ -98,7 +98,6 @@ class Mcdev {
 	 * @returns {{ success: boolean; error: string }} returns success or error after installing the package
 	 */
 	public install(): { success: boolean; error: string } {
-		console.log("== Mcdev: Install ==");
 		try {
 			const terminalOutcome = Terminal.installPackage(this.packageName);
 			return { success: terminalOutcome.success, error: terminalOutcome.stdStreams.error };
@@ -205,8 +204,6 @@ class Mcdev {
 	 * @returns {TDevTools.IExecuteFileDetails[]} files formatted in DevTool File Format
 	 */
 	public convertPathsToFiles(paths: string[]): TDevTools.IExecuteFileDetails[] {
-		console.log("== Mcdev: Convert File Paths ==");
-
 		const convertToFileFormat = (path: string): TDevTools.IExecuteFileDetails => {
 			// Splits file path by 'retrieve' or 'deploy' folder
 			const [projectPath, topFolder, relativeFilePath] = path.split(/(\/retrieve\/|\/deploy\/)/g);
@@ -250,7 +247,6 @@ class Mcdev {
 	 * @returns {Commands} Command class instance
 	 */
 	private getCommandBySubCommandName(name: string): Commands {
-		console.log("== Mcdev: Get Command By Sub Command name ==");
 		const [mcdevCommand]: Commands[] = Object.values(this.commandsTypes).filter((mcdevCommand: Commands) =>
 			mcdevCommand.commandsList().includes(name)
 		);
@@ -364,8 +360,6 @@ class Mcdev {
 		parameters: TDevTools.IExecuteParameters,
 		cancellationToken?: TUtils.ICancellationToken
 	): Promise<{ success: boolean }> {
-		console.log("== Mcdev: Execute ==");
-
 		let commandParameters: TDevTools.ICommandParameters = { ...(parameters as TDevTools.ICommandParameters) };
 
 		// Gets the MCDEV command class based on the selected command

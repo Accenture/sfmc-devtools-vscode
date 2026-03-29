@@ -1,21 +1,13 @@
 import { VSCode } from "@types";
 import DevToolsExtension from "./devtools/index";
 
-/**
- * Activates the VScode extension
- *
- * @export
- * @async
- * @param {VSCode.ExtensionContext} context - extension context
- * @returns {Promise<void>}
- */
+let extensionInstance: DevToolsExtension | undefined;
+
 export async function activate(context: VSCode.ExtensionContext): Promise<void> {
-	new DevToolsExtension(context).init();
+	extensionInstance = new DevToolsExtension(context);
+	extensionInstance.init();
 }
 
-/**
- * Deactivates the VScode extension
- *
- * @export
- */
-export function deactivate() {}
+export function deactivate(): void {
+	extensionInstance = undefined;
+}

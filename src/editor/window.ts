@@ -68,6 +68,27 @@ class VSCodeWindow {
 		return response;
 	}
 
+	async showWarningMessageWithOptions(
+		message: string,
+		actions: string[],
+		modal: boolean
+	): Promise<string | undefined> {
+		const response = await this.window.showWarningMessage(message, { modal }, ...actions);
+		return response;
+	}
+
+	async showViewProgress(
+		viewId: string,
+		title: string,
+		cancellable: boolean,
+		progressHandler: (
+			progress: TEditor.ProgressBar,
+			cancelToken: TEditor.ProgressBarCancellation
+		) => Thenable<unknown>
+	): Promise<void> {
+		this.window.withProgress({ title, location: { viewId }, cancellable }, progressHandler);
+	}
+
 	/**
 	 * Displays a quick pick menu with the given options.
 	 *

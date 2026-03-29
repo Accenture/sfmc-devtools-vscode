@@ -45,34 +45,149 @@
 		"onStartupFinished"
 	],
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "sfmc-devtools",
+					"title": "SFMC DevTools",
+					"icon": "resources/images/sfmc-devtools-logo2.png"
+				}
+			]
+		},
+		"views": {
+			"sfmc-devtools": [
+				{
+					"id": "sfmc-devtools-vscode.explorer",
+					"name": "Explorer",
+					"when": "sfmc-devtools-vscode.config.isproject"
+				}
+			]
+		},
+		"submenus": [
+			{
+				"id": "sfmc-devtools-vscode.submenu",
+				"label": "SFMC DevTools"
+			}
+		],
 		"commands": [
 			{
-				"command": "sfmc-devtools-vscode.changekey",
-				"title": "%command.title.changekey%"
-			},
-			{
-				"command": "sfmc-devtools-vscode.copytobu",
-				"title": "%command.title.copytobu%"
-			},
-			{
-				"command": "sfmc-devtools-vscode.delete",
-				"title": "%command.title.delete%"
+				"command": "sfmc-devtools-vscode.retrieve",
+				"title": "%command.title.retrieve%",
+				"icon": "$(cloud-download)"
 			},
 			{
 				"command": "sfmc-devtools-vscode.deploy",
-				"title": "%command.title.deploy%"
+				"title": "%command.title.deploy%",
+				"icon": "$(cloud-upload)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.delete",
+				"title": "%command.title.delete%",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.changekey",
+				"title": "%command.title.changekey%",
+				"icon": "$(key)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.copytobu",
+				"title": "%command.title.copytobu%",
+				"icon": "$(files)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.execute",
+				"title": "%command.title.execute%",
+				"icon": "$(play)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.schedule",
+				"title": "%command.title.schedule%",
+				"icon": "$(clock)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.pause",
+				"title": "%command.title.pause%",
+				"icon": "$(debug-pause)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.stop",
+				"title": "%command.title.stop%",
+				"icon": "$(debug-stop)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.publish",
+				"title": "%command.title.publish%",
+				"icon": "$(rocket)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.validate",
+				"title": "%command.title.validate%",
+				"icon": "$(check)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.refresh",
+				"title": "%command.title.refresh%",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.build",
+				"title": "%command.title.build%",
+				"icon": "$(package)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.createDeltaPkg",
+				"title": "%command.title.createDeltaPkg%",
+				"icon": "$(git-compare)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.fixKeys",
+				"title": "%command.title.fixKeys%",
+				"icon": "$(wrench)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.init",
+				"title": "%command.title.init%",
+				"icon": "$(new-folder)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.join",
+				"title": "%command.title.join%",
+				"icon": "$(repo-clone)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.reloadBUs",
+				"title": "%command.title.reloadBUs%",
+				"icon": "$(sync)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.upgrade",
+				"title": "%command.title.upgrade%",
+				"icon": "$(arrow-up)"
 			},
 			{
 				"command": "sfmc-devtools-vscode.restartExtension",
-				"title": "%command.title.restartExtension%"
-			},
-			{
-				"command": "sfmc-devtools-vscode.retrieve",
-				"title": "%command.title.retrieve%"
+				"title": "%command.title.restartExtension%",
+				"icon": "$(debug-restart)"
 			}
 		],
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "sfmc-devtools-vscode.retrieve",
+					"when": "%command.when.retrieve%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.deploy",
+					"when": "%command.when.deploy%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.delete",
+					"when": "%command.when.delete%",
+					"group": "devtools"
+				},
 				{
 					"command": "sfmc-devtools-vscode.changekey",
 					"when": "%command.when.changekey%",
@@ -84,108 +199,200 @@
 					"group": "devtools"
 				},
 				{
-					"command": "sfmc-devtools-vscode.delete",
-					"when": "%command.when.delete%",
+					"command": "sfmc-devtools-vscode.execute",
+					"when": "%command.when.execute%",
 					"group": "devtools"
 				},
 				{
-					"command": "sfmc-devtools-vscode.deploy",
-					"when": "%command.when.deploy%",
+					"command": "sfmc-devtools-vscode.schedule",
+					"when": "%command.when.schedule%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.pause",
+					"when": "%command.when.pause%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.stop",
+					"when": "%command.when.stop%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.publish",
+					"when": "%command.when.publish%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.validate",
+					"when": "%command.when.validate%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.refresh",
+					"when": "%command.when.refresh%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.build",
+					"when": "%command.when.build%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.createDeltaPkg",
+					"when": "sfmc-devtools-vscode.config.isproject",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.fixKeys",
+					"when": "%command.when.fixKeys%",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.init",
+					"when": "sfmc-devtools-vscode.config.isproject",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.join",
+					"when": "sfmc-devtools-vscode.config.isproject",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.reloadBUs",
+					"when": "sfmc-devtools-vscode.config.isproject",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.upgrade",
+					"when": "sfmc-devtools-vscode.config.isproject",
 					"group": "devtools"
 				},
 				{
 					"command": "sfmc-devtools-vscode.restartExtension",
 					"when": "sfmc-devtools-vscode.config.isproject",
 					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.retrieve",
-					"when": "%command.when.retrieve%",
-					"group": "devtools"
 				}
 			],
 			"editor/context": [
 				{
-					"command": "sfmc-devtools-vscode.changekey",
-					"when": "%command.when.changekey%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.copytobu",
-					"when": "%command.when.copytobu%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.delete",
-					"when": "%command.when.delete%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.deploy",
-					"when": "%command.when.deploy%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.retrieve",
-					"when": "%command.when.retrieve%",
+					"submenu": "sfmc-devtools-vscode.submenu",
+					"when": "sfmc-devtools-vscode.config.isproject",
 					"group": "devtools"
 				}
 			],
 			"explorer/context": [
 				{
-					"command": "sfmc-devtools-vscode.changekey",
-					"when": "%command.when.changekey%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.copytobu",
-					"when": "%command.when.copytobu%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.delete",
-					"when": "%command.when.delete%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.deploy",
-					"when": "%command.when.deploy%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.retrieve",
-					"when": "%command.when.retrieve%",
+					"submenu": "sfmc-devtools-vscode.submenu",
+					"when": "sfmc-devtools-vscode.config.isproject",
 					"group": "devtools"
 				}
 			],
 			"editor/title/context": [
 				{
-					"command": "sfmc-devtools-vscode.changekey",
-					"when": "%command.when.changekey%",
+					"submenu": "sfmc-devtools-vscode.submenu",
+					"when": "sfmc-devtools-vscode.config.isproject",
 					"group": "devtools"
-				},
+				}
+			],
+			"sfmc-devtools-vscode.submenu": [
 				{
-					"command": "sfmc-devtools-vscode.copytobu",
-					"when": "%command.when.copytobu%",
-					"group": "devtools"
-				},
-				{
-					"command": "sfmc-devtools-vscode.delete",
-					"when": "%command.when.delete%",
-					"group": "devtools"
+					"command": "sfmc-devtools-vscode.retrieve",
+					"when": "%command.when.retrieve%",
+					"group": "1_standard@1"
 				},
 				{
 					"command": "sfmc-devtools-vscode.deploy",
 					"when": "%command.when.deploy%",
-					"group": "devtools"
+					"group": "1_standard@2"
 				},
 				{
-					"command": "sfmc-devtools-vscode.retrieve",
-					"when": "%command.when.retrieve%",
-					"group": "devtools"
+					"command": "sfmc-devtools-vscode.delete",
+					"when": "%command.when.delete%",
+					"group": "1_standard@3"
+				},
+				{
+					"command": "sfmc-devtools-vscode.changekey",
+					"when": "%command.when.changekey%",
+					"group": "1_standard@4"
+				},
+				{
+					"command": "sfmc-devtools-vscode.copytobu",
+					"when": "%command.when.copytobu%",
+					"group": "1_standard@5"
+				},
+				{
+					"command": "sfmc-devtools-vscode.execute",
+					"when": "%command.when.execute%",
+					"group": "2_lifecycle@1"
+				},
+				{
+					"command": "sfmc-devtools-vscode.schedule",
+					"when": "%command.when.schedule%",
+					"group": "2_lifecycle@2"
+				},
+				{
+					"command": "sfmc-devtools-vscode.pause",
+					"when": "%command.when.pause%",
+					"group": "2_lifecycle@3"
+				},
+				{
+					"command": "sfmc-devtools-vscode.stop",
+					"when": "%command.when.stop%",
+					"group": "2_lifecycle@4"
+				},
+				{
+					"command": "sfmc-devtools-vscode.publish",
+					"when": "%command.when.publish%",
+					"group": "2_lifecycle@5"
+				},
+				{
+					"command": "sfmc-devtools-vscode.validate",
+					"when": "%command.when.validate%",
+					"group": "2_lifecycle@6"
+				},
+				{
+					"command": "sfmc-devtools-vscode.refresh",
+					"when": "%command.when.refresh%",
+					"group": "2_lifecycle@7"
+				},
+				{
+					"command": "sfmc-devtools-vscode.build",
+					"when": "%command.when.build%",
+					"group": "3_templating@1"
+				},
+				{
+					"command": "sfmc-devtools-vscode.createDeltaPkg",
+					"when": "sfmc-devtools-vscode.config.isproject",
+					"group": "4_devops@1"
+				},
+				{
+					"command": "sfmc-devtools-vscode.fixKeys",
+					"when": "%command.when.fixKeys%",
+					"group": "4_devops@2"
 				}
 			]
 		},
+		"keybindings": [
+			{
+				"command": "sfmc-devtools-vscode.retrieve",
+				"key": "ctrl+shift+r",
+				"mac": "cmd+shift+r",
+				"when": "sfmc-devtools-vscode.config.isproject"
+			},
+			{
+				"command": "sfmc-devtools-vscode.deploy",
+				"key": "ctrl+shift+d",
+				"mac": "cmd+shift+d",
+				"when": "sfmc-devtools-vscode.config.isproject"
+			},
+			{
+				"command": "sfmc-devtools-vscode.delete",
+				"key": "ctrl+shift+backspace",
+				"mac": "cmd+shift+backspace",
+				"when": "sfmc-devtools-vscode.config.isproject"
+			}
+		],
 		"configuration": {
 			"title": "SFMC DevTools",
 			"properties": {
@@ -198,6 +405,11 @@
 					"type": "boolean",
 					"default": true,
 					"description": "When enabled, shows inline warnings in the Problems panel for unresolvable r__TYPE_key relation fields in JSON metadata files, and offers a quick fix to retrieve the missing item."
+				},
+				"sfmc-devtools-vscode.contentBlockGoToDefinition": {
+					"type": "boolean",
+					"default": false,
+					"description": "When enabled, ContentBlockByKey() references in files inside the retrieve/ and deploy/ folders become Ctrl+Click links that navigate to the corresponding asset file."
 				},
 				"sfmc-devtools-vscode.warnOnContentBlockByKey": {
 					"type": "boolean",
@@ -220,7 +432,55 @@
 					"description": "When enabled, shows hover-only informational hints for known SFMC system data views (e.g. _Sent, _Open) in SQL query files."
 				}
 			}
-		}
+		},
+		"walkthroughs": [
+			{
+				"id": "sfmc-devtools-vscode.gettingStarted",
+				"title": "Get Started with SFMC DevTools",
+				"description": "Set up your Salesforce Marketing Cloud development environment.",
+				"steps": [
+					{
+						"id": "installMcdev",
+						"title": "Install mcdev",
+						"description": "Install the mcdev CLI tool globally via npm.\n\n[Open Terminal](command:workbench.action.terminal.new)",
+						"media": { "markdown": "docs/walkthrough/install.md" },
+						"completionEvents": ["onCommand:sfmc-devtools-vscode.restartExtension"]
+					},
+					{
+						"id": "createInstalledPackage",
+						"title": "Create SFMC Installed Package",
+						"description": "Create a Server-to-Server Installed Package in your SFMC account for API authentication.",
+						"media": { "markdown": "docs/walkthrough/installed-package.md" }
+					},
+					{
+						"id": "initProject",
+						"title": "Initialize Project",
+						"description": "Run mcdev init to set up your project with credentials and configuration.\n\n[Initialize Project](command:sfmc-devtools-vscode.init)",
+						"media": { "markdown": "docs/walkthrough/init.md" },
+						"completionEvents": ["onCommand:sfmc-devtools-vscode.init"]
+					},
+					{
+						"id": "firstRetrieve",
+						"title": "Retrieve Your First BU",
+						"description": "Right-click on a Business Unit folder in the Explorer and select 'mcdev: Retrieve' to download metadata.",
+						"media": { "markdown": "docs/walkthrough/retrieve.md" },
+						"completionEvents": ["onCommand:sfmc-devtools-vscode.retrieve"]
+					},
+					{
+						"id": "exploreDiagnostics",
+						"title": "Explore Diagnostics & Links",
+						"description": "Open retrieved files to see inline diagnostics, clickable links, and quick fixes powered by SFMC DevTools.",
+						"media": { "markdown": "docs/walkthrough/diagnostics.md" }
+					}
+				]
+			}
+		],
+		"jsonValidation": [
+			{
+				"fileMatch": ".mcdevrc.json",
+				"url": "./schemas/mcdevrc.schema.json"
+			}
+		]
 	},
 	"scripts": {
 		"webpack": "webpack --mode development",

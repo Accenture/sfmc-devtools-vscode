@@ -86,6 +86,11 @@ class ContentBlockLinkProvider implements VSCode.DocumentLinkProvider {
 	 * Populated by init() and kept current by addToCache / removeFromCache.
 	 */
 	private readonly keyCache = new Map<string, VSCode.Uri>();
+	private readonly isEnabled: () => boolean;
+
+	constructor(isEnabled?: () => boolean) {
+		this.isEnabled = isEnabled ?? (() => true);
+	}
 
 	/**
 	 * Scans all retrieve/<cred>/<bu>/asset/{other,block} files in the workspace
@@ -153,6 +158,8 @@ class ContentBlockLinkProvider implements VSCode.DocumentLinkProvider {
 	 * @returns {VSCode.DocumentLink[]} Array of document links pointing to found asset files
 	 */
 	provideDocumentLinks(document: VSCode.TextDocument): VSCode.DocumentLink[] {
+		if (!this.isEnabled()) return [];
+
 		const filePath = document.uri.path;
 
 		// Skip files outside retrieve/ and deploy/ folders, and skip .md and .sql files

@@ -10,7 +10,14 @@ import { MessagesDevTools } from "@messages";
 enum StandardCommandsAlias {
 	retrieve = "r",
 	deploy = "d",
-	delete = "del"
+	delete = "del",
+	execute = "exec",
+	schedule = "sched",
+	pause = "p",
+	stop = "stop",
+	publish = "activate",
+	validate = "validate",
+	refresh = "re"
 }
 
 /**
@@ -27,7 +34,6 @@ class StandardCommands extends Commands {
 	 * @returns {string[]} standard commands list
 	 */
 	commandsList(): string[] {
-		console.log("== StandardCommands: commandsList ==");
 		// "changekey" is listed separately because it reuses the deploy ("d") alias at runtime
 		// but requires its own build logic (adds --fromRetrieve, --skipValidation and a
 		// changeKey flag); adding it as a duplicate enum key is not possible in TypeScript.
@@ -42,7 +48,6 @@ class StandardCommands extends Commands {
 	 * @returns {TDevTools.ICommandConfig} configuration after running a specific command
 	 */
 	run(name: string, parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
-		console.log("== StandardCommands: Run ==");
 		let config: TDevTools.ICommandConfig = { alias: "", config: [] };
 		switch (name) {
 			case "retrieve":
@@ -57,6 +62,27 @@ class StandardCommands extends Commands {
 			case "changekey":
 				config = this.changekey(parameters);
 				break;
+			case "execute":
+				config = this.execute(parameters);
+				break;
+			case "schedule":
+				config = this.schedule(parameters);
+				break;
+			case "pause":
+				config = this.pause(parameters);
+				break;
+			case "stop":
+				config = this.stop(parameters);
+				break;
+			case "publish":
+				config = this.publish(parameters);
+				break;
+			case "validate":
+				config = this.validate(parameters);
+				break;
+			case "refresh":
+				config = this.refresh(parameters);
+				break;
 		}
 		return config;
 	}
@@ -68,16 +94,20 @@ class StandardCommands extends Commands {
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
 	retrieve(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
-		console.log("== StandardCommands: Retrieve ==");
-
 		if ("files" in parameters) {
-			// command alias
 			const retrieveAlias = StandardCommandsAlias.retrieve;
 
 			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
-			// command parameters configuration
+			const optional: string[] = [];
+			if ("likeKey" in parameters) optional.push(`${this.retrieveFlag("likeKey")}=${parameters.likeKey}`);
+			if ("likeName" in parameters) optional.push(`${this.retrieveFlag("likeName")}=${parameters.likeName}`);
+			if ("purge" in parameters && parameters.purge) optional.push(this.retrieveFlag("purge"));
+			if ("format" in parameters)
+				optional.push(
+					parameters.format === false ? this.retrieveFlag("noFormat") : this.retrieveFlag("format")
+				);
 			const retrieveConfig = fileParameters.map(parameter => [
-				this.configureParameters(parameter),
+				this.configureParameters({ ...parameter, optional: [...(parameter.optional || []), ...optional] }),
 				parameter.projectPath
 			]);
 			return { alias: retrieveAlias, config: retrieveConfig };
@@ -92,8 +122,6 @@ class StandardCommands extends Commands {
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
 	deploy(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
-		console.log("== StandardCommands: Deploy ==");
-
 		if ("files" in parameters) {
 			// command alias
 			const deployAlias = StandardCommandsAlias.deploy;
@@ -135,8 +163,6 @@ class StandardCommands extends Commands {
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
 	delete(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
-		console.log("== StandardCommands: Delete ==");
-
 		if ("files" in parameters) {
 			// command alias
 			const deleteAlias = StandardCommandsAlias.delete;
@@ -172,8 +198,6 @@ class StandardCommands extends Commands {
 	 * @returns {TDevTools.ICommandConfig} command configuration
 	 */
 	changekey(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
-		console.log("== StandardCommands: ChangeKey ==");
-
 		if ("files" in parameters) {
 			// changekey runs as a deploy command with --fromRetrieve and a changeKey flag
 			const deployAlias = StandardCommandsAlias.deploy;
@@ -217,6 +241,77 @@ class StandardCommands extends Commands {
 			return { alias: deployAlias, config: changeKeyConfig };
 		}
 		throw new Error(`[standard_changekey]: The property 'files' is missing from parameters.`);
+	}
+
+	execute(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if ("files" in parameters) {
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const optional = "schedule" in parameters ? ["--schedule"] : [];
+			const config = fileParameters.map(p => [
+				this.configureParameters({ ...p, optional: [...(p.optional || []), ...optional] }),
+				p.projectPath
+			]);
+			return { alias: StandardCommandsAlias.execute, config };
+		}
+		throw new Error(`[standard_execute]: The property 'files' is missing from parameters.`);
+	}
+
+	schedule(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if ("files" in parameters) {
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const config = fileParameters.map(p => [this.configureParameters(p), p.projectPath]);
+			return { alias: StandardCommandsAlias.schedule, config };
+		}
+		throw new Error(`[standard_schedule]: The property 'files' is missing from parameters.`);
+	}
+
+	pause(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if ("files" in parameters) {
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const config = fileParameters.map(p => [this.configureParameters(p), p.projectPath]);
+			return { alias: StandardCommandsAlias.pause, config };
+		}
+		throw new Error(`[standard_pause]: The property 'files' is missing from parameters.`);
+	}
+
+	stop(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if ("files" in parameters) {
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const config = fileParameters.map(p => [this.configureParameters(p), p.projectPath]);
+			return { alias: StandardCommandsAlias.stop, config };
+		}
+		throw new Error(`[standard_stop]: The property 'files' is missing from parameters.`);
+	}
+
+	publish(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if ("files" in parameters) {
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const optional = "skipStatusCheck" in parameters ? ["--skipStatusCheck"] : [];
+			const config = fileParameters.map(p => [
+				this.configureParameters({ ...p, optional: [...(p.optional || []), ...optional] }),
+				p.projectPath
+			]);
+			return { alias: StandardCommandsAlias.publish, config };
+		}
+		throw new Error(`[standard_publish]: The property 'files' is missing from parameters.`);
+	}
+
+	validate(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if ("files" in parameters) {
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const config = fileParameters.map(p => [this.configureParameters(p), p.projectPath]);
+			return { alias: StandardCommandsAlias.validate, config };
+		}
+		throw new Error(`[standard_validate]: The property 'files' is missing from parameters.`);
+	}
+
+	refresh(parameters: TDevTools.ICommandParameters): TDevTools.ICommandConfig {
+		if ("files" in parameters) {
+			const fileParameters = parameters.files as TDevTools.ICommandFileParameters[];
+			const config = fileParameters.map(p => [this.configureParameters(p), p.projectPath]);
+			return { alias: StandardCommandsAlias.refresh, config };
+		}
+		throw new Error(`[standard_refresh]: The property 'files' is missing from parameters.`);
 	}
 }
 

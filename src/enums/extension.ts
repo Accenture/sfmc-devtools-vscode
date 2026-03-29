@@ -35,7 +35,21 @@ enum StatusBarIcon {
 	delete = "trash",
 	clone = "copy",
 	cancel = "stop",
-	changekey = "key"
+	changekey = "key",
+	execute = "play",
+	schedule = "clock",
+	pause = "debug-pause",
+	stop = "debug-stop",
+	publish = "rocket",
+	validate = "check",
+	refresh = "refresh",
+	build = "package",
+	createDeltaPkg = "git-compare",
+	fixKeys = "wrench",
+	init = "new-folder",
+	join = "repo-clone",
+	reloadBUs = "sync",
+	upgrade = "arrow-up"
 }
 
 /**

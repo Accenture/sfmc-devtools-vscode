@@ -1,0 +1,90 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": ".mcdevrc.json",
+	"description": "Configuration file for Accenture SFMC DevTools (mcdev)",
+	"type": "object",
+	"properties": {
+		"credentials": {
+			"type": "object",
+			"description": "SFMC API credentials keyed by credential name",
+			"additionalProperties": {
+				"type": "object",
+				"properties": {
+					"eid": { "type": "integer", "description": "Enterprise ID (MID of the parent account)" },
+					"businessUnits": {
+						"type": "object",
+						"description": "Business Units keyed by name, values are MIDs",
+						"additionalProperties": { "type": "integer" }
+					}
+				},
+				"required": ["eid", "businessUnits"]
+			}
+		},
+		"options": {
+			"type": "object",
+			"description": "Global configuration options",
+			"properties": {
+				"deployment": {
+					"type": "object",
+					"properties": {
+						"commitHistory": { "type": "integer" },
+						"sourceTargetMapping": { "type": "object" }
+					}
+				},
+				"directories": {
+					"type": "object",
+					"properties": {
+						"retrieve": { "type": "string", "default": "retrieve" },
+						"deploy": { "type": "string", "default": "deploy" },
+						"template": { "type": "string", "default": "template" },
+						"templateBuilds": { "type": "string" }
+					}
+				},
+				"formatOnSave": { "type": "boolean", "default": true }
+			}
+		},
+		"directories": {
+			"type": "object",
+			"description": "Override directory names",
+			"properties": {
+				"retrieve": { "type": "string" },
+				"deploy": { "type": "string" },
+				"template": { "type": "string" },
+				"templateBuilds": { "type": "string" }
+			}
+		},
+		"markets": {
+			"type": "object",
+			"description": "Market definitions for templating",
+			"additionalProperties": {
+				"type": "object",
+				"additionalProperties": { "type": "string" }
+			}
+		},
+		"marketList": {
+			"type": "object",
+			"description": "Named market lists grouping markets for bulk operations",
+			"additionalProperties": {
+				"type": "object",
+				"properties": {
+					"description": { "type": "string" }
+				},
+				"additionalProperties": { "type": "string" }
+			}
+		},
+		"metaDataTypes": {
+			"type": "object",
+			"description": "Metadata type configuration",
+			"properties": {
+				"retrieve": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "List of metadata type API names to retrieve by default"
+				}
+			},
+			"additionalProperties": true
+		},
+		"version": { "type": "string" }
+	},
+	"required": ["credentials"]
+}

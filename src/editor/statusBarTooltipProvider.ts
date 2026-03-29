@@ -27,6 +27,7 @@ type LoadingStateCallback = (isLoading: boolean) => void;
  */
 const SETTING_LABELS: Record<string, string> = {
 	recommendExtensions: "Recommend Extensions",
+	contentBlockGoToDefinition: "ContentBlockByKey Go to Definition",
 	warnOnMissingJsonRelation: "Warn on Missing JSON Relation",
 	warnOnContentBlockByKey: "Warn on ContentBlockByKey",
 	warnOnMissingSqlDataExtension: "Warn on Missing SQL Data Extension",

@@ -80,6 +80,8 @@ interface ICommandConfig {
 	config: string[][];
 	/** Optional message logged once to the user before the first command invocation. */
 	preRunInfo?: string;
+	/** When true the command requires an interactive terminal (e.g. init, join). */
+	interactive?: boolean;
 }
 
 interface IConfigFileCredentials {

@@ -148,7 +148,6 @@ class MetadataTypes {
 	 * @returns {{ filename?: string; metadataTypeName?: string }} file name and metadata type name configured
 	 */
 	handleFileConfiguration(mdt: string, files: string[]): { filename?: string; metadataTypeName?: string } {
-		console.log("== MetadataTypes ExtractFileName ==");
 		if (mdt === "asset") {
 			const [assetName, filename] = files;
 

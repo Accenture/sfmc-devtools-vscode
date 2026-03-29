@@ -56,7 +56,6 @@ class VSCodeWorkspace {
 	 * @returns {(VSCode.Uri | undefined)} if defined returns the workspace uri else returns undefined
 	 */
 	getWorkspaceURI(): VSCode.Uri | undefined {
-		console.log("=== VSCodeWorkspace: Get URI ===");
 		const workspaceFolders = this.workspace.workspaceFolders;
 		if (workspaceFolders && workspaceFolders.length) return workspaceFolders[0].uri;
 		return;
@@ -92,7 +91,6 @@ class VSCodeWorkspace {
 	 * @returns {Promise<[string, VSCode.FileType][]>} array of names and Vscode file type
 	 */
 	async getWokspaceFiles(uri: VSCode.Uri): Promise<[string, VSCode.FileType][]> {
-		console.log("=== VSCodeWorkspace: Get Workspace Files ===");
 		const folderFiles = await this.workspace.fs.readDirectory(uri);
 		return folderFiles;
 	}
@@ -104,7 +102,6 @@ class VSCodeWorkspace {
 	 * @returns {Promise<string[]>} folders names in the workspace
 	 */
 	async getWorkspaceSubFolders(): Promise<string[]> {
-		console.log("=== VSCodeWorkspace: Get SubFolders ===");
 		const workspaceURI = this.getWorkspaceURI();
 		if (!workspaceURI)
 			throw new Error("[vscodeworkspace_getWorkspaceSubFolders] Failed to retrieve workspace URI.");
@@ -126,7 +123,6 @@ class VSCodeWorkspace {
 	 * @returns {Promise<string[]>} file path
 	 */
 	async findWorkspaceFiles(file: string): Promise<string[]> {
-		console.log("=== VSCodeWorkspace: findWorkspaceFiles ===");
 		const workspaceFiles = await this.workspace.findFiles(file);
 		return workspaceFiles.map((file: VSCode.Uri) => file.fsPath);
 	}
@@ -139,7 +135,6 @@ class VSCodeWorkspace {
 	 * @returns {Promise<boolean>} true if the file is in the workspace else false
 	 */
 	async isFileInWorkspaceFolder(file: string): Promise<boolean> {
-		console.log("=== VSCodeWorkspace: IsFileInFolder ===");
 		const workspaceFiles = await this.findWorkspaceFiles(file);
 		return workspaceFiles.length > 0;
 	}

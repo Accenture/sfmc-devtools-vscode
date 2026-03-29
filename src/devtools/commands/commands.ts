@@ -24,7 +24,17 @@ enum CommandFlags {
 	fromRetrieve = "--fromRetrieve",
 	json = "--json",
 	changeKeyField = "--changeKeyField",
-	changeKeyValue = "--changeKeyValue"
+	changeKeyValue = "--changeKeyValue",
+	likeKey = "--like.key",
+	likeName = "--like.name",
+	purge = "--purge",
+	format = "--format",
+	noFormat = "--no-format",
+	schedule = "--schedule",
+	skipStatusCheck = "--skipStatusCheck",
+	executeFlag = "--execute",
+	dependencies = "--dependencies",
+	retrieve = "--retrieve"
 }
 
 /**
@@ -103,7 +113,6 @@ abstract class Commands {
 	 * @returns {string} command configured
 	 */
 	protected configureParameters({ credential, metadata, optional }: TDevTools.ICommandFileParameters): string {
-		console.log("== Commands: configureParameters ==");
 		// All commands executed have the --skipInteraction flag to avoid user interaction with the terminal
 		const defaultFlags = `${this.retrieveFlag("skipInteraction")} ${this.retrieveFlag("noLogColors")}`;
 
