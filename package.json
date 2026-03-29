@@ -408,7 +408,7 @@
 				},
 				"sfmc-devtools-vscode.contentBlockGoToDefinition": {
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"description": "When enabled, ContentBlockByKey() references in files inside the retrieve/ and deploy/ folders become Ctrl+Click links that navigate to the corresponding asset file."
 				},
 				"sfmc-devtools-vscode.warnOnContentBlockByKey": {
