@@ -185,8 +185,13 @@ class DevToolsExtension {
 	 */
 	activateContextVariables(): void {
 		const vscodeCommands = this.vscodeEditor.getCommands();
+		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
 		// Sets vscode environment variable 'isproject' to true
 		vscodeCommands.executeCommandContext(`${ConfigExtension.extensionName}.config.isproject`, [true]);
+		// Mirrors the showTreeView setting into a context variable so the view when-clause can use it
+		vscodeCommands.executeCommandContext(`${ConfigExtension.extensionName}.config.showTreeView`, [
+			vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "showTreeView")
+		]);
 	}
 
 	/**
@@ -289,6 +294,13 @@ class DevToolsExtension {
 			VSCode.workspace.onDidChangeConfiguration(e => {
 				if (e.affectsConfiguration(ConfigExtension.extensionName)) {
 					this.tooltipProvider.update();
+
+					// Keep the showTreeView context variable in sync so the view when-clause updates live
+					if (e.affectsConfiguration(`${ConfigExtension.extensionName}.showTreeView`)) {
+						vscodeCommands.executeCommandContext(`${ConfigExtension.extensionName}.config.showTreeView`, [
+							vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "showTreeView")
+						]);
+					}
 
 					for (const [settingKey, label] of Object.entries(SETTING_LABELS)) {
 						if (!e.affectsConfiguration(`${ConfigExtension.extensionName}.${settingKey}`)) continue;

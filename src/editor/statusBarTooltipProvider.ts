@@ -32,7 +32,8 @@ const SETTING_LABELS: Record<string, string> = {
 	warnOnContentBlockByKey: "Warn on ContentBlockByKey",
 	warnOnMissingSqlDataExtension: "Warn on Missing SQL Data Extension",
 	warnOnMissingScriptDataExtension: "Warn on Missing Script Data Extension",
-	showSqlDataViewHoverNotice: "Show SQL Data View Hover Notice"
+	showSqlDataViewHoverNotice: "Show SQL Data View Hover Notice",
+	showTreeView: "Show Tree View (BETA)"
 };
 
 /**

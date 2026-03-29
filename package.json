@@ -59,7 +59,7 @@
 				{
 					"id": "sfmc-devtools-vscode.explorer",
 					"name": "Explorer",
-					"when": "sfmc-devtools-vscode.config.isproject"
+					"when": "sfmc-devtools-vscode.config.isproject && sfmc-devtools-vscode.config.showTreeView"
 				}
 			]
 		},
@@ -430,6 +430,11 @@
 					"type": "boolean",
 					"default": true,
 					"description": "When enabled, shows hover-only informational hints for known SFMC system data views (e.g. _Sent, _Open) in SQL query files."
+				},
+				"sfmc-devtools-vscode.showTreeView": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "**[BETA]** When enabled, shows the SFMC DevTools Explorer tree view in the Activity Bar for browsing Credentials, Business Units, and metadata types. This feature is under construction."
 				}
 			}
 		},
