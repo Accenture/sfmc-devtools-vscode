@@ -59,6 +59,7 @@
 				{
 					"id": "sfmc-devtools-vscode.explorer",
 					"name": "Explorer",
+					"icon": "resources/images/sfmc-devtools-logo2.png",
 					"when": "sfmc-devtools-vscode.config.isproject && sfmc-devtools-vscode.config.showTreeView"
 				}
 			]
