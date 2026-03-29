@@ -101,6 +101,11 @@ class DevToolsExtension {
 	 */
 	async loadConfiguration(): Promise<void> {
 		try {
+			// Register tree view unconditionally so VS Code can resolve the
+			// declared viewsContainer; the provider returns empty data when
+			// .mcdevrc.json is absent.
+			this.treeDataProvider = registerTreeView(this.extensionContext);
+
 			// Check if Mcdev is installed
 			const mcdevInstalled = this.mcdev.isInstalled();
 			// request user to install mcdev
@@ -114,8 +119,6 @@ class DevToolsExtension {
 				this.activateContainers();
 				// activate menu commands
 				this.activateMenuCommands();
-				// activate tree view in Activity Bar
-				this.treeDataProvider = registerTreeView(this.extensionContext);
 				// activate document link providers
 				this.activateLinkProviders();
 				// logs initial extension information into output channel
