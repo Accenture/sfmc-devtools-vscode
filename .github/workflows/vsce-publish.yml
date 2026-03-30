@@ -38,6 +38,12 @@ jobs:
             - run: npx @vscode/vsce publish --packagePath *.vsix
               env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
+            - name: Upload vsix artifact for Open VSX
+              uses: actions/upload-artifact@v4
+              with:
+                  name: vsix-package
+                  path: "*.vsix"
+                  retention-days: 1
             - name: Upload vsix to GitHub Release
               run: gh release upload "${{ github.event.release.tag_name }}" *.vsix
               env:
@@ -94,3 +100,16 @@ jobs:
 
                   gh api -X PATCH "repos/${owner}/${repo}/milestones/${milestone_number}" -f state="closed" >/dev/null
                   echo "Milestone #${milestone_number} closed."
+
+    publish-openvsx:
+        needs: publish-vsce
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download vsix artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: vsix-package
+            - name: Publish to Open VSX Registry
+              run: npx ovsx publish *.vsix
+              env:
+                  OVSX_PAT: ${{ secrets.OVSX_PAT }}
