@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import MetadataTypes from "../../../devtools/metadatatypes";
-import { TDevTools } from "../../../types";
+import { TDevTools } from "@types";
 
 suite("MetadataTypes", () => {
 	let mdt: MetadataTypes;
