@@ -449,34 +449,50 @@
 						"id": "installMcdev",
 						"title": "Install mcdev",
 						"description": "Install the mcdev CLI tool globally via npm.\n\n[Open Terminal](command:workbench.action.terminal.new)",
-						"media": { "markdown": "docs/walkthrough/install.md" },
-						"completionEvents": ["onCommand:sfmc-devtools-vscode.restartExtension"]
+						"media": {
+							"markdown": "docs/walkthrough/install.md"
+						},
+						"completionEvents": [
+							"onCommand:sfmc-devtools-vscode.restartExtension"
+						]
 					},
 					{
 						"id": "createInstalledPackage",
 						"title": "Create SFMC Installed Package",
 						"description": "Create a Server-to-Server Installed Package in your SFMC account for API authentication.",
-						"media": { "markdown": "docs/walkthrough/installed-package.md" }
+						"media": {
+							"markdown": "docs/walkthrough/installed-package.md"
+						}
 					},
 					{
 						"id": "initProject",
 						"title": "Initialize Project",
 						"description": "Run mcdev init to set up your project with credentials and configuration.\n\n[Initialize Project](command:sfmc-devtools-vscode.init)",
-						"media": { "markdown": "docs/walkthrough/init.md" },
-						"completionEvents": ["onCommand:sfmc-devtools-vscode.init"]
+						"media": {
+							"markdown": "docs/walkthrough/init.md"
+						},
+						"completionEvents": [
+							"onCommand:sfmc-devtools-vscode.init"
+						]
 					},
 					{
 						"id": "firstRetrieve",
 						"title": "Retrieve Your First BU",
 						"description": "Right-click on a Business Unit folder in the Explorer and select 'mcdev: Retrieve' to download metadata.",
-						"media": { "markdown": "docs/walkthrough/retrieve.md" },
-						"completionEvents": ["onCommand:sfmc-devtools-vscode.retrieve"]
+						"media": {
+							"markdown": "docs/walkthrough/retrieve.md"
+						},
+						"completionEvents": [
+							"onCommand:sfmc-devtools-vscode.retrieve"
+						]
 					},
 					{
 						"id": "exploreDiagnostics",
 						"title": "Explore Diagnostics & Links",
 						"description": "Open retrieved files to see inline diagnostics, clickable links, and quick fixes powered by SFMC DevTools.",
-						"media": { "markdown": "docs/walkthrough/diagnostics.md" }
+						"media": {
+							"markdown": "docs/walkthrough/diagnostics.md"
+						}
 					}
 				]
 			}
