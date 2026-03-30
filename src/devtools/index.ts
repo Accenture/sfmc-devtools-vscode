@@ -1039,7 +1039,9 @@ class DevToolsExtension {
 	 * These commands operate on selected files from the retrieve folder.
 	 */
 	handleLifecycleCommand(command: string, files: TDevTools.IExecuteFileDetails[]): void {
-		this.executeCommand(command, { filesDetails: files });
+		const supportedFiles = this.filterSupportedFiles(files, command);
+		if (!supportedFiles.length) return;
+		this.executeCommand(command, { filesDetails: supportedFiles });
 	}
 
 	/**
@@ -1048,7 +1050,9 @@ class DevToolsExtension {
 	async handleBuildCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		try {
 			if (!files.length) return;
-			const projectPath = files[0].projectPath;
+			const supportedFiles = this.filterSupportedFiles(files, "build");
+			if (!supportedFiles.length) return;
+			const projectPath = supportedFiles[0].projectPath;
 			const projectConfig = this.mcdev.retrieveProjectCredentialsConfig(projectPath);
 
 			const buFrom = (await this.selectBusinessUnits(projectPath, { multiBUs: false })) as string[];
@@ -1078,7 +1082,7 @@ class DevToolsExtension {
 			if (!marketTo) return;
 
 			this.executeCommand("build", {
-				filesDetails: files,
+				filesDetails: supportedFiles,
 				buFrom: buFrom[0],
 				buTo: buTo[0],
 				marketFrom,
@@ -1111,6 +1115,8 @@ class DevToolsExtension {
 	 * Handles the fixKeys command with a destructive-action warning dialog.
 	 */
 	async handleFixKeysCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
+		const supportedFiles = this.filterSupportedFiles(files, "fixkeys");
+		if (!supportedFiles.length) return;
 		const confirmationAnswer = await this.showInformationMessage(
 			"warning",
 			"Fix Keys is a destructive operation that renames keys across your Business Unit. " +
@@ -1119,7 +1125,7 @@ class DevToolsExtension {
 			true
 		);
 		if (!confirmationAnswer || confirmationAnswer.toLowerCase() !== EnumsExtension.Confirmation.Yes) return;
-		this.executeCommand("fixKeys", { filesDetails: files });
+		this.executeCommand("fixKeys", { filesDetails: supportedFiles });
 	}
 
 	/**

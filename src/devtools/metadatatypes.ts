@@ -11,8 +11,32 @@ const MetadataTypesSupportedActions: { [action: string]: TDevTools.MetadataTypes
 	retrieve: ["retrieve"],
 	deploy: ["create", "update"],
 	delete: ["delete"],
-	changekey: ["changeKey"]
+	changekey: ["changeKey"],
+	execute: ["execute"],
+	schedule: ["schedule"],
+	pause: ["pause"],
+	stop: ["stop"],
+	publish: ["publish"],
+	validate: ["validate"],
+	refresh: ["refresh"],
+	build: ["buildTemplate"],
+	fixkeys: ["changeKey"]
 };
+
+/**
+ * Capability flags that are provided by the mcdev CLI explainTypes output.
+ * Extension-defined flags (lifecycle operations) are NOT included here and must
+ * be preserved when incoming CLI data is applied via updateMetadataTypes.
+ */
+const CLI_PROVIDED_ACTIONS: TDevTools.MetadataTypesActions[] = [
+	"retrieve",
+	"create",
+	"update",
+	"delete",
+	"changeKey",
+	"buildTemplate",
+	"retrieveAsTemplate"
+];
 
 /**
  * MetadataTypes class
@@ -84,6 +108,9 @@ class MetadataTypes {
 	/**
 	 * Updates the metadata types list with the provided types.
 	 * Returns true if any change is detected: new types, removed types, or modified properties of existing types.
+	 * Only CLI-provided capability flags are compared so that extension-defined lifecycle flags
+	 * (execute, schedule, pause, stop, publish, validate, refresh) are never overwritten by
+	 * incoming data from `mcdev explainTypes`, which does not include those fields.
 	 *
 	 * @param {TDevTools.IMetadataTypes[]} types - updated list of metadata types
 	 * @returns {boolean} true if the list changed, false otherwise
@@ -106,12 +133,21 @@ class MetadataTypes {
 			if (Array.isArray(curRBD) && Array.isArray(newRBD)) {
 				if (curRBD.length !== newRBD.length || curRBD.some((v, i) => v !== newRBD[i])) return true;
 			} else if (curRBD !== newRBD) return true;
-			const supportsKeys = Object.keys(current.supports) as (keyof TDevTools.MetadataTypesActionsMap)[];
-			return supportsKeys.some(k => current.supports[k] !== t.supports[k]);
+			return CLI_PROVIDED_ACTIONS.some(k => current.supports[k] !== t.supports[k]);
 		});
 
 		if (hasNewTypes || hasRemovedTypes || hasChangedTypes) {
-			this.metadataTypes = types;
+			this.metadataTypes = types.map(t => {
+				const current = currentMap.get(t.apiName);
+				if (!current) return t;
+				const mergedSupports = { ...t.supports };
+				for (const action of Object.keys(current.supports) as TDevTools.MetadataTypesActions[]) {
+					if (!CLI_PROVIDED_ACTIONS.includes(action)) {
+						mergedSupports[action] = current.supports[action];
+					}
+				}
+				return { ...t, supports: mergedSupports };
+			});
 			return true;
 		}
 		return false;

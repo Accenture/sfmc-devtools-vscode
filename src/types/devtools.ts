@@ -8,7 +8,14 @@ type MetadataTypesActions =
 	| "delete"
 	| "changeKey"
 	| "buildTemplate"
-	| "retrieveAsTemplate";
+	| "retrieveAsTemplate"
+	| "execute"
+	| "schedule"
+	| "pause"
+	| "stop"
+	| "publish"
+	| "validate"
+	| "refresh";
 type MetadataTypesActionsMap = {
 	[key in MetadataTypesActions]: boolean;
 };

@@ -39,6 +39,21 @@ suite("Mcdev – command parameter mapping", () => {
 		assert.strictEqual(mcdev.isActionSupportedForType("retrieve", "unknownType"), false);
 	});
 
+	test("isActionSupportedForType execute: automation true, folder false", () => {
+		assert.strictEqual(mcdev.isActionSupportedForType("execute", "automation"), true);
+		assert.strictEqual(mcdev.isActionSupportedForType("execute", "folder"), false);
+	});
+
+	test("isActionSupportedForType validate: journey true, automation false", () => {
+		assert.strictEqual(mcdev.isActionSupportedForType("validate", "journey"), true);
+		assert.strictEqual(mcdev.isActionSupportedForType("validate", "automation"), false);
+	});
+
+	test("isActionSupportedForType fixkeys: automation true, folder false", () => {
+		assert.strictEqual(mcdev.isActionSupportedForType("fixkeys", "automation"), true);
+		assert.strictEqual(mcdev.isActionSupportedForType("fixkeys", "folder"), false);
+	});
+
 	test("updateMetadataTypes returns false for no changes", () => {
 		const types = mcdev.retrieveSupportedMetadataDataTypes("retrieve");
 		const allTypes = [...types];
