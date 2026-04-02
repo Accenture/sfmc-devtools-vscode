@@ -25,11 +25,13 @@ suite("StatusBarTooltipProvider", () => {
 		test("contains all expected settings", () => {
 			const expectedKeys = [
 				"recommendExtensions",
+				"contentBlockGoToDefinition",
 				"warnOnMissingJsonRelation",
 				"warnOnContentBlockByKey",
 				"warnOnMissingSqlDataExtension",
 				"warnOnMissingScriptDataExtension",
-				"showSqlDataViewHoverNotice"
+				"showSqlDataViewHoverNotice",
+				"showTreeView"
 			];
 			assert.deepStrictEqual(Object.keys(SETTING_LABELS), expectedKeys);
 		});
