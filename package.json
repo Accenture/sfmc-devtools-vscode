@@ -2,7 +2,7 @@
 	"name": "sfmc-devtools-vscode",
 	"displayName": "SFMC DevTools",
 	"description": "Unofficial IDE for Salesforce Marketing Cloud - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
-	"version": "2.8.1",
+	"version": "3.0.0",
 	"license": "MIT",
 	"publisher": "Accenture-oss",
 	"repository": {
@@ -511,7 +511,7 @@
 		"compile": "webpack",
 		"watch": "webpack --watch",
 		"package": "webpack --mode production --devtool hidden-source-map",
-		"package:test-vsix": "npx @vscode/vsce package --pre-release -o sfmc-devtools-vscode-test.vsix",
+		"package:test": "npx @vscode/vsce package --pre-release -o sfmc-devtools-vscode-BETA.vsix",
 		"package:release": "npx @vscode/vsce package",
 		"deploy": "vsce publish",
 		"lint": "eslint ./src --ext .ts",
