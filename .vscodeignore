@@ -1,10 +1,16 @@
 **/*.ts
+**/*.map
 node_modules
 src
+.vscode
+.vscode-test
+*.vsix
 .github
 .husky
 .fork
 .gitignore
+.npmrc
+.prettierrc
 .mocharc.cjs
 .vscode-test.mjs
 eslint.config.mjs
@@ -13,6 +19,4 @@ tsconfig.npmScripts.json
 tsconfig.test.json
 prepare-release.js
 webpack.config.js
-.git
 .gitattributes
-changelog.md
