@@ -27,9 +27,35 @@ suite("Config – extension", () => {
 		assert.deepStrictEqual([...ConfigExtension.menuCommands].sort(), expected.sort());
 	});
 
-	test("recommendedExtensions is a non-empty array", () => {
-		assert.ok(Array.isArray(ConfigExtension.recommendedExtensions));
-		assert.ok(ConfigExtension.recommendedExtensions.length > 0);
+	test("recommendedExtensions contains all expected extensions", () => {
+		const expected = [
+			"joernberkefeld.sfmc-language",
+			"IBM.output-colorizer",
+			"aaron-bond.better-comments",
+			"dbaeumer.vscode-eslint",
+			"editorconfig.editorconfig",
+			"esbenp.prettier-vscode"
+		];
+		assert.deepStrictEqual(
+			[...ConfigExtension.recommendedExtensions].sort(),
+			expected.sort(),
+			"recommendedExtensions must match the canonical list exactly"
+		);
+	});
+
+	test("sfmc-language is the first recommended extension", () => {
+		assert.strictEqual(
+			ConfigExtension.recommendedExtensions[0],
+			"joernberkefeld.sfmc-language",
+			"joernberkefeld.sfmc-language must be first so it is installed before other tools"
+		);
+	});
+
+	test("every recommendedExtensions entry follows publisher.extensionName format", () => {
+		const validId = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+$/;
+		for (const ext of ConfigExtension.recommendedExtensions) {
+			assert.ok(validId.test(ext), `"${ext}" does not match publisher.extensionName format`);
+		}
 	});
 
 	test("delayTimeUpdateStatusBar is a positive number", () => {

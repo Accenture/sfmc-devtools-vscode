@@ -1,5 +1,12 @@
 const extensionName = "sfmc-devtools-vscode";
-const recommendedExtensions = ["IBM.output-colorizer"];
+const recommendedExtensions = [
+	"joernberkefeld.sfmc-language",
+	"IBM.output-colorizer",
+	"aaron-bond.better-comments",
+	"dbaeumer.vscode-eslint",
+	"editorconfig.editorconfig",
+	"esbenp.prettier-vscode"
+];
 const menuCommands = [
 	"changekey",
 	"copytobu",
