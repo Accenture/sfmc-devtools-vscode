@@ -28,13 +28,19 @@ class VSCodeCommands {
 	 */
 	registerCommand(register: CommandRegister | CommandRegister[]): void {
 		[register].flat().forEach(registry =>
-			this.commands.registerCommand(registry.command, (...files: VSCode.Uri[]) => {
-				const filePaths = files
-					.flat()
-					.map(file => file.path)
-					.filter(path => path !== undefined);
-				registry.callbackAction(Lib.removeDuplicates(filePaths) as string[]);
-			})
+			this.commands.registerCommand(
+				registry.command,
+				(clickedUri?: VSCode.Uri, allSelectedUris?: VSCode.Uri[]) => {
+					// VS Code passes the right-clicked item as the first argument.
+					// When multiple items are selected (Ctrl+Click) in the explorer or the
+					// editor tab bar, VS Code also passes all selected URIs as the second argument.
+					// We merge both to cover cases where clickedUri may not be included in
+					// allSelectedUris, then deduplicate.
+					const uris = [...(allSelectedUris ?? []), ...(clickedUri ? [clickedUri] : [])];
+					const filePaths = uris.map(uri => uri.path).filter((path): path is string => path !== undefined);
+					registry.callbackAction(Lib.removeDuplicates(filePaths) as string[]);
+				}
+			)
 		);
 	}
 
