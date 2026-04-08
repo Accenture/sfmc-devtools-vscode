@@ -100,6 +100,8 @@ class TemplatingCommands extends Commands {
 			if ("retrieve" in parameters && parameters.retrieve) optional.push("--retrieve");
 			if ("skipValidation" in parameters && parameters.skipValidation)
 				optional.push(this.retrieveFlag("skipValidation"));
+			if (parameters.purge === true) optional.push(this.retrieveFlag("purge"));
+			else optional.push(this.retrieveFlag("noPurge"));
 			const buFromVal = parameters.buFrom as string;
 			const buToVal = parameters.buTo as string;
 			const marketFromVal = parameters.marketFrom as string;

@@ -64,3 +64,66 @@ suite("TemplatingCommands – clone", () => {
 		assert.strictEqual(result.alias, "clone");
 	});
 });
+
+function makeBuildParams(purge?: boolean): TDevTools.ICommandParameters {
+	const base = {
+		files: [
+			{
+				credential: "",
+				projectPath: "/project",
+				topFolder: "/retrieve/",
+				metadata: [{ metadatatype: "dataExtension", key: "myDE", path: "/retrieve/cred/bu/dataExtension" }]
+			}
+		],
+		buFrom: "srcCred/srcBU",
+		buTo: "tgtCred/tgtBU",
+		marketFrom: "sourceMarket",
+		marketTo: "targetMarket"
+	};
+	return purge === undefined ? base : { ...base, purge };
+}
+
+suite("TemplatingCommands – build", () => {
+	let cmd: TemplatingCommands;
+	setup(() => {
+		cmd = new TemplatingCommands();
+	});
+
+	test("commandsList includes build", () => {
+		assert.ok(cmd.commandsList().includes("build"));
+	});
+
+	test("build with purge true includes --purge", () => {
+		const result = cmd.build(makeBuildParams(true));
+		const paramStr = result.config[0][0];
+		assert.ok(paramStr.includes("--purge"));
+		assert.ok(!paramStr.includes("--no-purge"));
+	});
+
+	test("build with purge false includes --no-purge", () => {
+		const result = cmd.build(makeBuildParams(false));
+		const paramStr = result.config[0][0];
+		assert.ok(paramStr.includes("--no-purge"));
+		assert.ok(!/\s--purge(\s|$)/.test(paramStr));
+	});
+
+	test("build without purge defaults to --no-purge", () => {
+		const result = cmd.build(makeBuildParams());
+		const paramStr = result.config[0][0];
+		assert.ok(paramStr.includes("--no-purge"));
+	});
+
+	test("build returns alias build", () => {
+		const result = cmd.build(makeBuildParams(false));
+		assert.strictEqual(result.alias, "build");
+	});
+
+	test("run dispatches to build", () => {
+		const result = cmd.run("build", makeBuildParams(true));
+		assert.strictEqual(result.alias, "build");
+	});
+
+	test("build throws when required properties missing", () => {
+		assert.throws(() => cmd.build({ files: [] }), /\[templating_build\]/);
+	});
+});

@@ -4,6 +4,12 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.1.1] — 2026-04-08
+
+### Fixed
+
+- **Build (Template + Definition)**: the command now asks whether to clear the deploy folder before building and passes `--purge` or `--no-purge` to mcdev so the CLI no longer waits indefinitely on an interactive prompt in the VS Code terminal.
+
 ## [3.1.0] — 2026-04-08
 
 ### Added

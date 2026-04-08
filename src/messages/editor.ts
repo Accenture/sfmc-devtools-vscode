@@ -27,6 +27,9 @@ const noBusinessUnitsFound = (credential: string) =>
 	`No business units were found for the selected credential: "${credential}". Please check the configuration file.`;
 const unsupportedAction = (action: string, metadataTypes: string[]) =>
 	`The selected metadata type${metadataTypes.length > 1 ? "s do" : " does"} not support "${action}": ${metadataTypes.join(", ")}`;
+const buildPurgePrompt = "Clear deploy folder before building?";
+const buildPurgeOptionYes = "Yes, clear deploy folder before building";
+const buildPurgeOptionNo = "No, keep existing deploy folder";
 
 export {
 	recommendedExtensions,
@@ -46,5 +49,8 @@ export {
 	noCredentialFound,
 	deleteConfirmation,
 	noBusinessUnitsFound,
-	unsupportedAction
+	unsupportedAction,
+	buildPurgePrompt,
+	buildPurgeOptionYes,
+	buildPurgeOptionNo
 };

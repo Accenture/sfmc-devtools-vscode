@@ -1045,7 +1045,8 @@ class DevToolsExtension {
 	}
 
 	/**
-	 * Handles the build command by prompting the user for source/target BU and market selections.
+	 * Handles the build command by prompting the user for source/target BU, markets, and whether
+	 * to clear the deploy folder (maps to mcdev `--purge` / `--no-purge`).
 	 */
 	async handleBuildCommand(files: TDevTools.IExecuteFileDetails[]): Promise<void> {
 		try {
@@ -1081,12 +1082,20 @@ class DevToolsExtension {
 				| undefined;
 			if (!marketTo) return;
 
+			const purgeChoice = (await this.requestInputWithOptions(
+				[MessagesEditor.buildPurgeOptionYes, MessagesEditor.buildPurgeOptionNo],
+				MessagesEditor.buildPurgePrompt,
+				false
+			)) as string | undefined;
+			if (!purgeChoice) return;
+
 			this.executeCommand("build", {
 				filesDetails: supportedFiles,
 				buFrom: buFrom[0],
 				buTo: buTo[0],
 				marketFrom,
-				marketTo
+				marketTo,
+				purge: purgeChoice === MessagesEditor.buildPurgeOptionYes
 			});
 		} catch (error) {
 			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
