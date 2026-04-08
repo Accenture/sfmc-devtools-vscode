@@ -41,6 +41,13 @@
 		"Other"
 	],
 	"main": "./dist/extension.bundle.js",
+    "extensionPack": [
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig",
+        "esbenp.prettier-vscode",
+        "joernberkefeld.sfmc-language",
+        "joernberkefeld.sfmc-data"
+    ],
 	"activationEvents": [
 		"onStartupFinished"
 	],
