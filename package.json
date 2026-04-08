@@ -170,6 +170,10 @@
 				"command": "sfmc-devtools-vscode.restartExtension",
 				"title": "%command.title.restartExtension%",
 				"icon": "$(debug-restart)"
+			},
+			{
+				"command": "sfmc-devtools-vscode.showWhatsNew",
+				"title": "%command.title.showWhatsNew%"
 			}
 		],
 		"menus": {
@@ -272,6 +276,10 @@
 				{
 					"command": "sfmc-devtools-vscode.restartExtension",
 					"when": "sfmc-devtools-vscode.config.isproject",
+					"group": "devtools"
+				},
+				{
+					"command": "sfmc-devtools-vscode.showWhatsNew",
 					"group": "devtools"
 				}
 			],

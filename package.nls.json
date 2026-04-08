@@ -19,6 +19,7 @@
     "command.title.reloadBUs": "mcdev: Reload Business Units",
     "command.title.upgrade": "mcdev: Upgrade Project",
     "command.title.restartExtension": "mcdev: Restart extension",
+    "command.title.showWhatsNew": "SFMC DevTools: Show What's New",
     "command.when.retrieve": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /[\\\\/]retrieve[\\\\/]/",
     "command.when.deploy": "sfmc-devtools-vscode.config.isproject && (resourcePath =~ /[\\\\/]deploy[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+/ || (resourcePath =~ /[\\\\/]retrieve[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+[\\\\/]([^\\\\/]+.(json|jsonc|html|sql|ssjs|md|amp|txt)|[^\\\\/]+[\\\\/])/))",
     "command.when.delete": "sfmc-devtools-vscode.config.isproject && resourcePath =~ /[\\\\/]retrieve[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+[\\\\/]([^\\\\/]+.(json|jsonc|html|sql|ssjs|md|amp|txt)|[^\\\\/]+[\\\\/])/",
