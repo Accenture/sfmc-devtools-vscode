@@ -32,6 +32,24 @@ If you are starting a completely new SFMC DevTools project
 
 Consult the [Wiki](https://github.com/Accenture/sfmc-devtools-vscode/wiki) for a complete guide on how to use the SFMC DevTools Vscode Extension.
 
+### AI assistants (optional MCP)
+
+For **mcdev** project help (wiki search, `.mcdevrc` concepts such as markets and `marketList`, `createDeltaPkg`, journey checklists, metadata type listing), you can add the community MCP server **[mcp-server-mcdev](https://www.npmjs.com/package/mcp-server-mcdev)** to your editor’s MCP configuration. It is published to the [MCP Registry](https://registry.modelcontextprotocol.io) as **`io.github.JoernBerkefeld/mcp-server-mcdev`** and runs locally via `npx` (see that package’s README). It complements language-focused tooling such as **[mcp-server-sfmc](https://www.npmjs.com/package/mcp-server-sfmc)** for AMPscript and SSJS.
+
+Example `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "mcdev": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-server-mcdev@latest"]
+    }
+  }
+}
+```
+
 ### Features
 
 - Retrieve and Deploy Marketing Cloud assets by right clicking on the file in the File Explorer and selecting the command option
