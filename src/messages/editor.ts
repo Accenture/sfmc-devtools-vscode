@@ -6,6 +6,10 @@ const runningCommandCancelled = (command: string) => `DevTools command has been 
 const runningCommandFailure = "Oh no. Something went wrong while running DevTools Command...";
 const credentialPrompt = "Please select the credential you would like to use:";
 const businessUnitsPrompt = "Please select the business unit you would like to use:";
+/** Quick-pick title when selecting `--buFrom` during Build (templating). */
+const businessUnitsFromPrompt = "Please select the BU you would like to use as source:";
+/** Quick-pick title when selecting `--buTo` during Build (templating). */
+const businessUnitsToPrompt = "Please select the BU you would like to use as target:";
 const metaDataTypePrompt = "Please select the metadata types you would like to use:";
 const copyToBuPrompt = "Please select the action you would like to perform:";
 const changeKeyMethodPrompt = "Please select how you would like to change the key:";
@@ -39,6 +43,8 @@ export {
 	runningCommandFailure,
 	credentialPrompt,
 	businessUnitsPrompt,
+	businessUnitsFromPrompt,
+	businessUnitsToPrompt,
 	metaDataTypePrompt,
 	copyToBuPrompt,
 	changeKeyMethodPrompt,

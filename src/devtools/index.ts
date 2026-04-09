@@ -1056,7 +1056,10 @@ class DevToolsExtension {
 			const projectPath = supportedFiles[0].projectPath;
 			const projectConfig = this.mcdev.retrieveProjectCredentialsConfig(projectPath);
 
-			const buFrom = (await this.selectBusinessUnits(projectPath, { multiBUs: false })) as string[];
+			const buFrom = (await this.selectBusinessUnits(projectPath, {
+				multiBUs: false,
+				businessUnitsPrompt: MessagesEditor.businessUnitsFromPrompt
+			})) as string[];
 			if (!buFrom?.length) return;
 
 			const markets = projectConfig.getMarkets();
@@ -1074,7 +1077,10 @@ class DevToolsExtension {
 				| undefined;
 			if (!marketFrom) return;
 
-			const buTo = (await this.selectBusinessUnits(projectPath, { multiBUs: false })) as string[];
+			const buTo = (await this.selectBusinessUnits(projectPath, {
+				multiBUs: false,
+				businessUnitsPrompt: MessagesEditor.businessUnitsToPrompt
+			})) as string[];
 			if (!buTo?.length) return;
 
 			const marketTo = (await this.requestInputWithOptions(markets, "Select target market:", false)) as
@@ -1143,12 +1149,17 @@ class DevToolsExtension {
 	 * @param {string} projectPath - The path to the project.
 	 * @param {Object} options - The options for selecting business units.
 	 * @param {boolean} options.multiBUs - Indicates if multiple business units can be selected.
+	 * @param {string} [options.businessUnitsPrompt] - Quick-pick title for BU selection (defaults to generic prompt).
 	 * @returns {Promise<string[] | undefined>} A promise that resolves to an array of selected business units or undefined.
 	 * @throws {Error} If no credentials or business units are found.
 	 */
 	async selectBusinessUnits(
 		projectPath: string,
-		{ multiBUs, credential }: { multiBUs: boolean; credential?: string }
+		{
+			multiBUs,
+			credential,
+			businessUnitsPrompt: buPrompt
+		}: { multiBUs: boolean; credential?: string; businessUnitsPrompt?: string }
 	): Promise<string[] | undefined> {
 		// Get the credentials and business units from the mcdevrc file
 		const projectCredsConfig = this.mcdev.retrieveProjectCredentialsConfig(projectPath);
@@ -1183,7 +1194,7 @@ class DevToolsExtension {
 				// Request user to select a business unit
 				selectedBUs = (await this.requestInputWithOptions(
 					businessUnits,
-					MessagesEditor.businessUnitsPrompt,
+					buPrompt ?? MessagesEditor.businessUnitsPrompt,
 					multiBUs
 				)) as string[] | undefined;
 			} else {

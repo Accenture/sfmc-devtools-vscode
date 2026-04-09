@@ -4,6 +4,12 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.1.2] — 2026-04-09
+
+### Changed
+
+- **Build (Template + Definition)**: the two Business Unit quick-picks now say **source** vs **target** so it is clear which selection maps to `--buFrom` and which to `--buTo`.
+
 ## [3.1.1] — 2026-04-08
 
 ### Fixed
