@@ -1,7 +1,7 @@
 {
 	"name": "sfmc-devtools-vscode",
 	"displayName": "SFMC DevTools",
-	"description": "Unofficial IDE for Salesforce Marketing Cloud - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
+	"description": "Unofficial IDE for Salesforce Marketing Cloud Engagement - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
 	"version": "3.1.2",
 	"license": "MIT",
 	"publisher": "Accenture-oss",
@@ -574,7 +574,6 @@
 		"@vscode/codicons": "^0.0.45"
 	},
 	"lint-staged": {
-		"*.js": "eslint --fix",
-		"*.ts": "eslint --fix --ext .ts"
+		"*.{js,ts}": ["eslint --fix"]
 	}
 }

@@ -1,3 +1,24 @@
-# run lint-staged hooks
+if [[ $SKIP_HOOKS -gt 0 ]]; then
+  echo "[PRE-COMMIT] skipping hooks (SKIP_HOOKS=$SKIP_HOOKS)"
+  exit 0
+fi
+
 echo "[PRE-COMMIT] Run lint-staged"
-lint-staged
+lint-staged || {
+  echo "[PRE-COMMIT] lint-staged reported errors it could not auto-fix. Fix them manually and try again."
+  exit 1
+}
+
+echo "[PRE-COMMIT] Running TypeScript compile..."
+npm run compile --no-workspaces || {
+  echo "[PRE-COMMIT] Compile failed. Fix the errors above and try again."
+  exit 1
+}
+
+echo "[PRE-COMMIT] Running tests..."
+npm run test:unit --no-workspaces || {
+  echo "[PRE-COMMIT] Tests failed. Fix the errors above and try again."
+  exit 1
+}
+
+echo "[PRE-COMMIT] All checks passed."
