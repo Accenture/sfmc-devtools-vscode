@@ -4,6 +4,12 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.1.3] — 2026-06-26
+
+### Fixed
+
+- **Cursor compatibility**: lowered the required `engines.vscode` from `^1.109.0` back to `^1.101.0` so the extension installs in Cursor (whose bundled VS Code base lags upstream). The `1.109` floor made the extension uninstallable in Cursor with an "is not compatible" error.
+
 ## [3.1.2] — 2026-04-09
 
 ### Changed
