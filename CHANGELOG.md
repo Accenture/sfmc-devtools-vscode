@@ -4,6 +4,16 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.2.0] — 2026-06-26
+
+### Removed
+
+- **Bundled extension pack**: the extension no longer auto-installs ESLint, EditorConfig, Prettier, SFMC Language Service, and SFMC Data Loader. It is now a standalone extension.
+
+### Changed
+
+- **README**: added a "Recommended companion extensions" section pointing to the [SFMC Extension Pack](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-extension-pack) and [SFMC Extension Pack Plus](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-extension-pack-expanded), and strongly recommending at least the [SFMC Language Service](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-language) extension.
+
 ## [3.1.3] — 2026-06-26
 
 ### Fixed

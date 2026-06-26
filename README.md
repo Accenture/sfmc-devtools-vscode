@@ -21,6 +21,15 @@ npm install -g mcdev
 - After installation is completed click on the button `Reload Required` or simply reopen your Visual Studio Code
 - A `mcddev` button should display at the bottom bar
 
+### Recommended companion extensions
+
+This extension no longer bundles other extensions. For a complete SFMC editing experience, install one of our extension packs:
+
+- **[SFMC Extension Pack](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-extension-pack)** - SFMC Data Loader, SFMC DevTools, SFMC Language Service, and MSO Conditionals.
+- **[SFMC Extension Pack Plus](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-extension-pack-expanded)** - the same four SFMC extensions plus ESLint, Prettier, and EditorConfig for a typical SFMC project toolchain.
+
+At a minimum, we strongly recommend installing the **[SFMC Language Service](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-language)** extension for AMPscript and SSJS syntax highlighting, completions, and hover docs.
+
 ### Initialize SFMC DevTools Project
 
 If you are starting a completely new SFMC DevTools project
