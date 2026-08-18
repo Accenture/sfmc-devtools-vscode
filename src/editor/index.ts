@@ -36,13 +36,6 @@ class VSCodeEditor {
 	 */
 	private vscodeCommands: TEditor.VSCodeCommands;
 	/**
-	 * VSCodeExtensions class instance
-	 *
-	 * @private
-	 * @type {TEditor.VSCodeExtensions}
-	 */
-	private vscodeExtensions: TEditor.VSCodeExtensions;
-	/**
 	 * Creates an instance of VSCodeEditor.
 	 *
 	 * @constructor
@@ -53,7 +46,6 @@ class VSCodeEditor {
 		this.vscodeWorkspace = new TEditor.VSCodeWorkspace();
 		this.vscodeWindow = new TEditor.VSCodeWindow();
 		this.vscodeCommands = new TEditor.VSCodeCommands();
-		this.vscodeExtensions = new TEditor.VSCodeExtensions();
 	}
 
 	/**
@@ -90,15 +82,6 @@ class VSCodeEditor {
 	 */
 	getCommands() {
 		return this.vscodeCommands;
-	}
-
-	/**
-	 * Retrieves a VSCodeExtensions instance
-	 *
-	 * @returns {TEditor.VSCodeExtensions}
-	 */
-	getExtensions() {
-		return this.vscodeExtensions;
 	}
 }
 

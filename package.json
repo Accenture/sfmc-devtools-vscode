@@ -405,11 +405,6 @@
 		"configuration": {
 			"title": "SFMC DevTools",
 			"properties": {
-				"sfmc-devtools-vscode.recommendExtensions": {
-					"type": "boolean",
-					"default": true,
-					"description": "Indicates if recommended extensions popup should be shown to user or not."
-				},
 				"sfmc-devtools-vscode.warnOnMissingJsonRelation": {
 					"type": "boolean",
 					"default": true,

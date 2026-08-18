@@ -26,7 +26,6 @@ type LoadingStateCallback = (isLoading: boolean) => void;
  * Maps setting keys to human-readable labels shown in the tooltip.
  */
 const SETTING_LABELS: Record<string, string> = {
-	recommendExtensions: "Recommend Extensions",
 	contentBlockGoToDefinition: "ContentBlockByKey Go to Definition",
 	warnOnMissingJsonRelation: "Warn on Missing JSON Relation",
 	warnOnContentBlockByKey: "Warn on ContentBlockByKey",

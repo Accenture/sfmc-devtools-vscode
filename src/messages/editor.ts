@@ -1,5 +1,3 @@
-const recommendedExtensions =
-	"There are some recommended extensions that can enhance your usage of SFMC DevTools. Would you like to install them?";
 const runningCommand = "Running DevTools command...";
 const runningCommandSuccess = "DevTools command has run successfully!";
 const runningCommandCancelled = (command: string) => `DevTools command has been cancelled: ${command}`;
@@ -36,7 +34,6 @@ const buildPurgeOptionYes = "Yes, clear deploy folder before building";
 const buildPurgeOptionNo = "No, keep existing deploy folder";
 
 export {
-	recommendedExtensions,
 	runningCommand,
 	runningCommandSuccess,
 	runningCommandCancelled,

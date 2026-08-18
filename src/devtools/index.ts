@@ -113,8 +113,6 @@ class DevToolsExtension {
 			else {
 				// activate extension context variables
 				this.activateContextVariables();
-				// activate recommended extensions
-				this.activateRecommendedExtensions();
 				// activate editor containers
 				this.activateContainers();
 				// activate menu commands
@@ -192,50 +190,6 @@ class DevToolsExtension {
 		vscodeCommands.executeCommandContext(`${ConfigExtension.extensionName}.config.showTreeView`, [
 			vscodeWorkspace.isConfigurationKeyEnabled(ConfigExtension.extensionName, "showTreeView")
 		]);
-	}
-
-	/**
-	 * Activates the extension recommended extensions
-	 *
-	 * @async
-	 * @returns {Promise<void>}
-	 */
-	async activateRecommendedExtensions(): Promise<void> {
-		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
-		const vscodeExtensions = this.vscodeEditor.getExtensions();
-		const vscodeCommands = this.vscodeEditor.getCommands();
-		const recommendedExtensions = ConfigExtension.recommendedExtensions;
-		const configurationKey = "recommendExtensions";
-
-		// Checks if recommended extensions are already installed
-		const uninstalledExtensions = recommendedExtensions.filter(
-			extension => !vscodeExtensions.isExtensionInstalled(extension)
-		);
-
-		// Checks if recommended extensions suggestion is enabled
-		const recommendExtensions = vscodeWorkspace.isConfigurationKeyEnabled(
-			ConfigExtension.extensionName,
-			configurationKey
-		);
-
-		if (uninstalledExtensions.length && recommendExtensions) {
-			// Asks the user if he wants to install recommended extensions
-			const userAnswer = await this.showInformationMessage(
-				"info",
-				MessagesEditor.recommendedExtensions,
-				Object.keys(EnumsExtension.RecommendedExtensionsOptions)
-			);
-
-			// if user clicks on "do not show again" then recommendExtension disabled
-			if (
-				userAnswer &&
-				userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions["Do not show again"]
-			)
-				vscodeWorkspace.setConfigurationKey(ConfigExtension.extensionName, configurationKey, false);
-			// if user clicks on "install" then installs extensions
-			if (userAnswer && userAnswer.toLowerCase() === EnumsExtension.RecommendedExtensionsOptions.Install)
-				vscodeCommands.installExtension(uninstalledExtensions);
-		}
 	}
 
 	/**

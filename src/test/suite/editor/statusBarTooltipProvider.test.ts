@@ -24,7 +24,6 @@ suite("StatusBarTooltipProvider", () => {
 	suite("SETTING_LABELS", () => {
 		test("contains all expected settings", () => {
 			const expectedKeys = [
-				"recommendExtensions",
 				"contentBlockGoToDefinition",
 				"warnOnMissingJsonRelation",
 				"warnOnContentBlockByKey",

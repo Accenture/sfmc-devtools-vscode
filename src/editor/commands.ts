@@ -59,15 +59,6 @@ class VSCodeCommands {
 	}
 
 	/**
-	 * Installs an extension
-	 *
-	 * @param {(string | string[])} extensionName - extension name
-	 */
-	installExtension(extensionName: string | string[]): void {
-		this.executeCommand(["extension.open", "workbench.extensions.installExtension"], [extensionName].flat());
-	}
-
-	/**
 	 * Reloads the workspace
 	 *
 	 */

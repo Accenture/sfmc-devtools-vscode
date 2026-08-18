@@ -1,7 +1,6 @@
 import { VSCode } from "./vscode";
 import VSCodeCommands from "../editor/commands";
 import VSCodeContext from "../editor/context";
-import VSCodeExtensions from "../editor/extensions";
 import VSCodeEditor from "../editor/index";
 import VSCodeWindow from "../editor/window";
 import VSCodeWorkspace from "../editor/workspace";
@@ -32,7 +31,6 @@ export {
 	VSCodeCommands,
 	VSCodeContext,
 	VSCodeEditor,
-	VSCodeExtensions,
 	VSCodeWindow,
 	VSCodeWorkspace
 };

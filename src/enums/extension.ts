@@ -9,17 +9,6 @@ enum Confirmation {
 }
 
 /**
- * Recommended Extensions User options
- *
- * @enum {number}
- */
-enum RecommendedExtensionsOptions {
-	"Install" = "install",
-	"Not Now" = "not now",
-	"Do not show again" = "do not show again"
-}
-
-/**
  * Status Bar Icon Options
  *
  * @enum {number}
@@ -65,4 +54,4 @@ enum LoggerLevel {
 	ERROR = "error"
 }
 
-export { Confirmation, RecommendedExtensionsOptions, StatusBarIcon, LoggerLevel };
+export { Confirmation, StatusBarIcon, LoggerLevel };

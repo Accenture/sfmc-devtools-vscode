@@ -1,4 +1,6 @@
 import * as assert from "assert";
+import * as fs from "fs";
+import * as path from "path";
 import { ConfigExtension } from "@config";
 
 suite("Config – extension", () => {
@@ -27,35 +29,13 @@ suite("Config – extension", () => {
 		assert.deepStrictEqual([...ConfigExtension.menuCommands].sort(), expected.sort());
 	});
 
-	test("recommendedExtensions contains all expected extensions", () => {
-		const expected = [
-			"joernberkefeld.sfmc-language",
-			"IBM.output-colorizer",
-			"aaron-bond.better-comments",
-			"dbaeumer.vscode-eslint",
-			"editorconfig.editorconfig",
-			"esbenp.prettier-vscode"
-		];
-		assert.deepStrictEqual(
-			[...ConfigExtension.recommendedExtensions].sort(),
-			expected.sort(),
-			"recommendedExtensions must match the canonical list exactly"
-		);
-	});
-
-	test("sfmc-language is the first recommended extension", () => {
-		assert.strictEqual(
-			ConfigExtension.recommendedExtensions[0],
-			"joernberkefeld.sfmc-language",
-			"joernberkefeld.sfmc-language must be first so it is installed before other tools"
-		);
-	});
-
-	test("every recommendedExtensions entry follows publisher.extensionName format", () => {
-		const validId = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+$/;
-		for (const ext of ConfigExtension.recommendedExtensions) {
-			assert.ok(validId.test(ext), `"${ext}" does not match publisher.extensionName format`);
-		}
+	test("package.json does not declare an extensionPack", () => {
+		// SFMC DevTools is a single-purpose extension. Companion extensions are
+		// offered via the dedicated SFMC extension packs and the mcdev boilerplate
+		// workspace recommendations, not by bundling them here.
+		const manifestPath = path.resolve(process.cwd(), "package.json");
+		const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+		assert.strictEqual(manifest.extensionPack, undefined, "package.json must not reintroduce an extensionPack");
 	});
 
 	test("delayTimeUpdateStatusBar is a positive number", () => {

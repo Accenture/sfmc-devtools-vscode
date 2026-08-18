@@ -23,7 +23,6 @@ type MetadataTypesActionsMap = {
 interface IConfig {
 	extensionName: string;
 	requiredFiles: string[];
-	recommendedExtensions: string[];
 	menuCommands: string[];
 }
 interface IMetadataTypes {
