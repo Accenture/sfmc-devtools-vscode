@@ -21,14 +21,27 @@ npm install -g mcdev
 - After installation is completed click on the button `Reload Required` or simply reopen your Visual Studio Code
 - A `mcddev` button should display at the bottom bar
 
-### Recommended companion extensions
+### Companion extensions
 
-This extension no longer bundles other extensions. For a complete SFMC editing experience, install one of our extension packs:
+Installing SFMC DevTools automatically brings along a small set of companion extensions that make working with `mcdev` projects much smoother. One of them is **required** (it installs automatically and stays for as long as DevTools is installed) because DevTools relies on it to be usable:
+
+- **[SFMC Language Service](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-language)** (required) - **so your code is readable and gets linted/formatted.** DevTools retrieves and deploys `.ssjs` and `.amp` files, but VS Code has no built-in support for AMPscript or SSJS. Without this extension those files are plain, uncolored text with no completions, hover docs, or diagnostics - and the ESLint/Prettier tooling `mcdev` sets up has nothing to hook into. It provides the syntax highlighting, IntelliSense, and language server that make the retrieved code readable and lintable.
+
+The following soft companions ship as a pack and can each be removed individually if you do not want them:
+
+- **[ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)** and **[Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)** - the `mcdev` CLI scaffolds ESLint and Prettier configs into your project, so these are advisable to have installed.
+- **[SFMC Data Loader](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-data)** - companion `mcdev` tooling for loading and manipulating Data Extension records, so you can move data alongside the metadata DevTools retrieves and deploys.
+
+**Readable `mcdev` logs are now built in.** DevTools streams the `mcdev` CLI output into the VS Code **Output** panel, which has no syntax coloring of its own. DevTools now colorizes its own "mcdev" Output channel internally via an embedded `mcdev-log` grammar, so success, warning, and error lines are distinguishable at a glance. Because this is built in, the third-party [Output Colorizer](https://marketplace.visualstudio.com/items?itemName=IBM.output-colorizer) extension is no longer a required companion.
+
+Why bundle these? The SFMC extension packs are optional and do not assume you use `mcdev`. Developers who **do** use `mcdev` often skip the packs - this minimal set makes sure they still get the crucial language service (readable, lintable code) and the linting/formatting and data-loading tooling `mcdev` expects, while the Output panel is colorized by DevTools itself.
+
+For a fuller toolchain (SFMC Data Loader, MSO Conditionals, EditorConfig, Peacock), install one of our extension packs:
 
 - **[SFMC Extension Pack](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-extension-pack)** - SFMC Data Loader, SFMC DevTools, SFMC Language Service, and MSO Conditionals.
 - **[SFMC Extension Pack Plus](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-extension-pack-expanded)** - the same four SFMC extensions plus ESLint, Prettier, and EditorConfig for a typical SFMC project toolchain.
 
-At a minimum, we strongly recommend installing the **[SFMC Language Service](https://marketplace.visualstudio.com/items?itemName=joernberkefeld.sfmc-language)** extension for AMPscript and SSJS syntax highlighting, completions, and hover docs.
+New `mcdev init` projects also ship a `.vscode/extensions.json` file, so VS Code will surface these companions through its built-in **Recommended Extensions** prompt when you open a DevTools project.
 
 ### Initialize SFMC DevTools Project
 

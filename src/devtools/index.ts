@@ -204,6 +204,10 @@ class DevToolsExtension {
 		const vscodeWorkspace = this.vscodeEditor.getWorkspace();
 		const packageName = this.mcdev.getPackageName();
 
+		// Pre-creates the mcdev output channel bound to the mcdev-log language so
+		// its content gets syntax highlighting from the bundled TextMate grammar
+		vscodeWindow.createOutputChannel(packageName, "mcdev-log");
+
 		// Sets the command when the status bar is clicked
 		const statusBarCommand = `${ConfigExtension.extensionName}.openOutputChannel`;
 		// Start with a loading spinner – caches are about to be populated

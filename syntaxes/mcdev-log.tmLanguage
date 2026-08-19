@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    mcdev-log TextMate grammar
+
+    Adapted from IBM's vscode-log-output-colorizer grammar (log.tmLanguage),
+    which is released under The MIT License (MIT), Copyright (c) 2016
+    International Business Machines. See NOTICE.md for the full license text.
+
+    Reworked for the DevTools "mcdev" Output channel: prunes IBM's generic log
+    patterns and adds mcdev-tuned rules that approximate mcdev's winston
+    npm-level palette (error=red, warn=yellow, info/http=green, verbose=cyan,
+    debug=blue, silly=magenta). Console line format is: HH:mm:ss LEVEL: message.
+    The scopeName is unique (code.mcdev-log) so it only targets our own channel.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>scopeName</key>
+        <string>code.mcdev-log</string>
+        <key>name</key>
+        <string>mcdev log</string>
+        <key>patterns</key>
+        <array>
+            <dict>
+                <!-- Leading timestamp HH:mm:ss at start of line -->
+                <key>match</key>
+                <string>(?&lt;=^|\s)([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\b</string>
+                <key>name</key>
+                <string>constant.numeric.timestamp.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- error level -> red -->
+                <key>match</key>
+                <string>\berror(?=:)</string>
+                <key>name</key>
+                <string>invalid.illegal.level.error.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- warn level -> yellow -->
+                <key>match</key>
+                <string>\bwarn(?=:)</string>
+                <key>name</key>
+                <string>markup.changed.level.warn.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- info level -> green -->
+                <key>match</key>
+                <string>\binfo(?=:)</string>
+                <key>name</key>
+                <string>markup.inserted.level.info.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- http level -> green -->
+                <key>match</key>
+                <string>\bhttp(?=:)</string>
+                <key>name</key>
+                <string>markup.inserted.level.http.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- verbose level -> cyan -->
+                <key>match</key>
+                <string>\bverbose(?=:)</string>
+                <key>name</key>
+                <string>support.function.level.verbose.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- debug level -> blue -->
+                <key>match</key>
+                <string>\bdebug(?=:)</string>
+                <key>name</key>
+                <string>keyword.level.debug.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- silly level -> magenta -->
+                <key>match</key>
+                <string>\bsilly(?=:)</string>
+                <key>name</key>
+                <string>constant.language.level.silly.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- mcdev glyphs: command / beta / deprecated / not-supported -->
+                <key>match</key>
+                <string>[\x{26A1}\x{1F6A7}\x{1F4A5}\x{2607}]</string>
+                <key>name</key>
+                <string>constant.language.glyph.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- mcdev :: prefix marker -->
+                <key>match</key>
+                <string>::</string>
+                <key>name</key>
+                <string>keyword.operator.prefix.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- URLs -->
+                <key>match</key>
+                <string>\bhttps?://\S+</string>
+                <key>name</key>
+                <string>markup.underline.link.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- credential/BU reference: name/BU -->
+                <key>match</key>
+                <string>\b[\w.-]+/[\w.-]+\b</string>
+                <key>name</key>
+                <string>support.type.credential.mcdev-log</string>
+            </dict>
+            <dict>
+                <!-- gray sub-message: " - Subtype(s): ..." shape -->
+                <key>match</key>
+                <string>^\s*-\s.*$</string>
+                <key>name</key>
+                <string>comment.line.submessage.mcdev-log</string>
+            </dict>
+        </array>
+        <key>uuid</key>
+        <string>b7e2c4d1-3f6a-4e2b-9c8d-1a2b3c4d5e6f</string>
+    </dict>
+</plist>

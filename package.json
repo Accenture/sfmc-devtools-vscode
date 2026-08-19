@@ -2,7 +2,7 @@
 	"name": "sfmc-devtools-vscode",
 	"displayName": "SFMC DevTools",
 	"description": "Unofficial IDE for Salesforce Marketing Cloud Engagement - Handle and manipulate several SFMC assets (journeys, automations, queries, SSJS, AMPScript, etc..) between your local machine and Salesforce Marketing Cloud (SFMC).",
-	"version": "3.2.0",
+	"version": "3.3.0",
 	"license": "MIT",
 	"publisher": "Accenture-oss",
 	"repository": {
@@ -41,10 +41,31 @@
 		"Other"
 	],
 	"main": "./dist/extension.bundle.js",
+	"extensionDependencies": [
+		"joernberkefeld.sfmc-language"
+	],
+	"extensionPack": [
+		"dbaeumer.vscode-eslint",
+		"esbenp.prettier-vscode",
+		"joernberkefeld.sfmc-data"
+	],
 	"activationEvents": [
 		"onStartupFinished"
 	],
 	"contributes": {
+		"languages": [
+			{
+				"id": "mcdev-log",
+				"configuration": "./mcdev-log.configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "mcdev-log",
+				"scopeName": "code.mcdev-log",
+				"path": "./syntaxes/mcdev-log.tmLanguage"
+			}
+		],
 		"viewsContainers": {
 			"activitybar": [
 				{

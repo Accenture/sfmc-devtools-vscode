@@ -146,10 +146,13 @@ class VSCodeWindow {
 	 * Creates an ouput channel
 	 *
 	 * @param {string} name - output channel name
+	 * @param {string} [languageId] - optional language id to associate with the output channel for syntax highlighting
 	 * @return {void}
 	 */
-	createOutputChannel(name: string): void {
-		const outputChannel = this.window.createOutputChannel(name);
+	createOutputChannel(name: string, languageId?: string): void {
+		const outputChannel = languageId
+			? this.window.createOutputChannel(name, languageId)
+			: this.window.createOutputChannel(name);
 		if (!outputChannel)
 			throw new Error(`[vscodewindow_createOutputChannel]: Failed to create OutputChannel with name '${name}'.`);
 		this.outputChannelItems = { ...this.outputChannelItems, [name]: outputChannel };

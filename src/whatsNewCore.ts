@@ -37,8 +37,18 @@ export function escapeHtml(s: string): string {
 	return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
+/** Only http(s)/mailto links are turned into anchors; anything else is left as plain text. */
+function isSafeUrl(url: string): boolean {
+	return /^(https?:\/\/|mailto:)/i.test(url);
+}
+
 function inlineMarkdown(escaped: string): string {
-	let s = escaped.replaceAll(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+	// [text](url) → anchor. Runs on already-escaped text, so "&" in URLs is "&amp;"
+	// (harmless in href). Only safe schemes become links; others stay as literal text.
+	let s = escaped.replaceAll(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, text: string, url: string) =>
+		isSafeUrl(url) ? `<a href="${url}">${text}</a>` : match
+	);
+	s = s.replaceAll(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 	s = s.replaceAll(/`([^`]+)`/g, "<code>$1</code>");
 	return s;
 }
@@ -46,45 +56,54 @@ function inlineMarkdown(escaped: string): string {
 function renderMarkdownChunk(chunk: string): string {
 	const lines = chunk.split(/\r?\n/);
 	const out: string[] = [];
-	let inUl = false;
+	// Indentation (in spaces) of each currently-open <ul>, outermost first.
+	const listIndents: number[] = [];
 
-	const closeUl = () => {
-		if (inUl) {
+	const closeLists = (toDepth: number) => {
+		while (listIndents.length > toDepth) {
 			out.push("</ul>");
-			inUl = false;
+			listIndents.pop();
 		}
 	};
 
 	for (const line of lines) {
 		const h3 = line.match(/^###\s+(.+)$/);
 		if (h3) {
-			closeUl();
+			closeLists(0);
 			out.push(`<h3>${inlineMarkdown(escapeHtml(h3[1]!.trim()))}</h3>`);
 			continue;
 		}
 		const h2 = line.match(/^##\s+(.+)$/);
 		if (h2) {
-			closeUl();
+			closeLists(0);
 			out.push(`<h2>${inlineMarkdown(escapeHtml(h2[1]!.trim()))}</h2>`);
 			continue;
 		}
-		const bullet = line.match(/^\s*-\s+(.+)$/);
+		const bullet = line.match(/^(\s*)-\s+(.+)$/);
 		if (bullet) {
-			if (!inUl) {
+			const indent = bullet[1]!.replaceAll("\t", "  ").length;
+			// Open a deeper list only when this bullet is indented past the current level;
+			// close lists back to the matching level when it dedents.
+			if (listIndents.length === 0 || indent > listIndents[listIndents.length - 1]!) {
 				out.push("<ul>");
-				inUl = true;
+				listIndents.push(indent);
+			} else {
+				while (listIndents.length > 1 && indent < listIndents[listIndents.length - 1]!) {
+					out.push("</ul>");
+					listIndents.pop();
+				}
 			}
-			out.push(`<li>${inlineMarkdown(escapeHtml(bullet[1]!.trim()))}</li>`);
+			out.push(`<li>${inlineMarkdown(escapeHtml(bullet[2]!.trim()))}</li>`);
 			continue;
 		}
 		if (line.trim() === "") {
-			closeUl();
+			closeLists(0);
 			continue;
 		}
-		closeUl();
+		closeLists(0);
 		out.push(`<p>${inlineMarkdown(escapeHtml(line.trim()))}</p>`);
 	}
-	closeUl();
+	closeLists(0);
 	return out.join("");
 }
 

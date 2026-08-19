@@ -47,7 +47,10 @@ function buildWhatsNewHtml(bodyHtml: string, title: string, nonce: string, cspSo
     h2 { font-size: 1.15rem; margin: 1.25rem 0 0.5rem; color: var(--vscode-foreground); }
     h3 { font-size: 1rem; margin: 1rem 0 0.35rem; color: var(--vscode-descriptionForeground); }
     ul { margin: 0.25rem 0 0.75rem 1.25rem; padding: 0; }
+    ul ul { margin: 0.25rem 0 0.25rem 1.25rem; }
     li { margin: 0.35rem 0; }
+    a { color: var(--vscode-textLink-foreground); text-decoration: none; }
+    a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
     p { margin: 0.35rem 0; }
     pre {
       background: var(--vscode-textCodeBlock-background);
