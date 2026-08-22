@@ -4,6 +4,12 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.4.0] — 2026-08-22
+
+### Added
+
+- **Anonymous usage telemetry**: the extension now sends a small amount of anonymous telemetry (activation, installed `mcdev` version, and mcdev-run command outcomes with durations) to PostHog (EU cloud) to gauge adoption and reliability. No personal data, file contents, credentials, or BU/tenant identifiers are collected. It follows VS Code's global `telemetry.telemetryLevel` setting — set it to `off` to opt out. The full event catalog ships in [`telemetry.json`](./telemetry.json).
+
 ## [3.3.0] — 2026-08-19
 
 ### Added

@@ -1,0 +1,147 @@
+{
+	"commonProperties": {
+		"distinct_id": {
+			"classification": "EndUserPseudonymizedInformation",
+			"purpose": "FeatureInsight",
+			"comment": "Stable pseudonymous VS Code machine identifier used to distinguish installations without collecting personal data."
+		},
+		"$process_person_profile": {
+			"classification": "SystemMetaData",
+			"purpose": "FeatureInsight",
+			"comment": "Always false so PostHog does not create or update person profiles."
+		},
+		"extension": {
+			"classification": "SystemMetaData",
+			"purpose": "FeatureInsight",
+			"comment": "Short emitting extension name, always sfmc-devtools."
+		},
+		"extensionVersion": {
+			"classification": "SystemMetaData",
+			"purpose": "FeatureInsight",
+			"comment": "Version of the emitting extension."
+		},
+		"os": {
+			"classification": "SystemMetaData",
+			"purpose": "FeatureInsight",
+			"comment": "Host operating-system platform."
+		},
+		"vscodeVersion": {
+			"classification": "SystemMetaData",
+			"purpose": "FeatureInsight",
+			"comment": "Version of the host editor."
+		}
+	},
+	"events": {
+		"extension.activated": {
+			"owner": "joernberkefeld",
+			"comment": "Emitted once after extension initialization with project and related-extension presence booleans.",
+			"properties": {
+				"isDevToolsProject": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether the workspace contains an mcdev project."
+				},
+				"coInstalledAsDependency": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether another installed extension lists this extension as a dependency."
+				},
+				"coInstalledInPack": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether another installed extension includes this extension in its pack."
+				},
+				"neighbor.sergey-agadzhanov.ampscript": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether sergey-agadzhanov.ampscript is installed."
+				},
+				"neighbor.FiB.ssjs-vsc": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether FiB.ssjs-vsc is installed."
+				},
+				"neighbor.FiB.beautyAmp": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether FiB.beautyAmp is installed."
+				},
+				"neighbor.sfmc-language": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether joernberkefeld.sfmc-language is installed."
+				},
+				"neighbor.sfmc-data": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether joernberkefeld.sfmc-data is installed."
+				},
+				"neighbor.mso-conditionals": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether joernberkefeld.mso-conditionals is installed."
+				},
+				"neighbor.sfmc-extension-pack": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether joernberkefeld.sfmc-extension-pack is installed."
+				},
+				"neighbor.sfmc-extension-pack-plus": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether joernberkefeld.sfmc-extension-pack-expanded is installed."
+				},
+				"neighbor.markdown-preview-bitbucket-innersource": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Whether joernberkefeld.markdown-preview-bitbucket-innersource is installed."
+				}
+			}
+		},
+		"mcdev.version": {
+			"owner": "joernberkefeld",
+			"comment": "Emitted once per session after the mcdev CLI version lookup settles.",
+			"properties": {
+				"mcdevVersion": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Installed mcdev CLI version, omitted when lookup fails or returns no version."
+				}
+			}
+		},
+		"command.executed": {
+			"owner": "joernberkefeld",
+			"comment": "Emitted when an mcdev-run command reports a successful result.",
+			"properties": {
+				"command": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Fixed internal mcdev command identifier."
+				}
+			},
+			"measures": {
+				"durationMs": {
+					"classification": "SystemMetaData",
+					"purpose": "PerformanceAndHealth",
+					"comment": "Wall-clock command duration in milliseconds."
+				}
+			}
+		},
+		"command.failed": {
+			"owner": "joernberkefeld",
+			"comment": "Emitted when an mcdev-run command reports failure; no raw error message or stack is collected.",
+			"properties": {
+				"command": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Fixed internal mcdev command identifier."
+				},
+				"errorCategory": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Coarse fixed failure category, never a raw error value."
+				}
+			}
+		}
+	}
+}

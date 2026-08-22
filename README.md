@@ -62,13 +62,13 @@ Example `.vscode/mcp.json`:
 
 ```json
 {
-  "servers": {
-    "mcdev": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "mcp-server-mcdev@latest"]
-    }
-  }
+	"servers": {
+		"mcdev": {
+			"type": "stdio",
+			"command": "npx",
+			"args": ["-y", "mcp-server-mcdev@latest"]
+		}
+	}
 }
 ```
 
@@ -80,6 +80,20 @@ Example `.vscode/mcp.json`:
 - Deploy Marketing Cloud assets directly from the retrieve folder
 - Copy multiple Marketing Cloud assets from one business unit to another
 - Deploy multiple Marketing Cloud assets from one business unit to another
+
+### Telemetry
+
+This extension collects a small amount of **anonymous** usage telemetry to understand adoption and reliability. It **never** collects personal data, file contents, credentials, or Business Unit / tenant identifiers.
+
+What is collected:
+
+- **Activation** — that the extension started, whether an mcdev project is open, and which related SFMC extensions are co-installed (booleans only).
+- **mcdev version** — the installed `mcdev` CLI version and this extension's own version.
+- **Command outcomes** — for mcdev-run commands (e.g. retrieve, deploy, build): the command id, its duration, and success/failure (a coarse category only — never an error message or stack).
+
+Every event also carries the host OS, the VS Code version, and this extension's version. Events are sent to **PostHog (EU cloud)**. The full event catalog ships in [`telemetry.json`](./telemetry.json) and is visible via the VS Code CLI `--telemetry` dump.
+
+**Opt out:** telemetry follows VS Code's global setting. Set `telemetry.telemetryLevel` to `off` (Settings → search "telemetry") and no events are sent. The extension re-checks this setting live, so turning it off stops collection immediately.
 
 ### Copyright
 

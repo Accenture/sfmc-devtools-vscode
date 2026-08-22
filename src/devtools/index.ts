@@ -6,8 +6,28 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils, VSCode } from "@types";
-import { Lib, File, VsceLogger } from "utils";
+import { Lib, File, VsceLogger, Terminal } from "utils";
+import { TelemetryReporter, detectEcosystem, type TelemetryValue } from "../telemetry";
+import { trackCommandResult } from "../commandTelemetry";
+import { McdevVersionTelemetry } from "../mcdevVersionTelemetry";
 
+interface TelemetrySink {
+	track(event: string, props?: Record<string, TelemetryValue>): void;
+	disposeAsync(): Promise<void>;
+}
+
+export type McdevExecute = (
+	command: string,
+	commandHandler: (streams: TUtils.IOutputLogger) => void,
+	parameters: TDevTools.IExecuteParameters,
+	cancellationToken?: TUtils.ICancellationToken
+) => Promise<{ success: boolean }>;
+
+export interface DevToolsTelemetryOptions {
+	createReporter?: (extensionVersion: string) => TelemetrySink;
+	lookupMcdevVersion?: () => Promise<TUtils.ITerminalCommandResult>;
+	executeMcdev?: McdevExecute;
+}
 /**
  * DevTools Extension class
  *
@@ -50,6 +70,17 @@ class DevToolsExtension {
 	 * @type {TEditor.IExtensionContext}
 	 */
 	private extensionContext: TEditor.IExtensionContext;
+	/**
+	 * Anonymous telemetry reporter (gated by VS Code's global telemetry setting).
+	 *
+	 * @private
+	 * @type {TelemetryReporter | undefined}
+	 */
+	private telemetryReporter: TelemetrySink | undefined;
+	private readonly createTelemetryReporter: (extensionVersion: string) => TelemetrySink;
+	private readonly lookupMcdevVersion: () => Promise<TUtils.ITerminalCommandResult>;
+	private readonly executeMcdevCommand: McdevExecute;
+	private mcdevVersionTelemetry: McdevVersionTelemetry | undefined;
 
 	/**
 	 * Creates an instance of DevToolsExtension.
@@ -57,11 +88,29 @@ class DevToolsExtension {
 	 * @constructor
 	 * @param {TEditor.IExtensionContext} context - extension context
 	 */
-	constructor(context: TEditor.IExtensionContext) {
+	constructor(context: TEditor.IExtensionContext, telemetryOptions: DevToolsTelemetryOptions = {}) {
 		this.extensionContext = context;
 		this.vscodeEditor = new TEditor.VSCodeEditor(context);
 		this.mcdev = new Mcdev();
 		this.tooltipProvider = new StatusBarTooltipProvider(ConfigExtension.extensionName);
+		this.createTelemetryReporter =
+			telemetryOptions.createReporter ??
+			(extensionVersion =>
+				new TelemetryReporter({
+					extensionName: "sfmc-devtools",
+					extensionVersion
+				}));
+		this.lookupMcdevVersion =
+			telemetryOptions.lookupMcdevVersion ??
+			(() =>
+				Terminal.executeTerminalCommandCapture({
+					command: this.mcdev.getPackageName(),
+					commandArgs: ["--version"]
+				}));
+		this.executeMcdevCommand =
+			telemetryOptions.executeMcdev ??
+			((command, commandHandler, parameters, cancellationToken) =>
+				this.mcdev.execute(command, commandHandler, parameters, cancellationToken));
 	}
 
 	/**
@@ -71,9 +120,36 @@ class DevToolsExtension {
 	 * @returns {Promise<void>}
 	 */
 	async init(): Promise<void> {
+		// Create the anonymous telemetry reporter, owned by this instance and drained in deactivate()
+		this.telemetryReporter = this.createTelemetryReporter(this.vscodeEditor.getContext().getExtensionVersion());
+
 		// Checks if is there any DevTools Project
 		const isDevToolsProject = await this.isDevToolsProject();
-		if (isDevToolsProject) this.loadConfiguration();
+
+		// Emit an activation event with project presence + ecosystem co-installation booleans
+		this.telemetryReporter.track("extension.activated", {
+			isDevToolsProject,
+			...detectEcosystem(this.extensionContext.extension.id)
+		});
+
+		// Read the installed mcdev version off the activation critical path.
+		this.mcdevVersionTelemetry = new McdevVersionTelemetry(this.telemetryReporter, this.lookupMcdevVersion);
+		void this.mcdevVersionTelemetry.start();
+
+		if (isDevToolsProject) await this.loadConfiguration();
+	}
+
+	/**
+	 * Waits briefly for the version lookup, then drains telemetry with its own bounded timeout.
+	 * @returns A promise settled when shutdown telemetry handling is complete.
+	 */
+	async disposeTelemetry(): Promise<void> {
+		const reporter = this.telemetryReporter;
+		if (!reporter) return;
+		this.telemetryReporter = undefined;
+
+		await this.mcdevVersionTelemetry?.waitForShutdown();
+		await reporter.disposeAsync();
 	}
 
 	/**
@@ -1250,6 +1326,8 @@ class DevToolsExtension {
 		let progressReporter: TEditor.ProgressBar | null = null;
 		// Tracks the last full mcdev command string (used in the cancellation log message)
 		let lastRunCommand = "";
+		// Wall-clock start used to measure command duration for telemetry
+		const commandStartMs = Date.now();
 
 		/**
 		 * Executes logging based on the provided output information.
@@ -1360,12 +1438,16 @@ class DevToolsExtension {
 						progressReporter = progress;
 						// Show a placeholder message immediately while the command is being prepared
 						progress.report({ message: MessagesEditor.runningCommand });
-						const { success }: { success: boolean } = await this.mcdev.execute(
+						const { success }: { success: boolean } = await this.executeMcdevCommand(
 							command,
 							executeOnOutput,
 							executeParameters,
 							cancelToken
 						);
+						// Skip cancelled commands; completed failures use only the fixed coarse category.
+						if (!cancelToken.isCancellationRequested) {
+							trackCommandResult(this.telemetryReporter, command, success, Date.now() - commandStartMs);
+						}
 						if (cancelToken.isCancellationRequested) {
 							this.writeLog(
 								packageName,
