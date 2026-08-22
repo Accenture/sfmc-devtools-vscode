@@ -83,9 +83,9 @@ suite("Config – extension", () => {
 		);
 	});
 
-	test("package.json version is 3.3.0", () => {
+	test("package.json version is 3.4.0", () => {
 		const manifest = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"));
-		assert.strictEqual(manifest.version, "3.3.0");
+		assert.strictEqual(manifest.version, "3.4.0");
 	});
 
 	test("delayTimeUpdateStatusBar is a positive number", () => {
