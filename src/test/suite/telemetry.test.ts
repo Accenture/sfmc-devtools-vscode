@@ -226,13 +226,26 @@ suite("telemetry", () => {
 		const sink = createSink();
 		trackCommandResult(sink, "retrieve", true, 42);
 		trackCommandResult(sink, "deploy", false, 99);
+		const thrown = { name: "Error", code: "ENOENT", message: "spawn C:\\Users\\secret\\mcdev" };
+		trackCommandResult(sink, "retrieve", false, 12, { error: thrown, errorCategory: "unknown" });
 		assert.deepStrictEqual(sink.events, [
 			{ event: "command.executed", properties: { command: "retrieve", durationMs: 42 } },
-			{ event: "command.failed", properties: { command: "deploy", errorCategory: "commandFailed" } }
+			{ event: "command.failed", properties: { command: "deploy", errorCategory: "commandFailed" } },
+			{
+				event: "command.failed",
+				properties: {
+					command: "retrieve",
+					errorCategory: "unknown",
+					errorName: "Error",
+					errorCode: "ENOENT"
+				}
+			}
 		]);
 		assert.ok(!("durationMs" in sink.events[1].properties));
 		assert.ok(!("message" in sink.events[1].properties));
 		assert.ok(!("stack" in sink.events[1].properties));
+		assert.ok(!("message" in sink.events[2].properties));
+		assert.ok(!("stack" in sink.events[2].properties));
 	});
 
 	test("telemetry catalog matches runtime event properties and measures bidirectionally", async () => {
@@ -245,7 +258,12 @@ suite("telemetry", () => {
 			});
 			reporter.track("mcdev.version", { mcdevVersion: "9.2.1" });
 			reporter.track("command.executed", { command: "retrieve", durationMs: 42 });
-			reporter.track("command.failed", { command: "deploy", errorCategory: "commandFailed" });
+			reporter.track("command.failed", {
+				command: "deploy",
+				errorCategory: "commandFailed",
+				errorName: "Error",
+				errorCode: "ENOENT"
+			});
 			await reporter.flush();
 
 			const catalogPath = join(__dirname, "..", "..", "..", "telemetry.json");
@@ -334,6 +352,36 @@ suite("telemetry", () => {
 		assert.strictEqual(executed[0].properties.command, "retrieve");
 		assert.strictEqual(typeof executed[0].properties.durationMs, "number");
 		assert.ok(!("errorCategory" in executed[0].properties));
+		await extension.disposeTelemetry();
+	});
+
+	test("executeCommand records sanitized extras when executeMcdev throws", async () => {
+		const sink = createSink();
+		const executeMcdev: McdevExecute = async () => {
+			throw { name: "Error", code: "ENOENT", message: "spawn C:\\Users\\secret\\mcdev" };
+		};
+		const extension = new DevToolsExtension(makeContext(), {
+			createReporter: () => sink,
+			lookupMcdevVersion: idleLookup,
+			executeMcdev
+		});
+		await extension.init();
+		primeStatusBar(extension);
+		await extension.executeCommand("retrieve", { filesDetails: [] });
+		const failed = sink.events.filter(event => event.event === "command.failed");
+		assert.deepStrictEqual(failed, [
+			{
+				event: "command.failed",
+				properties: {
+					command: "retrieve",
+					errorCategory: "unknown",
+					errorName: "Error",
+					errorCode: "ENOENT"
+				}
+			}
+		]);
+		assert.ok(!("message" in failed[0].properties));
+		assert.ok(!("stack" in failed[0].properties));
 		await extension.disposeTelemetry();
 	});
 

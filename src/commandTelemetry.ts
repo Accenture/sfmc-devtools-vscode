@@ -1,7 +1,13 @@
+import { sanitizeFailureTelemetry } from "./errorTelemetry";
 import type { TelemetryValue } from "./telemetry";
 
 interface TelemetrySink {
 	track(event: string, props?: Record<string, TelemetryValue>): void;
+}
+
+export interface CommandFailureDetails {
+	error?: unknown;
+	errorCategory?: string;
 }
 
 /** Records the privacy-safe telemetry shape for a completed mcdev command result. */
@@ -9,11 +15,15 @@ export function trackCommandResult(
 	reporter: TelemetrySink | undefined,
 	command: string,
 	success: boolean,
-	durationMs: number
+	durationMs: number,
+	failure?: CommandFailureDetails
 ): void {
 	if (success) {
 		reporter?.track("command.executed", { command, durationMs });
-	} else {
-		reporter?.track("command.failed", { command, errorCategory: "commandFailed" });
+		return;
 	}
+	reporter?.track("command.failed", {
+		command,
+		...sanitizeFailureTelemetry(failure?.error, failure?.errorCategory ?? "commandFailed")
+	});
 }

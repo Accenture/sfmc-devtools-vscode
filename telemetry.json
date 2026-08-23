@@ -129,7 +129,7 @@
 		},
 		"command.failed": {
 			"owner": "joernberkefeld",
-			"comment": "Emitted when an mcdev-run command reports failure; no raw error message or stack is collected.",
+			"comment": "Emitted when an mcdev-run command reports failure; no raw error message, stack, or path is collected.",
 			"properties": {
 				"command": {
 					"classification": "SystemMetaData",
@@ -139,7 +139,17 @@
 				"errorCategory": {
 					"classification": "SystemMetaData",
 					"purpose": "FeatureInsight",
-					"comment": "Coarse fixed failure category, never a raw error value."
+					"comment": "Coarse fixed failure category: commandFailed when mcdev reports failure, unknown when execute throws. Never a raw error value."
+				},
+				"errorName": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Optional. Short Error.name identifier when it matches a safe pattern. Never a message."
+				},
+				"errorCode": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Optional. Sanitized error.code (ENOENT, FileNotFound) as a string. Never a path."
 				}
 			}
 		}

@@ -1438,15 +1438,33 @@ class DevToolsExtension {
 						progressReporter = progress;
 						// Show a placeholder message immediately while the command is being prepared
 						progress.report({ message: MessagesEditor.runningCommand });
-						const { success }: { success: boolean } = await this.executeMcdevCommand(
-							command,
-							executeOnOutput,
-							executeParameters,
-							cancelToken
-						);
-						// Skip cancelled commands; completed failures use only the fixed coarse category.
-						if (!cancelToken.isCancellationRequested) {
-							trackCommandResult(this.telemetryReporter, command, success, Date.now() - commandStartMs);
+						let success = false;
+						try {
+							({ success } = await this.executeMcdevCommand(
+								command,
+								executeOnOutput,
+								executeParameters,
+								cancelToken
+							));
+							// Skip cancelled commands; completed failures use the coarse category only.
+							if (!cancelToken.isCancellationRequested) {
+								trackCommandResult(
+									this.telemetryReporter,
+									command,
+									success,
+									Date.now() - commandStartMs
+								);
+							}
+						} catch (error) {
+							if (!cancelToken.isCancellationRequested) {
+								trackCommandResult(
+									this.telemetryReporter,
+									command,
+									false,
+									Date.now() - commandStartMs,
+									{ error, errorCategory: "unknown" }
+								);
+							}
 						}
 						if (cancelToken.isCancellationRequested) {
 							this.writeLog(

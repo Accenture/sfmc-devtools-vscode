@@ -89,7 +89,7 @@ What is collected:
 
 - **Activation** — that the extension started, whether an mcdev project is open, and which related SFMC extensions are co-installed (booleans only).
 - **mcdev version** — the installed `mcdev` CLI version and this extension's own version.
-- **Command outcomes** — for mcdev-run commands (e.g. retrieve, deploy, build): the command id, its duration, and success/failure (a coarse category only — never an error message or stack).
+- **Command outcomes** — for mcdev-run commands (e.g. retrieve, deploy, build): the command id, its duration, and success/failure (a coarse `errorCategory`, plus optional sanitized `errorName` / `errorCode` when execute throws — never an error message, stack, or path).
 
 Every event also carries the host OS, the VS Code version, and this extension's version. Events are sent to **PostHog (EU cloud)**. The full event catalog ships in [`telemetry.json`](./telemetry.json) and is visible via the VS Code CLI `--telemetry` dump.
 

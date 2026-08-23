@@ -4,6 +4,14 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [Unreleased]
+
+## [3.4.1] — 2026-08-23
+
+### Changed
+
+- **`command.failed` telemetry** now optionally includes sanitized `errorName` / `errorCode` when `executeMcdev` throws (`errorCategory: unknown`). Successful `{success:false}` results still send only `commandFailed`. Never a raw message, stack, or path.
+
 ## [3.4.0] — 2026-08-22
 
 ### Added
