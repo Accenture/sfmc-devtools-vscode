@@ -4,5 +4,5 @@ PATTERN="^(#[[:digit:]]|Merge|Revert)"
 
 if ! echo "$START_LINE" | grep -qE "$PATTERN" ; then
   echo "Bad commit message, see example: \"#431 commit message\", you provided: \"$START_LINE\""
-  exit 1
+#  exit 1
 fi

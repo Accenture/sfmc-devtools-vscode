@@ -21,7 +21,8 @@ jobs:
               with:
                   node-version: 24
 
-            - run: npm ci
+            - run: npm ci --no-workspaces
+            - run: npm run lint-ts
             - run: npm test
 
     publish-vsce:
@@ -33,7 +34,7 @@ jobs:
               with:
                   node-version: 24
                   registry-url: https://registry.npmjs.org/
-            - run: npm ci --ignore-scripts
+            - run: npm ci --no-workspaces
             - run: npm run package:release
             - run: npx @vscode/vsce publish --packagePath *.vsix
               env:

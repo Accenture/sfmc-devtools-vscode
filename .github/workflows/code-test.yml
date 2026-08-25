@@ -32,10 +32,12 @@ jobs:
                   node-version: ${{ matrix.node }}
                   registry-url: https://registry.npmjs.org/
 
-            - run: npm ci --ignore-scripts
+            - run: npm ci --no-workspaces
 
             - run: npm run lint
 
             - run: npm run lint-ts
+
+            - run: npm run compile
 
             - run: npm run test:unit

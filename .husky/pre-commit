@@ -9,9 +9,15 @@ lint-staged || {
   exit 1
 }
 
-echo "[PRE-COMMIT] Running TypeScript compile..."
+echo "[PRE-COMMIT] Type-checking (tsc)..."
+npm run lint-ts --no-workspaces || {
+  echo "[PRE-COMMIT] Type check failed. Fix the errors above and try again."
+  exit 1
+}
+
+echo "[PRE-COMMIT] Bundling extension (esbuild)..."
 npm run compile --no-workspaces || {
-  echo "[PRE-COMMIT] Compile failed. Fix the errors above and try again."
+  echo "[PRE-COMMIT] Bundle failed. Fix the errors above and try again."
   exit 1
 }
 

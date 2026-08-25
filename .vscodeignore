@@ -18,5 +18,5 @@ tsconfig.json
 tsconfig.npmScripts.json
 tsconfig.test.json
 prepare-release.js
-webpack.config.js
+scripts/**
 .gitattributes

@@ -6,6 +6,12 @@ Publishing is triggered automatically via GitHub Actions when a new release is c
 
 ## [Unreleased]
 
+## [3.4.2] — 2026-08-25
+
+### Changed
+
+- **Build tooling migrated from webpack to esbuild.** The extension is now bundled with esbuild (matching the other SFMC VS Code extensions), replacing webpack + `ts-loader`. Type-checking runs as a dedicated `tsc --noEmit` step (`lint-ts`) wired into the pre-commit hook and CI, since esbuild does not type-check. No runtime behavior changes — the shipped bundle (`dist/extension.bundle.js`) and extension functionality are unchanged.
+
 ## [3.4.1] — 2026-08-23
 
 ### Changed
