@@ -300,6 +300,8 @@ class RelatedItemDiagnosticProvider {
 
 	/**
 	 * Checks whether the specific key file exists in the workspace.
+	 * Assets prefer nested template/message metadata according to document context,
+	 * then flat mobile, flat webstudio, and nested webstudio metadata in the same BU.
 	 * Results are cached; false is cached to avoid repeated searches.
 	 *
 	 * @param type                - metadata type folder name (e.g. "dataExtension")
@@ -328,11 +330,21 @@ class RelatedItemDiagnosticProvider {
 		let exists = false;
 
 		if (type === "asset") {
+			// Match link resolution: context first, then mobile and webstudio metadata.
 			const subtype = isInsideAssetFolder ? "template" : "message";
-			const files = await VSCode.workspace.findFiles(
-				`${buPrefix}/asset/${subtype}/${key}/${key}.asset-${subtype}-meta.json`
-			);
-			exists = files.length > 0;
+			const paths = [
+				`${buPrefix}/asset/${subtype}/${key}/${key}.asset-${subtype}-meta.json`,
+				`${buPrefix}/asset/mobile/${key}.asset-mobile-meta.json`,
+				`${buPrefix}/asset/webstudio/${key}.asset-webstudio-meta.json`,
+				`${buPrefix}/asset/webstudio/${key}/${key}.asset-webstudio-meta.json`
+			];
+			for (const path of paths) {
+				const files = await VSCode.workspace.findFiles(path);
+				if (files.length > 0) {
+					exists = true;
+					break;
+				}
+			}
 		} else {
 			const files = await VSCode.workspace.findFiles(`${buPrefix}/${type}/${key}.${type}-meta.json`);
 			if (files.length > 0) {

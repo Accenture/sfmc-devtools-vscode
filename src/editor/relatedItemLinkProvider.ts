@@ -120,6 +120,8 @@ function getLeadingValueStart(matchIndex: number, matchStr: string, fieldName: s
  *       → asset/message/<key>/<key>.asset-message-meta.json
  *   • r__asset_key inside an asset folder
  *       → asset/template/<key>/<key>.asset-template-meta.json
+ *   • Both asset contexts fall back, in order, to flat mobile metadata,
+ *     flat webstudio metadata, then nested webstudio metadata in the same BU.
  *   • r__dataExtension_key not found in the current BU
  *       → also tries retrieve/cred/_ParentBU_/dataExtension/<key>.dataExtension-meta.json
  *
@@ -172,12 +174,21 @@ class RelatedItemLinkProvider implements VSCode.DocumentLinkProvider {
 		let uri: VSCode.Uri | null = null;
 
 		if (type === "asset") {
-			// Asset files use a subfolder per key and a subtype-dependent path
+			// Preserve context-specific precedence, then try mobile and webstudio metadata.
 			const subtype = isInsideAssetFolder ? "template" : "message";
-			const files = await VSCode.workspace.findFiles(
-				`${buPrefix}/asset/${subtype}/${key}/${key}.asset-${subtype}-meta.json`
-			);
-			if (files.length > 0) uri = files[0];
+			const paths = [
+				`${buPrefix}/asset/${subtype}/${key}/${key}.asset-${subtype}-meta.json`,
+				`${buPrefix}/asset/mobile/${key}.asset-mobile-meta.json`,
+				`${buPrefix}/asset/webstudio/${key}.asset-webstudio-meta.json`,
+				`${buPrefix}/asset/webstudio/${key}/${key}.asset-webstudio-meta.json`
+			];
+			for (const path of paths) {
+				const files = await VSCode.workspace.findFiles(path);
+				if (files.length > 0) {
+					uri = files[0];
+					break;
+				}
+			}
 		} else {
 			// Standard pattern: TYPE/key.TYPE-meta.json
 			const files = await VSCode.workspace.findFiles(`${buPrefix}/${type}/${key}.${type}-meta.json`);

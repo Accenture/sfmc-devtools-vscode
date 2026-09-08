@@ -4,7 +4,11 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
-## [Unreleased]
+## [3.4.3] — 2026-09-08
+
+### Fixed
+
+- **JSON asset relations**: `r__asset_key` links and missing-reference checks now fall back to flat mobile metadata and flat or nested webstudio metadata in the same BU, after the existing context-specific template/message lookup.
 
 ## [3.4.2] — 2026-08-25
 

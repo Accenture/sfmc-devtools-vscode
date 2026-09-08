@@ -80,6 +80,7 @@ Example `.vscode/mcp.json`:
 - Deploy Marketing Cloud assets directly from the retrieve folder
 - Copy multiple Marketing Cloud assets from one business unit to another
 - Deploy multiple Marketing Cloud assets from one business unit to another
+- Navigate JSON `r__asset_key` references to local metadata in the same BU. References inside asset folders prefer nested template metadata; other references prefer nested message metadata. Both then try flat mobile, flat webstudio, and nested webstudio metadata, in that order. Missing-reference warnings use the same lookup order.
 
 ### Telemetry
 
