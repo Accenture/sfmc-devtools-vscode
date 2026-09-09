@@ -173,6 +173,10 @@ export class TelemetryReporter implements vscode.Disposable {
 }
 
 const NEIGHBOR_ALLOWLIST: Record<string, string> = {
+	"neighbor.xnerd.ampscript-language": "xnerd.ampscript-language",
+	"neighbor.esbenp.prettier-vscode": "esbenp.prettier-vscode",
+	"neighbor.dbaeumer.vscode-eslint": "dbaeumer.vscode-eslint",
+	"neighbor.MarketingThibs.ampscriptsnippets": "MarketingThibs.ampscriptsnippets",
 	"neighbor.sergey-agadzhanov.ampscript": "sergey-agadzhanov.ampscript",
 	"neighbor.FiB.ssjs-vsc": "FiB.ssjs-vsc",
 	"neighbor.FiB.beautyAmp": "FiB.beautyAmp",

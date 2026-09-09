@@ -4,6 +4,11 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.5.0] — 2026-09-09
+
+### Changed
+
+- **Extension-presence telemetry** now includes presence-only booleans for `xnerd.ampscript-language`, `esbenp.prettier-vscode`, `dbaeumer.vscode-eslint`, and `MarketingThibs.ampscriptsnippets`, alongside the existing Markdown Preview signal. Presence reflects the current extension host, not activation or usage.
 ## [3.4.3] — 2026-09-08
 
 ### Fixed

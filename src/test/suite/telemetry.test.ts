@@ -319,6 +319,59 @@ suite("telemetry", () => {
 		assert.strictEqual(Object.prototype.hasOwnProperty.call(result, "neighbor.sfmc-devtools"), false);
 	});
 
+	test("ecosystem detects only allowlisted presence regardless of activation", () => {
+		const selfId = "Accenture-oss.sfmc-devtools-vscode";
+		const requestedNeighbors: Record<string, string> = {
+			"neighbor.xnerd.ampscript-language": "xnerd.ampscript-language",
+			"neighbor.esbenp.prettier-vscode": "esbenp.prettier-vscode",
+			"neighbor.dbaeumer.vscode-eslint": "dbaeumer.vscode-eslint",
+			"neighbor.MarketingThibs.ampscriptsnippets": "MarketingThibs.ampscriptsnippets",
+			"neighbor.markdown-preview-bitbucket-innersource": "joernberkefeld.markdown-preview-bitbucket-innersource"
+		};
+		const originalInstalled = extensions.__installed;
+		try {
+			const ids = Object.values(requestedNeighbors);
+			for (const presentIds of [[], ids, ...ids.map(id => [id])]) {
+				extensions.__installed = [
+					{
+						id: selfId,
+						isActive: false,
+						packageJSON: { extensionDependencies: [selfId], extensionPack: [selfId] }
+					},
+					{ id: "unrelated.private-extension", isActive: false, packageJSON: {} },
+					...presentIds.map(id => ({ id, isActive: false, packageJSON: {} }))
+				];
+				const result = detectEcosystem(selfId);
+				for (const [key, id] of Object.entries(requestedNeighbors)) {
+					assert.strictEqual(result[key], presentIds.includes(id), `${key} must match only ${id}`);
+				}
+				assert.strictEqual(result.coInstalledAsDependency, false, "self dependencies must be excluded");
+				assert.strictEqual(result.coInstalledInPack, false, "self packs must be excluded");
+				assert.ok(!("neighbor.sfmc-devtools" in result));
+				assert.ok(!JSON.stringify(result).includes("unrelated.private-extension"));
+				for (const [key, value] of Object.entries(result)) {
+					assert.strictEqual(typeof value, "boolean", key);
+					if (key.startsWith("neighbor.") && !(key in requestedNeighbors))
+						assert.strictEqual(value, false, key);
+				}
+				assert.strictEqual(
+					Object.keys(result).length,
+					15,
+					"only 13 allowlisted neighbors and two co-installation flags"
+				);
+			}
+			extensions.__installed = [
+				{ id: "other.dependency", packageJSON: { extensionDependencies: [selfId] } },
+				{ id: "other.pack", packageJSON: { extensionPack: [selfId] } }
+			];
+			const result = detectEcosystem(selfId);
+			assert.strictEqual(result.coInstalledAsDependency, true);
+			assert.strictEqual(result.coInstalledInPack, true);
+		} finally {
+			extensions.__installed = originalInstalled;
+		}
+	});
+
 	test("DevToolsExtension.init sends extension.activated through the live reporter", async () => {
 		const fetchStub = stubFetch();
 		try {

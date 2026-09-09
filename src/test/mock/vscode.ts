@@ -437,6 +437,7 @@ const env = {
 
 interface MockExtension {
 	id: string;
+	isActive?: boolean;
 	packageJSON: { extensionDependencies?: string[]; extensionPack?: string[] };
 }
 
