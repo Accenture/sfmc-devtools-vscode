@@ -484,8 +484,8 @@
 				"steps": [
 					{
 						"id": "installMcdev",
-						"title": "Install mcdev",
-						"description": "Install the mcdev CLI tool globally via npm.\n\n[Open Terminal](command:workbench.action.terminal.new)",
+						"title": "Check Node/npm and mcdev source",
+						"description": "mcdev is bundled; no global installation is required. Put compatible Node.js and npm on PATH, then restart the IDE. Default auto selects project-local, PATH, then bundled mcdev; use mcdevSource and mcdevPath for explicit bundled/custom selection. Bundled updates arrive with extension updates. Git is optional for init/upgrade (warning and skipped Git steps), but required for join and Git-backed delta packages.\n\n[Open Terminal](command:workbench.action.terminal.new)",
 						"media": {
 							"markdown": "docs/walkthrough/install.md"
 						},

@@ -37,6 +37,17 @@ suite("mcdev source resolver", () => {
 		assert.deepStrictEqual(settings["sfmc-devtools-vscode.mcdevSource"].enum, ["auto", "bundled", "custom"]);
 		assert.strictEqual(settings["sfmc-devtools-vscode.mcdevPath"].default, "");
 	});
+	test("setup walkthrough explains bundled runtime without mandatory global installation", () => {
+		const manifest = JSON.parse(readFileSync(path.resolve(__dirname, "../../../../package.json"), "utf8"));
+		const setup = manifest.contributes.walkthroughs[0].steps.find(
+			(step: { id: string }) => step.id === "installMcdev"
+		);
+		assert.strictEqual(setup.title, "Check Node/npm and mcdev source");
+		assert.match(setup.description, /no global installation is required/);
+		assert.match(setup.description, /project-local, PATH, then bundled/);
+		assert.match(setup.description, /restart the IDE/);
+		assert.match(setup.description, /required for join and Git-backed delta/);
+	});
 	test("auto prefers project-local before PATH and does not probe Node", () => {
 		const local = `${options.projectRoot}/node_modules/.bin/mcdev`;
 		assert.deepStrictEqual(

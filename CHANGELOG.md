@@ -4,6 +4,20 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [Unreleased]
+
+### Added
+
+- Bundled mcdev fallback with `sfmc-devtools-vscode.mcdevSource`: default `auto` selects project-local, PATH, then bundled mcdev; explicit `bundled` and `custom` selections never fall back. `mcdevPath` configures the custom executable.
+- Relocatable runtime packaging with source provenance, per-file hashes and offline VSIX smoke coverage. This feature branch uses `MCDEV_BUNDLE_SOURCE` and an unpublished local source commit; remote CI is blocked until that pinned source is accessible.
+
+### Changed
+
+- A separate global mcdev installation is no longer required for extension commands. Compatible Node/npm on PATH remain required; bundled mcdev updates with the extension.
+- All extension CLI invocations, including interactive setup and metadata discovery, use the selected runtime. Failed commands are not retried through another source.
+- Bundled mcdev preserves its active CLI for recursive setup/upgrade calls and resolves its canonical formatter plugin from its own package. Missing Git warns and skips Git steps during init/upgrade; join and Git-backed delta packages require Git.
+- README and walkthrough setup guidance now explain source settings, runtime prerequisites and the unchanged fresh-project command-visibility limitation.
+
 ## [3.5.0] — 2026-09-09
 
 ### Changed

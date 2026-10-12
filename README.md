@@ -2,17 +2,24 @@
 
 Accenture SFMC DevTools VS Code Extension was built to simplify the command execution for [Accenture SFMC DevTools](https://github.com/Accenture/sfmc-devtools), offering a more intuitive interface that streamlines the process of retrieving and deploying Marketing Cloud assets, configuration and code across various Business Units and instances. This tool eliminates the necessity of manual command line input (CLI), making your workflow more efficient and user-friendly.
 
-### Pre Requisites
+### Prerequisites
 
-- Install [Node.js](https://nodejs.org/en)
-- Install [Git](https://git-scm.com/downloads)
-- Install [Accenture SFMC DevTools](https://github.com/Accenture/sfmc-devtools)
+- Install a currently supported [Node.js](https://nodejs.org/en) release with npm, and make both `node` and `npm` available on PATH to VS Code/Cursor and its terminals. The bundled mcdev 10 runtime requires `^22.22.2 || >=24.15.0`: Node 22.22.2+ within Node 22, or Node 24.15.0+. Node 20, 21, 23 and earlier Node 22/24 patches are unsupported.
+- Restart the IDE after installing Node/npm or changing PATH; an already running IDE retains its old environment.
+- [Git](https://git-scm.com/downloads) is optional for ordinary retrieve/deploy and project setup. Without Git, `init` and `upgrade` warn and skip Git steps while continuing non-Git setup. Joining a repository and Git-backed delta packages require Git and fail with an actionable error when it is unavailable. Existing Git failures are not treated as successful setup.
 
-### Install Accenture SFMC DevTools
+On Windows without administrator rights, a portable Node/npm installation added to **your user-scoped PATH** works too; the extension does not download or provision Node. See [installing Node.js as a local Windows user](https://stackoverflow.com/questions/37029089/how-to-install-nodejs-lts-on-windows-as-a-local-user-without-admin-rights/37029090#37029090) and [opening environment-variable settings](https://superuser.com/a/25038). These are user-supplied supporting links, not a recommendation to use their historical Node versions. Choose a currently supported release satisfying the range above, ensure npm is included, and restart VS Code/Cursor. Check `node --version` and `npm --version` in a new IDE terminal.
 
-```bash
-npm install -g mcdev
-```
+### Choose the mcdev CLI source
+
+The extension ships a bundled mcdev runtime: **no global or project-local mcdev installation is required**. In Settings, configure:
+
+- `sfmc-devtools-vscode.mcdevSource`: `auto` (default) selects project-local mcdev first, then mcdev on PATH, then the bundled runtime. `bundled` always uses the extension's copy. `custom` always uses the executable named by `mcdevPath`.
+- `sfmc-devtools-vscode.mcdevPath`: executable path for `custom`; relative paths resolve from the project root. Supply only the path, without arguments or shell quotes. Windows `.cmd` launchers are supported.
+
+Explicit `bundled`/`custom` choices never silently fall back. A failed operation is not retried with another CLI version. Source changes apply to subsequent invocations; the mcdev Output channel reports the selected source/version for diagnostics. Bundled mcdev updates arrive with **extension updates**, not through a global npm update. A project-version mismatch may require updating the extension or deliberately selecting a compatible local/custom CLI before upgrading the project.
+
+If you prefer a separately installed CLI (including typing `mcdev` directly in a terminal), install it globally with `npm install -g mcdev`, or use a project-local installation. The bundled copy does not add a `mcdev` command to PATH.
 
 ### Install SFMC DevTools VS Code Extension
 
@@ -47,8 +54,9 @@ New `mcdev init` projects also ship a `.vscode/extensions.json` file, so VS Code
 
 If you are starting a completely new SFMC DevTools project
 
-- Go to Terminal and click on New Terminal
-- Enter the command `mcdev init` and follow the interactive instructions to initialize a new project. For more guidance, consult the official SFMC DevTools documentation [here](https://github.com/Accenture/sfmc-devtools/wiki/06.a-~-Admin-Commands#init)
+- Use **mcdev: Initialize Project** when the command is available in your open mcdev project; it uses the selected CLI source in an integrated terminal.
+- Command visibility still depends on existing project detection; this feature does not redesign fresh-folder or multi-root discovery. For a completely fresh folder where the command is unavailable, use a separately installed CLI and run `mcdev init` in that folder. The bundled fallback does not expose a standalone `mcdev` terminal command.
+- Follow the interactive instructions. Without Git, setup warns and skips repository/remotes/commit/push steps. For more guidance, consult the [SFMC DevTools init documentation](https://github.com/Accenture/sfmc-devtools/wiki/06.a-~-Admin-Commands#init).
 
 ### Wiki
 
@@ -95,6 +103,14 @@ What is collected:
 Every event also carries the host OS, the VS Code version, and this extension's version. Events are sent to **PostHog (EU cloud)**. The full event catalog ships in [`telemetry.json`](./telemetry.json) and is visible via the VS Code CLI `--telemetry` dump.
 
 **Opt out:** telemetry follows VS Code's global setting. Set `telemetry.telemetryLevel` to `off` (Settings → search "telemetry") and no events are sent. The extension re-checks this setting live, so turning it off stops collection immediately.
+
+### Building this feature branch locally
+
+This branch currently builds the runtime from an explicit local mcdev source checkout rather than a corrected published npm release. Set `MCDEV_BUNDLE_SOURCE` to an absolute mcdev checkout containing its registry-only `package-lock.json`, then run `npm run compile --no-workspaces` (or `npm run package:test --no-workspaces` for a VSIX). There is no implicit sibling-directory or registry fallback. `MCDEV_BUNDLE_EXPECTED_COMMIT`, when set, requires that exact clean source commit.
+
+The staged runtime under `dist/mcdev` records the source commit, dirty state, package version, source digest and per-file hashes in `bundle-metadata.json`. `npm run verify:vsix --no-workspaces -- sfmc-devtools-vscode-BETA.vsix` checks the packaged runtime after extraction/relocation and runs offline smoke tests. Archive timestamps can change the VSIX hash; byte-identical archive reproducibility is not claimed.
+
+The current Windows/Ubuntu CI matrix pins upstream commit `aab5ee99eb53d8c468956d84547c02acf336e191`. It cannot fetch that local-only commit until it becomes accessible in the configured upstream repository. No remote CI success or published-source acceptance is claimed. Before release, publish/authorize an accessible corrected source and reconcile the source pin/build strategy; the present local-only work does not bump versions, publish, push, or release anything.
 
 ### Copyright
 
