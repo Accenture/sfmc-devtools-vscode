@@ -101,7 +101,18 @@ suite("selected mcdev activation", () => {
 					"& 'C:/node path/node.exe' 'C:/extension path/dist/mcdev/lib/cli.js' join"
 				]
 			);
-			assert.deepStrictEqual(seen[0].options, { name: "mcdev init", cwd: invocation.cwd, shellPath: env.shell });
+			assert.deepStrictEqual(seen[0].options, {
+				name: "mcdev init",
+				cwd: invocation.cwd,
+				shellPath: env.shell,
+				env: { MCDEV_RUNTIME_SOURCE: "bundled" }
+			});
+			for (const source of ["local", "path", "custom"] as const) {
+				invocation.source = source;
+				await result.handleInteractiveCommand("init");
+				assert.deepStrictEqual((seen.at(-1)?.options as { env: unknown }).env, { MCDEV_RUNTIME_SOURCE: null });
+			}
+			invocation.source = "bundled";
 			assert.ok(seen.every(item => item.shown));
 		} finally {
 			window.createTerminal = original;

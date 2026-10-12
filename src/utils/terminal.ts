@@ -1,7 +1,7 @@
 import { spawn, spawnSync, SpawnSyncReturns } from "child_process";
 import { TUtils } from "@types";
 import { Lib } from "utils";
-import { mcdevShellCommand } from "../devtools/mcdevInvocation";
+import { mcdevEnvironment, mcdevShellCommand } from "../devtools/mcdevInvocation";
 
 /** Preserve legacy shell fragments while quoting the selected runtime's raw paths. */
 function selectedCommand(config: TUtils.ITerminalCommandRunner): TUtils.ITerminalCommandRunner {
@@ -14,7 +14,8 @@ function selectedCommand(config: TUtils.ITerminalCommandRunner): TUtils.ITermina
 			process.platform === "win32" ? "cmd" : "posix"
 		),
 		commandArgs: [],
-		commandCwd: config.invocation.cwd
+		commandCwd: config.invocation.cwd,
+		commandEnv: mcdevEnvironment(config.invocation, config.commandEnv ?? process.env)
 	};
 }
 
@@ -29,9 +30,12 @@ function selectedCommand(config: TUtils.ITerminalCommandRunner): TUtils.ITermina
 function executeCommandSync({
 	command,
 	commandArgs,
-	commandCwd
+	commandCwd,
+	commandEnv
 }: TUtils.ITerminalCommandRunner): TUtils.ITerminalCommandResult {
-	const terminal = <SpawnSyncReturns<Buffer>>spawnSync(command, commandArgs, { shell: true, cwd: commandCwd });
+	const terminal = <SpawnSyncReturns<Buffer>>(
+		spawnSync(command, commandArgs, { shell: true, cwd: commandCwd, env: commandEnv })
+	);
 	return {
 		success: terminal.status === 0,
 		stdStreams: { output: terminal.stdout.toString().trim(), error: terminal.stderr.toString().trim() }
@@ -73,6 +77,7 @@ function executeCommand({
 	command,
 	commandArgs,
 	commandCwd,
+	commandEnv,
 	commandHandler,
 	cancellationToken
 }: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
@@ -90,6 +95,7 @@ function executeCommand({
 		const proc = spawn(command, commandArgs, {
 			shell: true,
 			cwd: commandCwd,
+			env: commandEnv,
 			detached: process.platform !== "win32"
 		});
 
@@ -134,12 +140,12 @@ function executeCommand({
  * @returns {Promise<TUtils.ITerminalCommandResult>} object configured with the full result of executing the terminal command
  */
 function executeTerminalCommandCapture(config: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
-	const { command, commandArgs, commandCwd } = selectedCommand(config);
+	const { command, commandArgs, commandCwd, commandEnv } = selectedCommand(config);
 	return new Promise(resolve => {
 		let output = "";
 		let error = "";
 		const cwd = commandCwd ? Lib.removeLeadingRootDrivePath(commandCwd) : commandCwd;
-		const proc = spawn(command, commandArgs, { shell: true, cwd });
+		const proc = spawn(command, commandArgs, { shell: true, cwd, env: commandEnv });
 
 		if (proc.stdout)
 			proc.stdout.on("data", (data: Buffer) => {
@@ -174,12 +180,12 @@ function executeTerminalCommand(
 	config: TUtils.ITerminalCommandRunner,
 	sync: boolean
 ): TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult> {
-	const { command, commandArgs, commandHandler, cancellationToken } = selectedCommand(config);
+	const { command, commandArgs, commandHandler, cancellationToken, commandEnv } = selectedCommand(config);
 	let { commandCwd } = selectedCommand(config);
 	if (commandCwd) commandCwd = Lib.removeLeadingRootDrivePath(commandCwd);
 	return sync
-		? executeCommandSync({ command, commandArgs, commandCwd })
-		: executeCommand({ command, commandArgs, commandCwd, commandHandler, cancellationToken });
+		? executeCommandSync({ command, commandArgs, commandCwd, commandEnv })
+		: executeCommand({ command, commandArgs, commandCwd, commandEnv, commandHandler, cancellationToken });
 }
 
 /**

@@ -34,7 +34,8 @@ export default defineConfig([
 		}
 	},
 	{
-		files: ["*.js", "*.mjs"],
+		files: ["**/*.js", "**/*.mjs"],
+		rules: { "@typescript-eslint/typedef": "off" },
 		languageOptions: {
 			globals: {
 				...globals.nodeBuiltin,

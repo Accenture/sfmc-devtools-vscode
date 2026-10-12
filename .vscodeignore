@@ -6,6 +6,7 @@ src
 .vscode-test
 *.vsix
 .github
+.mcdev-source/**
 .husky
 .fork
 .gitignore

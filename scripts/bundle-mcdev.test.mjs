@@ -20,6 +20,39 @@ test("compile and production prepublish both stage the runtime", async () => {
 	const ignore = await fs.readFile(path.join(root, ".vscodeignore"), "utf8");
 	assert.match(ignore, /^!dist\/mcdev\/\*\*$/m);
 	assert.match(ignore, /^node_modules\/\*\*$/m);
+	assert.match(ignore, /^\.mcdev-source\/\*\*$/m);
+});
+
+test("exact source CI and stage provenance fail closed without registry fallback", async () => {
+	const workflow = await fs.readFile(path.join(root, ".github/workflows/code-test.yml"), "utf8");
+	assert.match(workflow, /ref: aab5ee99eb53d8c468956d84547c02acf336e191/);
+	assert.match(workflow, /MCDEV_BUNDLE_EXPECTED_COMMIT: aab5ee99eb53d8c468956d84547c02acf336e191/);
+	assert.match(workflow, /windows-latest/);
+	assert.match(workflow, /npm run verify:vsix/);
+	if (!process.env.MCDEV_BUNDLE_SOURCE) return;
+	const previous = process.env.MCDEV_BUNDLE_EXPECTED_COMMIT;
+	try {
+		process.env.MCDEV_BUNDLE_EXPECTED_COMMIT = "0000000000000000000000000000000000000000";
+		await assert.rejects(bundleMcdev(process.env.MCDEV_BUNDLE_SOURCE), /expected clean immutable commit/);
+	} finally {
+		if (previous === undefined) delete process.env.MCDEV_BUNDLE_EXPECTED_COMMIT;
+		else process.env.MCDEV_BUNDLE_EXPECTED_COMMIT = previous;
+	}
+});
+
+test("cached identical bytes refresh current source provenance", async () => {
+	if (!process.env.MCDEV_BUNDLE_SOURCE) return;
+	const metadataPath = path.join(root, "dist", "mcdev", "bundle-metadata.json");
+	const original = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+	try {
+		await fs.writeFile(metadataPath, JSON.stringify({ ...original, sourceCommit: "stale", sourceDirty: true }));
+		const refreshed = await bundleMcdev(process.env.MCDEV_BUNDLE_SOURCE);
+		assert.equal(refreshed.sourceCommit, original.sourceCommit);
+		assert.equal(refreshed.sourceDirty, original.sourceDirty);
+		assert.deepEqual(refreshed.files, original.files);
+	} finally {
+		await fs.writeFile(metadataPath, `${JSON.stringify(original, null, 2)}\n`);
+	}
 });
 
 test("staged package preserves ESM entry, licenses, boilerplate dotfiles and full formatter closure", async () => {

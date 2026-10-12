@@ -2,7 +2,7 @@ import * as assert from "node:assert";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { mcdevShellCommand } from "../../../devtools/mcdevInvocation";
+import { mcdevEnvironment, mcdevShellCommand } from "../../../devtools/mcdevInvocation";
 import { McdevInvocation } from "../../../devtools/mcdevResolve";
 import { executeTerminalCommand, executeTerminalCommandCapture } from "../../../utils/terminal";
 import { TUtils } from "@types";
@@ -21,6 +21,42 @@ suite("selected mcdev transport", () => {
 		prefixArgs: [cli],
 		cwd: root
 	};
+	test("bundled environment is isolated, inherited by children, and cleared for installed sources", async () => {
+		const inherited = { ...process.env, MCDEV_RUNTIME_SOURCE: "bundled", mcdev_runtime_source: "stale" };
+		const probe = path.join(root, "environment probe.js");
+		writeFileSync(
+			probe,
+			"const {spawnSync}=require('node:child_process');console.log(spawnSync(process.execPath,['-e','console.log(process.env.MCDEV_RUNTIME_SOURCE || \"unset\")'],{encoding:'utf8'}).stdout.trim());\n"
+		);
+		for (const source of ["bundled", "local", "path", "custom"] as const) {
+			const selected = { ...invocation, prefixArgs: [probe], source };
+			const expected = source === "bundled" ? "bundled" : "unset";
+			assert.strictEqual(mcdevEnvironment(selected, inherited).mcdev_runtime_source, undefined);
+			const config = {
+				command: "must-not-execute",
+				commandArgs: [],
+				invocation: selected,
+				commandEnv: inherited
+			};
+			assert.strictEqual((await executeTerminalCommandCapture(config)).stdStreams.output, expected);
+			assert.strictEqual(
+				(executeTerminalCommand(config, true) as TUtils.ITerminalCommandResult).stdStreams.output,
+				expected
+			);
+			let output = "";
+			await executeTerminalCommand(
+				{
+					...config,
+					commandHandler: streams => {
+						output += streams.output;
+					}
+				},
+				false
+			);
+			assert.strictEqual(output, expected);
+		}
+		assert.strictEqual(inherited.MCDEV_RUNTIME_SOURCE, "bundled");
+	});
 	test("POSIX and PowerShell quote spaced paths without changing fragments", () => {
 		const input = { ...invocation, executable: "/node path/node", prefixArgs: ["/extension's path/cli.js"] };
 		assert.strictEqual(

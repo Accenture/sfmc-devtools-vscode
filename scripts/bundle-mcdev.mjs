@@ -91,6 +91,14 @@ export async function bundleMcdev(source, destination = path.join(projectRoot, "
 			if (error.code !== "ENOENT") throw error;
 		}
 	}
+	const gitCommit = run("git", ["rev-parse", "HEAD"], source).trim();
+	const gitDirty = Boolean(run("git", ["status", "--porcelain"], source).trim());
+	if (
+		process.env.MCDEV_BUNDLE_EXPECTED_COMMIT &&
+		(gitCommit !== process.env.MCDEV_BUNDLE_EXPECTED_COMMIT || gitDirty)
+	) {
+		throw new Error("mcdev source must match the expected clean immutable commit.");
+	}
 	const initial = await snapshot(source);
 	const metadataPath = path.join(destination, "bundle-metadata.json");
 	let previous;
@@ -117,6 +125,9 @@ export async function bundleMcdev(source, destination = path.join(projectRoot, "
 				throw new Error(`Staged runtime changed: ${file}`);
 			}
 		}
+		previous.sourceCommit = gitCommit;
+		previous.sourceDirty = gitDirty;
+		await fs.writeFile(metadataPath, `${JSON.stringify(previous, null, 2)}\n`);
 		return previous;
 	}
 	// Fresh builds live under an owned OS-temp run root. No recursive repository cleanup.
@@ -158,8 +169,12 @@ export async function bundleMcdev(source, destination = path.join(projectRoot, "
 	for (const file of Object.keys(previous?.files || {})) {
 		if (!hashes[file]) await fs.unlink(path.join(destination, file));
 	}
-	const gitCommit = run("git", ["rev-parse", "HEAD"], source).trim();
-	const gitDirty = Boolean(run("git", ["status", "--porcelain"], source).trim());
+	if (
+		run("git", ["rev-parse", "HEAD"], source).trim() !== gitCommit ||
+		Boolean(run("git", ["status", "--porcelain"], source).trim()) !== gitDirty
+	) {
+		throw new Error("mcdev source identity changed during packaging.");
+	}
 	const metadata = {
 		schemaVersion: 1,
 		source: "explicit-local-checkout",

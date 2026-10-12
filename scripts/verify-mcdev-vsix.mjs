@@ -62,7 +62,11 @@ export async function verifyVsix(vsix) {
 	const cwd = path.join(runRoot, "empty project");
 	await fs.mkdir(cwd);
 	// No external mcdev, Git or npm is available; only this absolute Node executable.
-	const env = { ...process.env, PATH: "", NODE_PATH: "" };
+	const env = { ...process.env, PATH: "", NODE_PATH: "", MCDEV_RUNTIME_SOURCE: "bundled" };
+	if (process.env.MCDEV_BUNDLE_EXPECTED_COMMIT) {
+		assert.equal(metadata.sourceCommit, process.env.MCDEV_BUNDLE_EXPECTED_COMMIT);
+		assert.equal(metadata.sourceDirty, false);
+	}
 	for (const args of [["--version"], ["--help"], ["et", "--json"]]) {
 		const result = spawnSync(process.execPath, [path.join(extraction, metadata.cliPath), ...args], {
 			cwd,
@@ -75,6 +79,18 @@ export async function verifyVsix(vsix) {
 		if (args[0] === "--help") assert.match(result.stdout, /mcdev/i);
 		if (args[0] === "et") assert(Object.keys(JSON.parse(result.stdout)).length > 0);
 	}
+	const smoke = spawnSync(
+		process.execPath,
+		[path.join(path.dirname(fileURLToPath(import.meta.url)), "smoke-mcdev-runtime.mjs"), extraction],
+		{
+			cwd,
+			env,
+			encoding: "utf8",
+			timeout: 120000
+		}
+	);
+	assert.equal(smoke.status, 0, `Packaged workflows: ${smoke.error || smoke.stdout + smoke.stderr}`);
+	console.log(smoke.stdout);
 	console.log(`Verified ${count} VSIX runtime files; relocated --version/help/et --json passed: ${runRoot}`);
 	return { count, metadata, runRoot };
 }

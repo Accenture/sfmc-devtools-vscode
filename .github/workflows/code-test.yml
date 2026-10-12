@@ -11,11 +11,17 @@ on:
 
 jobs:
     lintandTesting:
-        runs-on: ubuntu-latest
+        runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
                 node: [24]
+                os: [ubuntu-latest, windows-latest]
+        env:
+            # Local-only development: caller must provide an accessible immutable source commit.
+            # No registry or main-branch fallback can package an older mcdev silently.
+            MCDEV_BUNDLE_SOURCE: ${{ github.workspace }}/.mcdev-source
+            MCDEV_BUNDLE_EXPECTED_COMMIT: aab5ee99eb53d8c468956d84547c02acf336e191
         name: lint & test w/ node v${{ matrix.node }}
         permissions:
             actions: read
@@ -32,6 +38,13 @@ jobs:
                   node-version: ${{ matrix.node }}
                   registry-url: https://registry.npmjs.org/
 
+            - name: Checkout exact mcdev source (fails until local commit is accessible)
+              uses: actions/checkout@v6
+              with:
+                  repository: Accenture/sfmc-devtools
+                  ref: aab5ee99eb53d8c468956d84547c02acf336e191
+                  path: .mcdev-source
+
             - run: npm ci --no-workspaces
 
             - run: npm run lint
@@ -40,4 +53,8 @@ jobs:
 
             - run: npm run compile
 
-            - run: npm run test:unit
+            - run: npm test --no-workspaces
+
+            - run: npm run package:test --no-workspaces
+
+            - run: npm run verify:vsix --no-workspaces -- sfmc-devtools-vscode-BETA.vsix

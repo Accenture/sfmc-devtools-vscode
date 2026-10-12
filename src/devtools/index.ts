@@ -1113,7 +1113,8 @@ class DevToolsExtension {
 			const terminal = VSCode.window.createTerminal({
 				name: `${packageName} ${command}`,
 				cwd: invocation.cwd,
-				shellPath
+				shellPath,
+				env: { MCDEV_RUNTIME_SOURCE: invocation.source === "bundled" ? "bundled" : null }
 			});
 			terminal.show();
 			terminal.sendText(commandText);
