@@ -6,10 +6,14 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils, VSCode } from "@types";
-import { Lib, File, VsceLogger, Terminal } from "utils";
+import { Lib, File, VsceLogger } from "utils";
 import { TelemetryReporter, detectEcosystem, type TelemetryValue } from "../telemetry";
 import { trackCommandResult } from "../commandTelemetry";
 import { McdevVersionTelemetry } from "../mcdevVersionTelemetry";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { resolveMcdev, McdevInvocation, McdevSourceSetting } from "./mcdevResolve";
+import { mcdevShellCommand } from "./mcdevInvocation";
 
 interface TelemetrySink {
 	track(event: string, props?: Record<string, TelemetryValue>): void;
@@ -91,7 +95,7 @@ class DevToolsExtension {
 	constructor(context: TEditor.IExtensionContext, telemetryOptions: DevToolsTelemetryOptions = {}) {
 		this.extensionContext = context;
 		this.vscodeEditor = new TEditor.VSCodeEditor(context);
-		this.mcdev = new Mcdev();
+		this.mcdev = new Mcdev(projectPath => this.resolveRuntime(projectPath));
 		this.tooltipProvider = new StatusBarTooltipProvider(ConfigExtension.extensionName);
 		this.createTelemetryReporter =
 			telemetryOptions.createReporter ??
@@ -102,15 +106,35 @@ class DevToolsExtension {
 				}));
 		this.lookupMcdevVersion =
 			telemetryOptions.lookupMcdevVersion ??
-			(() =>
-				Terminal.executeTerminalCommandCapture({
-					command: this.mcdev.getPackageName(),
-					commandArgs: ["--version"]
-				}));
+			(() => this.mcdev.lookupVersion(this.vscodeEditor.getWorkspace().getWorkspaceFsPath()));
 		this.executeMcdevCommand =
 			telemetryOptions.executeMcdev ??
 			((command, commandHandler, parameters, cancellationToken) =>
 				this.mcdev.execute(command, commandHandler, parameters, cancellationToken));
+	}
+
+	/** Read resource-scoped source settings on every invocation, not just activation. */
+	private resolveRuntime(projectPath: string): McdevInvocation {
+		const settings = VSCode.workspace.getConfiguration(ConfigExtension.extensionName, VSCode.Uri.file(projectPath));
+		const extensionRoot = this.extensionContext.extensionUri.fsPath;
+		let nodeEngine = "";
+		try {
+			nodeEngine = (
+				JSON.parse(readFileSync(path.join(extensionRoot, "dist/mcdev/bundle-metadata.json"), "utf8")) as {
+					nodeEngine: string;
+				}
+			).nodeEngine;
+			if (typeof nodeEngine !== "string") nodeEngine = "";
+		} catch {
+			// Installed sources do not depend on bundle metadata; bundled selection reports the invalid artifact.
+		}
+		return resolveMcdev({
+			source: settings.get<McdevSourceSetting>("mcdevSource", "auto"),
+			customPath: settings.get<string>("mcdevPath", ""),
+			projectRoot: projectPath,
+			bundledCliPath: path.join(extensionRoot, "dist/mcdev/lib/cli.js"),
+			bundledNodeEngine: nodeEngine
+		});
 	}
 
 	/**
@@ -182,11 +206,9 @@ class DevToolsExtension {
 			// .mcdevrc.json is absent.
 			this.treeDataProvider = registerTreeView(this.extensionContext);
 
-			// Check if Mcdev is installed
-			const mcdevInstalled = this.mcdev.isInstalled();
-			// request user to install mcdev
-			if (!mcdevInstalled) await this.mcdevInstall();
-			else {
+			// Availability means the selected source resolves, not a mandatory global npm installation.
+			const invocation = this.mcdev.getInvocation(this.vscodeEditor.getWorkspace().getWorkspaceFsPath());
+			{
 				// activate extension context variables
 				this.activateContextVariables();
 				// activate editor containers
@@ -197,12 +219,30 @@ class DevToolsExtension {
 				this.activateLinkProviders();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
+				this.writeLog(
+					this.mcdev.getPackageName(),
+					`Selected mcdev source: ${invocation.source}`,
+					EnumsExtension.LoggerLevel.INFO
+				);
+				void this.mcdev
+					.lookupVersion(invocation.cwd)
+					.then(result => {
+						if (result.success)
+							this.writeLog(
+								this.mcdev.getPackageName(),
+								`Selected mcdev version: ${result.stdStreams.output}`,
+								EnumsExtension.LoggerLevel.INFO
+							);
+					})
+					.catch(error =>
+						this.writeLog(this.mcdev.getPackageName(), String(error), EnumsExtension.LoggerLevel.WARN)
+					);
 				// refresh metadata types in background from mcdev
 				this.refreshMetadataTypesInBackground();
 			}
 		} catch (error) {
-			// log as debug error
-			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+			this.writeLog(this.mcdev.getPackageName(), String(error), EnumsExtension.LoggerLevel.ERROR);
+			await this.showInformationMessage("error", String(error), []);
 		}
 	}
 
@@ -1058,14 +1098,29 @@ class DevToolsExtension {
 	 * Handles interactive commands (init, join) by opening a VS Code Terminal panel.
 	 * These commands use inquirer for complex interactive flows and need direct user input.
 	 */
-	handleInteractiveCommand(command: string): void {
-		const packageName = this.mcdev.getPackageName();
-		const terminal = VSCode.window.createTerminal({
-			name: `${packageName} ${command}`,
-			cwd: this.vscodeEditor.getWorkspace().getWorkspaceFsPath()
-		});
-		terminal.show();
-		terminal.sendText(`${packageName} ${command}`);
+	async handleInteractiveCommand(command: string): Promise<void> {
+		try {
+			const packageName = this.mcdev.getPackageName();
+			const invocation = this.mcdev.getInvocation(this.vscodeEditor.getWorkspace().getWorkspaceFsPath());
+			// Choose an explicit shell so quoting matches the terminal, retaining direct TTY input.
+			const shellPath = VSCode.env.shell;
+			const shell = /(?:powershell|pwsh)(?:\.exe)?$/i.test(shellPath)
+				? "powershell"
+				: /cmd(?:\.exe)?$/i.test(shellPath)
+					? "cmd"
+					: "posix";
+			const commandText = mcdevShellCommand(invocation, [command], shell);
+			const terminal = VSCode.window.createTerminal({
+				name: `${packageName} ${command}`,
+				cwd: invocation.cwd,
+				shellPath
+			});
+			terminal.show();
+			terminal.sendText(commandText);
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), String(error), EnumsExtension.LoggerLevel.ERROR);
+			await this.showInformationMessage("error", String(error), []);
+		}
 	}
 
 	/**
@@ -1456,6 +1511,7 @@ class DevToolsExtension {
 								);
 							}
 						} catch (error) {
+							executeOnOutput({ error: String(error) });
 							if (!cancelToken.isCancellationRequested) {
 								trackCommandResult(
 									this.telemetryReporter,

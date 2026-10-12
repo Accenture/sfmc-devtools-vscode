@@ -7,6 +7,7 @@ import { ConfigDevTools } from "@config";
 import { MessagesDevTools } from "@messages";
 import { TDevTools, TUtils } from "@types";
 import { Lib, File, Terminal } from "utils";
+import { McdevInvocation } from "./mcdevResolve";
 
 /**
  * Mcdev class
@@ -39,8 +40,23 @@ class Mcdev {
 	 *
 	 * @constructor
 	 */
-	constructor() {
+	constructor(private readonly resolveInvocation?: (projectPath: string) => McdevInvocation) {
 		this.metadataTypes = new MetadataTypes();
+	}
+
+	/** Resolve the selected runtime afresh for each project invocation. */
+	public getInvocation(projectPath: string): McdevInvocation {
+		if (!this.resolveInvocation) throw new Error("mcdev runtime resolver is not configured.");
+		return this.resolveInvocation(projectPath);
+	}
+
+	/** Probe the selected CLI, never a literal PATH mcdev. */
+	public async lookupVersion(projectPath: string): Promise<TUtils.ITerminalCommandResult> {
+		return Terminal.executeTerminalCommandCapture({
+			command: this.packageName,
+			commandArgs: ["--version"],
+			invocation: this.getInvocation(projectPath)
+		});
 	}
 
 	/**
@@ -142,7 +158,7 @@ class Mcdev {
 			const result = await Terminal.executeTerminalCommandCapture({
 				command: this.packageName,
 				commandArgs: ["et", "--json"],
-				commandCwd: projectPath
+				invocation: this.getInvocation(projectPath)
 			});
 
 			if (!result.success || !result.stdStreams.output) return null;
@@ -424,12 +440,13 @@ class Mcdev {
 			const terminalConfig: TUtils.ITerminalCommandRunner = {
 				command: this.getPackageName(),
 				commandArgs: [commandConfig.alias, parameters],
-				commandCwd: projectPath,
+				invocation: this.getInvocation(projectPath),
 				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) =>
 					commandHandler({ output, error }),
 				cancellationToken
 			};
 
+			commandHandler({ info: `Selected mcdev source: ${terminalConfig.invocation?.source}\n` });
 			// Logs the command that is being executed
 			commandHandler({
 				info: `${MessagesDevTools.mcdevRunningCommand} ${this.getPackageName()} ${commandConfig.alias} ${parameters}\n`

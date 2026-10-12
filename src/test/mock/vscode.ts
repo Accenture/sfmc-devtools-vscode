@@ -345,6 +345,11 @@ interface MockProgress {
 }
 
 const window = {
+	createTreeView: (): { dispose: () => void } => ({ dispose: () => {} }),
+	createTerminal: (options: unknown): { show: () => void; sendText: (text: string) => void } => {
+		void options;
+		return { show: () => {}, sendText: () => {} };
+	},
 	activeTextEditor: undefined as TextEditor | undefined,
 	showInformationMessage: async (): Promise<string | undefined> => undefined,
 	showWarningMessage: async (): Promise<string | undefined> => undefined,
@@ -418,6 +423,7 @@ type TelemetryChangeListener = (isEnabled: boolean) => void;
  * user toggling the global telemetry setting.
  */
 const env = {
+	shell: process.platform === "win32" ? "powershell.exe" : "/bin/sh",
 	machineId: "mock-machine-id",
 	isTelemetryEnabled: true,
 	__listeners: [] as TelemetryChangeListener[],

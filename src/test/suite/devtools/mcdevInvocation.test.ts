@@ -6,6 +6,7 @@ import { mcdevShellCommand } from "../../../devtools/mcdevInvocation";
 import { McdevInvocation } from "../../../devtools/mcdevResolve";
 import { executeTerminalCommand, executeTerminalCommandCapture } from "../../../utils/terminal";
 import { TUtils } from "@types";
+import Mcdev from "../../../devtools/mcdev";
 
 suite("selected mcdev transport", () => {
 	const root = mkdtempSync(path.join(os.tmpdir(), "mcdev transport "));
@@ -52,6 +53,41 @@ suite("selected mcdev transport", () => {
 			argv: ["retrieve", "cred/bu", "query", "--keys", "some key"],
 			cwd: root
 		});
+	});
+	test("version, metadata and ordinary operations resolve the selected runtime each time", async () => {
+		const paths: string[] = [];
+		const mcdev = new Mcdev(projectPath => {
+			paths.push(projectPath);
+			return { ...invocation, cwd: projectPath };
+		});
+		assert.strictEqual((await mcdev.lookupVersion(root)).success, true);
+		await mcdev.runExplainTypes(root);
+		assert.strictEqual((await mcdev.execute("upgrade", () => {}, { projectPath: root })).success, true);
+		assert.deepStrictEqual(paths, [root, root, root]);
+	});
+	test("source changes affect subsequent invocations and failures are not retried", async () => {
+		let calls = 0;
+		let selected = invocation;
+		const mcdev = new Mcdev(() => {
+			calls++;
+			return selected;
+		});
+		assert.strictEqual((await mcdev.lookupVersion(root)).success, true);
+		selected = { ...invocation, prefixArgs: [cli, "--fail"], source: "custom" };
+		assert.strictEqual((await mcdev.execute("upgrade", () => {}, { projectPath: root })).success, false);
+		assert.strictEqual(calls, 2);
+	});
+	test("Windows cmd launcher at a spaced path uses the selected runtime", async function () {
+		if (process.platform !== "win32") this.skip();
+		const launcher = path.join(root, "custom mcdev.cmd");
+		writeFileSync(launcher, `@"${process.execPath}" "${cli}" %*\r\n`);
+		const result = await executeTerminalCommandCapture({
+			command: "must-not-execute",
+			commandArgs: ["join"],
+			invocation: { ...invocation, executable: launcher, prefixArgs: [], source: "custom" }
+		});
+		assert.strictEqual(result.success, true, result.stdStreams.error);
+		assert.deepStrictEqual(JSON.parse(result.stdStreams.output).argv, ["join"]);
 	});
 	test("operation failure is returned without fallback or retry", async () => {
 		const result = await executeTerminalCommandCapture({
