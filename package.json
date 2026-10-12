@@ -426,6 +426,19 @@
 		"configuration": {
 			"title": "SFMC DevTools",
 			"properties": {
+				"sfmc-devtools-vscode.mcdevSource": {
+					"type": "string",
+					"enum": ["auto", "bundled", "custom"],
+					"default": "auto",
+					"scope": "resource",
+					"description": "Select mcdev automatically (project-local, PATH, then bundled), use only bundled mcdev, or use only the custom executable. Explicit selections never fall back."
+				},
+				"sfmc-devtools-vscode.mcdevPath": {
+					"type": "string",
+					"default": "",
+					"scope": "resource",
+					"description": "Executable path used when mcdevSource is custom. Relative paths resolve from the project root. Do not include arguments or shell quotes."
+				},
 				"sfmc-devtools-vscode.warnOnMissingJsonRelation": {
 					"type": "boolean",
 					"default": true,
@@ -556,6 +569,7 @@
 		"@eslint/js": "^10.0.1",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^25.9.1",
+		"@types/semver": "^7.8.0",
 		"@types/vscode": "^1.101.0",
 		"@typescript-eslint/parser": "^8.60.0",
 		"@vscode/test-cli": "^0.0.12",
@@ -578,7 +592,8 @@
 		"typescript-eslint": "^8.58.0"
 	},
 	"dependencies": {
-		"@vscode/codicons": "^0.0.45"
+		"@vscode/codicons": "^0.0.45",
+		"semver": "^7.8.5"
 	},
 	"lint-staged": {
 		"*.{js,ts}": [
