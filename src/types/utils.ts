@@ -11,6 +11,8 @@ interface ICancellationToken {
 interface ITerminalCommandRunner {
 	command: string;
 	commandArgs: string[];
+	/** Selected runtime: raw executable and prefix argv, appended before legacy shell fragments. */
+	invocation?: import("../devtools/mcdevResolve").McdevInvocation;
 	commandCwd?: string;
 	commandHandler?: (terminalStreams: ITerminalCommandStreams) => void;
 	cancellationToken?: ICancellationToken;
