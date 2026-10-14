@@ -206,8 +206,7 @@ suite("telemetry", () => {
 	test("pending mcdev lookup is awaited when it resolves during shutdown", async () => {
 		const sink = createSink();
 		let resolveLookup:
-			| ((value: { success: boolean; stdStreams: { output: string; error: string } }) => void)
-			| undefined;
+			((value: { success: boolean; stdStreams: { output: string; error: string } }) => void) | undefined;
 		const versionTelemetry = new McdevVersionTelemetry(
 			sink,
 			() =>
@@ -516,8 +515,7 @@ suite("telemetry", () => {
 	test("pending version lookup reaches the reporter during production shutdown", async () => {
 		const sink = createSink();
 		let resolveLookup:
-			| ((value: { success: boolean; stdStreams: { output: string; error: string } }) => void)
-			| undefined;
+			((value: { success: boolean; stdStreams: { output: string; error: string } }) => void) | undefined;
 		const extension = new DevToolsExtension(makeContext(), {
 			createReporter: () => sink,
 			lookupMcdevVersion: () =>

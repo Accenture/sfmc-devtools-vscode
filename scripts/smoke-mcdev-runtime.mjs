@@ -21,8 +21,20 @@ const { default: Builder } = await load("lib/Builder.js");
 const { Util } = await load("lib/util/util.js");
 const { default: validation } = await load("lib/util/validations.js");
 
+// Check the packaged SDK's own scope provider without credentials or network access.
+const sdkManifest = JSON.parse(await fs.readFile(path.join(runtime, "node_modules/sfmc-sdk/package.json"), "utf8"));
+const { default: Auth } = await load("node_modules/sfmc-sdk/lib/auth.js");
+assert.equal(sdkManifest.version, "4.0.2");
+const scopes = Auth.prototype.getSupportedScopes.call({});
+assert(Array.isArray(scopes) && scopes.length > 0);
+assert(scopes.every(scope => typeof scope === "string" && scope.length > 0));
+const authSource = await fs.readFile(path.join(runtime, "lib/util/auth.js"), "utf8");
+assert.match(authSource, /sdk\.auth\s*\.getSupportedScopes\(\)/);
+console.log("Packaged SDK 4.0.2 scope provider and mcdev delegation passed");
+
 // Generate every template, including hidden tooling files, without invoking setup/Git/npm.
-assert.equal(await InitConfig.createIdeConfigFiles("10.0.0"), true);
+const runtimeManifest = JSON.parse(await fs.readFile(path.join(runtime, "package.json"), "utf8"));
+assert.equal(await InitConfig.createIdeConfigFiles(runtimeManifest.version), true);
 for (const name of Object.keys(
 	JSON.parse(await fs.readFile(path.join(runtime, "bundle-metadata.json"), "utf8")).files
 )) {

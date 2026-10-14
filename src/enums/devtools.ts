@@ -4,7 +4,7 @@
  * @enum {string}
  */
 enum CopyToBUOptions {
-	"Copy" = "copy",
+	Copy = "copy",
 	"Copy And Deploy" = "copy and deploy"
 }
 
@@ -14,7 +14,7 @@ enum CopyToBUOptions {
  * @enum {string}
  */
 enum ChangeKeyOptions {
-	"Field" = "field",
+	Field = "field",
 	"Custom Value" = "custom value"
 }
 

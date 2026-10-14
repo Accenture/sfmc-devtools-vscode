@@ -41,11 +41,15 @@ class Uri {
 	}
 
 	static file(path: string): Uri {
+		if (process.platform === "win32") path = path.replace(/\\/g, "/");
+		if (!path.startsWith("/")) path = "/" + path;
 		return new Uri("file", "", path, "", "");
 	}
 
 	get fsPath(): string {
-		return this.path;
+		let path = this.path;
+		if (/^\/[A-Za-z]:/.test(path)) path = path[1].toLowerCase() + path.slice(2);
+		return process.platform === "win32" ? path.replace(/\//g, "\\") : path;
 	}
 
 	toString(): string {

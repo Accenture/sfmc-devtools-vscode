@@ -115,7 +115,8 @@ class DevToolsExtension {
 
 	/** Read resource-scoped source settings on every invocation, not just activation. */
 	private resolveRuntime(projectPath: string): McdevInvocation {
-		const settings = VSCode.workspace.getConfiguration(ConfigExtension.extensionName, VSCode.Uri.file(projectPath));
+		const resource = VSCode.Uri.file(projectPath);
+		const settings = VSCode.workspace.getConfiguration(ConfigExtension.extensionName, resource);
 		const extensionRoot = this.extensionContext.extensionUri.fsPath;
 		let nodeEngine = "";
 		try {
@@ -131,7 +132,7 @@ class DevToolsExtension {
 		return resolveMcdev({
 			source: settings.get<McdevSourceSetting>("mcdevSource", "auto"),
 			customPath: settings.get<string>("mcdevPath", ""),
-			projectRoot: projectPath,
+			projectRoot: resource.fsPath,
 			bundledCliPath: path.join(extensionRoot, "dist/mcdev/lib/cli.js"),
 			bundledNodeEngine: nodeEngine
 		});
@@ -1163,8 +1164,7 @@ class DevToolsExtension {
 			}
 
 			const marketFrom = (await this.requestInputWithOptions(markets, "Select source market:", false)) as
-				| string
-				| undefined;
+				string | undefined;
 			if (!marketFrom) return;
 
 			const buTo = (await this.selectBusinessUnits(projectPath, {
@@ -1174,8 +1174,7 @@ class DevToolsExtension {
 			if (!buTo?.length) return;
 
 			const marketTo = (await this.requestInputWithOptions(markets, "Select target market:", false)) as
-				| string
-				| undefined;
+				string | undefined;
 			if (!marketTo) return;
 
 			const purgeChoice = (await this.requestInputWithOptions(
@@ -1267,8 +1266,7 @@ class DevToolsExtension {
 		else if (credentials.length > 1)
 			// Request user to select a credential
 			selectedCred = (await this.requestInputWithOptions(credentials, MessagesEditor.credentialPrompt, false)) as
-				| string
-				| undefined;
+				string | undefined;
 		else {
 			// Show error message if no credentials are found in the mcdevrc file
 			errorMessage = MessagesEditor.noCredentialFound;

@@ -9,7 +9,8 @@ Publishing is triggered automatically via GitHub Actions when a new release is c
 ### Added
 
 - Bundled mcdev fallback with `sfmc-devtools-vscode.mcdevSource`: default `auto` selects project-local, PATH, then bundled mcdev; explicit `bundled` and `custom` selections never fall back. `mcdevPath` configures the custom executable.
-- Relocatable runtime packaging with source provenance, per-file hashes and offline VSIX smoke coverage. This feature branch uses `MCDEV_BUNDLE_SOURCE` and an unpublished local source commit; remote CI is blocked until that pinned source is accessible.
+- Relocatable runtime packaging from published mcdev 10.1.0, with registry/lockfile provenance, per-file hashes and offline VSIX smoke coverage. The bundled SDK is 4.0.2, including its supported-scope provider; Node `^22.22.2 || >=24.15.0` is required.
+- Build-time Prettier is aligned to mcdev's 3.9.9 so the packaged formatter and its plugin use the same version.
 
 ### Changed
 

@@ -1,4 +1,7 @@
 import * as assert from "node:assert";
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import DevToolsExtension from "../../../devtools/index";
 import Mcdev from "../../../devtools/mcdev";
 import { TEditor } from "@types";
@@ -38,6 +41,47 @@ suite("selected mcdev activation", () => {
 	});
 	teardown(() => {
 		workspace.workspaceFolders = undefined;
+	});
+	test("real runtime boundary shares native cwd with resource settings and probes PATH Node", () => {
+		const root = mkdtempSync(path.join(os.tmpdir(), "mcdev cwd "));
+		const runtime = path.join(root, "dist", "mcdev");
+		mkdirSync(path.join(runtime, "lib"), { recursive: true });
+		writeFileSync(path.join(runtime, "lib", "cli.js"), "");
+		writeFileSync(
+			path.join(runtime, "bundle-metadata.json"),
+			JSON.stringify({ nodeEngine: "^22.22.2 || >=24.15.0" })
+		);
+		const originalConfiguration = workspace.getConfiguration;
+		const context = {
+			subscriptions: [],
+			extensionUri: Uri.file(root),
+			extension: { id: "test", packageJSON: { name: "sfmc-devtools-vscode", version: "3.5.0" } }
+		} as unknown as TEditor.IExtensionContext;
+		const result = new DevToolsExtension(context) as unknown as {
+			resolveRuntime(projectPath: string): McdevInvocation;
+		};
+		let resource: Uri | undefined;
+		workspace.getConfiguration = ((_section: string, uri: Uri) => {
+			resource = uri;
+			return {
+				...originalConfiguration(),
+				get: (key: string, fallback: unknown) => (key === "mcdevSource" ? "bundled" : fallback)
+			};
+		}) as typeof workspace.getConfiguration;
+		try {
+			const inputs = process.platform === "win32" ? [root, Uri.file(root).path] : [root];
+			for (const input of inputs) {
+				const selected = result.resolveRuntime(input);
+				assert.strictEqual(selected.source, "bundled");
+				assert.strictEqual(selected.cwd, Uri.file(root).fsPath);
+				assert.strictEqual(resource?.fsPath, selected.cwd);
+				assert.deepStrictEqual(selected.prefixArgs, [
+					path.join(Uri.file(root).fsPath, "dist/mcdev/lib/cli.js")
+				]);
+			}
+		} finally {
+			workspace.getConfiguration = originalConfiguration;
+		}
 	});
 	test("bundled availability activates providers and commands without global npm gate", async () => {
 		const result = extension();

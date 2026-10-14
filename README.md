@@ -12,7 +12,7 @@ On Windows without administrator rights, a portable Node/npm installation added 
 
 ### Choose the mcdev CLI source
 
-The extension ships a bundled mcdev runtime: **no global or project-local mcdev installation is required**. In Settings, configure:
+The extension ships the published **mcdev 10.1.0** runtime with **sfmc-sdk 4.0.2**: **no global or project-local mcdev installation is required**. In Settings, configure:
 
 - `sfmc-devtools-vscode.mcdevSource`: `auto` (default) selects project-local mcdev first, then mcdev on PATH, then the bundled runtime. `bundled` always uses the extension's copy. `custom` always uses the executable named by `mcdevPath`.
 - `sfmc-devtools-vscode.mcdevPath`: executable path for `custom`; relative paths resolve from the project root. Supply only the path, without arguments or shell quotes. Windows `.cmd` launchers are supported.
@@ -104,13 +104,11 @@ Every event also carries the host OS, the VS Code version, and this extension's 
 
 **Opt out:** telemetry follows VS Code's global setting. Set `telemetry.telemetryLevel` to `off` (Settings → search "telemetry") and no events are sent. The extension re-checks this setting live, so turning it off stops collection immediately.
 
-### Building this feature branch locally
+### Building locally
 
-This branch currently builds the runtime from an explicit local mcdev source checkout rather than a corrected published npm release. Set `MCDEV_BUNDLE_SOURCE` to an absolute mcdev checkout containing its registry-only `package-lock.json`, then run `npm run compile --no-workspaces` (or `npm run package:test --no-workspaces` for a VSIX). There is no implicit sibling-directory or registry fallback. `MCDEV_BUNDLE_EXPECTED_COMMIT`, when set, requires that exact clean source commit.
+From the extension directory, run `npm ci --no-workspaces`, then `npm run compile --no-workspaces` (or `npm run package:test --no-workspaces` for a VSIX). The build stages the exact registry-locked mcdev 10.1.0 package and its runtime dependencies. No sibling source checkout or source-selection environment variable is needed.
 
-The staged runtime under `dist/mcdev` records the source commit, dirty state, package version, source digest and per-file hashes in `bundle-metadata.json`. `npm run verify:vsix --no-workspaces -- sfmc-devtools-vscode-BETA.vsix` checks the packaged runtime after extraction/relocation and runs offline smoke tests. Archive timestamps can change the VSIX hash; byte-identical archive reproducibility is not claimed.
-
-The current Windows/Ubuntu CI matrix pins upstream commit `aab5ee99eb53d8c468956d84547c02acf336e191`. It cannot fetch that local-only commit until it becomes accessible in the configured upstream repository. No remote CI success or published-source acceptance is claimed. Before release, publish/authorize an accessible corrected source and reconcile the source pin/build strategy; the present local-only work does not bump versions, publish, push, or release anything.
+The staged runtime under `dist/mcdev` records the extension lockfile digest, package versions, registry URLs/integrities and per-file hashes in `bundle-metadata.json`. `npm run verify:vsix --no-workspaces -- sfmc-devtools-vscode-BETA.vsix` checks the packaged runtime after extraction/relocation and runs offline smoke tests. Archive timestamps can change the VSIX hash; byte-identical archive reproducibility is not claimed.
 
 ### Copyright
 

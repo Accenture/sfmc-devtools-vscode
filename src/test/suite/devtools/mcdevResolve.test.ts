@@ -36,6 +36,9 @@ suite("mcdev source resolver", () => {
 		assert.strictEqual(settings["sfmc-devtools-vscode.mcdevSource"].default, "auto");
 		assert.deepStrictEqual(settings["sfmc-devtools-vscode.mcdevSource"].enum, ["auto", "bundled", "custom"]);
 		assert.strictEqual(settings["sfmc-devtools-vscode.mcdevPath"].default, "");
+		assert.strictEqual(manifest.devDependencies.mcdev, "10.1.0");
+		assert.strictEqual(manifest.peerDependencies.mcdev, ">=9.0.0");
+		assert.strictEqual(manifest.peerDependenciesMeta.mcdev.optional, true);
 	});
 	test("setup walkthrough explains bundled runtime without mandatory global installation", () => {
 		const manifest = JSON.parse(readFileSync(path.resolve(__dirname, "../../../../package.json"), "utf8"));

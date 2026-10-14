@@ -1,6 +1,6 @@
 ## Check Node/npm and mcdev source
 
-mcdev is bundled with this extension. You do not need a global or project-local mcdev installation for extension commands.
+mcdev 10.1.0 (with sfmc-sdk 4.0.2) is bundled with this extension. You do not need a global or project-local mcdev installation for extension commands.
 
 Install a supported Node.js release with npm and put both `node` and `npm` on PATH. Bundled mcdev 10 requires Node `^22.22.2 || >=24.15.0`. Restart VS Code/Cursor after installing or changing PATH, then check `node --version` and `npm --version` in a new terminal.
 
