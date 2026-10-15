@@ -12,7 +12,12 @@ test("exact registry build dependency and optional external CLI peer coexist", a
 	const manifest = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
 	assert.equal(manifest.devDependencies.mcdev, "10.1.0");
 	assert.equal(manifest.devDependencies.prettier, "3.9.9");
+	assert.equal(manifest.devDependencies["@vscode/test-cli"], "^0.0.15");
 	const lock = JSON.parse(await fs.readFile(path.join(root, "package-lock.json"), "utf8"));
+	assert.equal(lock.packages["node_modules/@vscode/test-cli"].version, "0.0.15");
+	assert.equal(lock.packages["node_modules/@vscode/test-cli"].engines.node, ">=22");
+	assert.equal(lock.packages["node_modules/@vscode/test-cli"].dependencies.mocha, "^11.7.6");
+	assert.equal(lock.packages["node_modules/mocha"].version, "11.8.0");
 	assert.equal(lock.packages["node_modules/npm-run-all"].version, "4.1.5");
 	assert.equal(lock.packages["node_modules/npm-run-all"].dependencies.minimatch, "^3.0.4");
 	assert.equal(lock.packages["node_modules/minimatch"].version, "3.1.5");
