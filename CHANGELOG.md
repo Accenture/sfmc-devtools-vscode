@@ -4,12 +4,13 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
-## [Unreleased]
+## [3.6.0] — 2026-10-15
 
 ### Added
 
 - Explicit mcdev project-upgrade guidance now offers a targeted **Upgrade** action and **More Details**, without automatic retries.
 - Anonymous source-mode telemetry records only `auto`, `bundled`, or `custom` at activation and on actual configuration changes, including without an open project.
+
 - Bundled mcdev fallback with `sfmc-devtools-vscode.mcdevSource`: default `auto` selects project-local, PATH, then bundled mcdev; explicit `bundled` and `custom` selections never fall back. `mcdevPath` configures the custom executable.
 - Relocatable runtime packaging from published mcdev 10.1.0, with registry/lockfile provenance, per-file hashes and offline VSIX smoke coverage. The bundled SDK is 4.0.2, including its supported-scope provider; Node `^22.22.2 || >=24.15.0` is required.
 - Build-time Prettier is aligned to mcdev's 3.9.9 so the packaged formatter and its plugin use the same version.
@@ -26,6 +27,7 @@ Publishing is triggered automatically via GitHub Actions when a new release is c
 ### Changed
 
 - **Extension-presence telemetry** now includes presence-only booleans for `xnerd.ampscript-language`, `esbenp.prettier-vscode`, `dbaeumer.vscode-eslint`, and `MarketingThibs.ampscriptsnippets`, alongside the existing Markdown Preview signal. Presence reflects the current extension host, not activation or usage.
+
 ## [3.4.3] — 2026-09-08
 
 ### Fixed
