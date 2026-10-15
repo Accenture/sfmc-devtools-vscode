@@ -13,6 +13,11 @@ test("exact registry build dependency and optional external CLI peer coexist", a
 	assert.equal(manifest.devDependencies.mcdev, "10.1.0");
 	assert.equal(manifest.devDependencies.prettier, "3.9.9");
 	const lock = JSON.parse(await fs.readFile(path.join(root, "package-lock.json"), "utf8"));
+	assert.equal(lock.packages["node_modules/npm-run-all"].version, "4.1.5");
+	assert.equal(lock.packages["node_modules/npm-run-all"].dependencies.minimatch, "^3.0.4");
+	assert.equal(lock.packages["node_modules/minimatch"].version, "3.1.5");
+	assert.equal(lock.packages["node_modules/minimatch"].dependencies["brace-expansion"], "^1.1.7");
+	assert.equal(lock.packages["node_modules/brace-expansion"].version, "1.1.21");
 	assert.equal(lock.packages["node_modules/mcdev"].dependencies.prettier, manifest.devDependencies.prettier);
 	assert.equal(lock.packages["node_modules/prettier"].version, manifest.devDependencies.prettier);
 	assert.equal(lock.packages["node_modules/mcdev/node_modules/prettier"], undefined);
