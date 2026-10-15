@@ -1,4 +1,4 @@
-import Mcdev from "./mcdev";
+import Mcdev, { type McdevExecutionResult } from "./mcdev";
 import { activateLinkProviders } from "./linkProviders";
 import { McdevTreeDataProvider, registerTreeView } from "./treeView";
 import { SETTING_LABELS, StatusBarTooltipProvider } from "../editor/statusBarTooltipProvider";
@@ -6,10 +6,14 @@ import { ConfigExtension } from "@config";
 import { MessagesDevTools, MessagesEditor } from "@messages";
 import { EnumsDevTools, EnumsExtension } from "@enums";
 import { TDevTools, TEditor, TUtils, VSCode } from "@types";
-import { Lib, File, VsceLogger, Terminal } from "utils";
+import { Lib, File, VsceLogger } from "utils";
 import { TelemetryReporter, detectEcosystem, type TelemetryValue } from "../telemetry";
 import { trackCommandResult } from "../commandTelemetry";
 import { McdevVersionTelemetry } from "../mcdevVersionTelemetry";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { resolveMcdev, McdevInvocation, McdevSourceSetting } from "./mcdevResolve";
+import { mcdevShellCommand } from "./mcdevInvocation";
 
 interface TelemetrySink {
 	track(event: string, props?: Record<string, TelemetryValue>): void;
@@ -21,7 +25,7 @@ export type McdevExecute = (
 	commandHandler: (streams: TUtils.IOutputLogger) => void,
 	parameters: TDevTools.IExecuteParameters,
 	cancellationToken?: TUtils.ICancellationToken
-) => Promise<{ success: boolean }>;
+) => Promise<McdevExecutionResult>;
 
 export interface DevToolsTelemetryOptions {
 	createReporter?: (extensionVersion: string) => TelemetrySink;
@@ -91,7 +95,7 @@ class DevToolsExtension {
 	constructor(context: TEditor.IExtensionContext, telemetryOptions: DevToolsTelemetryOptions = {}) {
 		this.extensionContext = context;
 		this.vscodeEditor = new TEditor.VSCodeEditor(context);
-		this.mcdev = new Mcdev();
+		this.mcdev = new Mcdev(projectPath => this.resolveRuntime(projectPath));
 		this.tooltipProvider = new StatusBarTooltipProvider(ConfigExtension.extensionName);
 		this.createTelemetryReporter =
 			telemetryOptions.createReporter ??
@@ -102,15 +106,36 @@ class DevToolsExtension {
 				}));
 		this.lookupMcdevVersion =
 			telemetryOptions.lookupMcdevVersion ??
-			(() =>
-				Terminal.executeTerminalCommandCapture({
-					command: this.mcdev.getPackageName(),
-					commandArgs: ["--version"]
-				}));
+			(() => this.mcdev.lookupVersion(this.vscodeEditor.getWorkspace().getWorkspaceFsPath()));
 		this.executeMcdevCommand =
 			telemetryOptions.executeMcdev ??
 			((command, commandHandler, parameters, cancellationToken) =>
 				this.mcdev.execute(command, commandHandler, parameters, cancellationToken));
+	}
+
+	/** Read resource-scoped source settings on every invocation, not just activation. */
+	private resolveRuntime(projectPath: string): McdevInvocation {
+		const resource = VSCode.Uri.file(projectPath);
+		const settings = VSCode.workspace.getConfiguration(ConfigExtension.extensionName, resource);
+		const extensionRoot = this.extensionContext.extensionUri.fsPath;
+		let nodeEngine = "";
+		try {
+			nodeEngine = (
+				JSON.parse(readFileSync(path.join(extensionRoot, "dist/mcdev/bundle-metadata.json"), "utf8")) as {
+					nodeEngine: string;
+				}
+			).nodeEngine;
+			if (typeof nodeEngine !== "string") nodeEngine = "";
+		} catch {
+			// Installed sources do not depend on bundle metadata; bundled selection reports the invalid artifact.
+		}
+		return resolveMcdev({
+			source: settings.get<McdevSourceSetting>("mcdevSource", "auto"),
+			customPath: settings.get<string>("mcdevPath", ""),
+			projectRoot: resource.fsPath,
+			bundledCliPath: path.join(extensionRoot, "dist/mcdev/lib/cli.js"),
+			bundledNodeEngine: nodeEngine
+		});
 	}
 
 	/**
@@ -123,14 +148,43 @@ class DevToolsExtension {
 		// Create the anonymous telemetry reporter, owned by this instance and drained in deactivate()
 		this.telemetryReporter = this.createTelemetryReporter(this.vscodeEditor.getContext().getExtensionVersion());
 
+		// Observe configured mode even when no mcdev project is open; never collect the custom path.
+		const sourceScopes = (): (VSCode.Uri | undefined)[] =>
+			VSCode.workspace.workspaceFolders?.length
+				? VSCode.workspace.workspaceFolders.map(folder => folder.uri)
+				: [undefined];
+		const readSource = (resource?: VSCode.Uri): McdevSourceSetting => {
+			const source = VSCode.workspace
+				.getConfiguration(ConfigExtension.extensionName, resource)
+				.get<string>("mcdevSource", "auto");
+			return source === "bundled" || source === "custom" ? source : "auto";
+		};
+		// Scope identifiers stay internal; telemetry contains only normalized modes.
+		const sourceModes = new Map(sourceScopes().map(resource => [resource?.toString(), readSource(resource)]));
+		this.vscodeEditor.getContext().registerDisposable(
+			VSCode.workspace.onDidChangeConfiguration(event => {
+				for (const resource of sourceScopes()) {
+					if (!event.affectsConfiguration(`${ConfigExtension.extensionName}.mcdevSource`, resource)) continue;
+					const scope = resource?.toString();
+					const next = readSource(resource);
+					if (next === sourceModes.get(scope)) continue;
+					sourceModes.set(scope, next);
+					this.telemetryReporter?.track("mcdev.sourceChanged", { mcdevSource: next });
+				}
+			})
+		);
+
 		// Checks if is there any DevTools Project
 		const isDevToolsProject = await this.isDevToolsProject();
 
 		// Emit an activation event with project presence + ecosystem co-installation booleans
-		this.telemetryReporter.track("extension.activated", {
-			isDevToolsProject,
-			...detectEcosystem(this.extensionContext.extension.id)
-		});
+		for (const resource of sourceScopes()) {
+			this.telemetryReporter.track("extension.activated", {
+				isDevToolsProject,
+				mcdevSource: readSource(resource),
+				...detectEcosystem(this.extensionContext.extension.id)
+			});
+		}
 
 		// Read the installed mcdev version off the activation critical path.
 		this.mcdevVersionTelemetry = new McdevVersionTelemetry(this.telemetryReporter, this.lookupMcdevVersion);
@@ -182,11 +236,9 @@ class DevToolsExtension {
 			// .mcdevrc.json is absent.
 			this.treeDataProvider = registerTreeView(this.extensionContext);
 
-			// Check if Mcdev is installed
-			const mcdevInstalled = this.mcdev.isInstalled();
-			// request user to install mcdev
-			if (!mcdevInstalled) await this.mcdevInstall();
-			else {
+			// Availability means the selected source resolves, not a mandatory global npm installation.
+			const invocation = this.mcdev.getInvocation(this.vscodeEditor.getWorkspace().getWorkspaceFsPath());
+			{
 				// activate extension context variables
 				this.activateContextVariables();
 				// activate editor containers
@@ -197,12 +249,30 @@ class DevToolsExtension {
 				this.activateLinkProviders();
 				// logs initial extension information into output channel
 				this.writeExtensionInformation();
+				this.writeLog(
+					this.mcdev.getPackageName(),
+					`Selected mcdev source: ${invocation.source}`,
+					EnumsExtension.LoggerLevel.INFO
+				);
+				void this.mcdev
+					.lookupVersion(invocation.cwd)
+					.then(result => {
+						if (result.success)
+							this.writeLog(
+								this.mcdev.getPackageName(),
+								`Selected mcdev version: ${result.stdStreams.output}`,
+								EnumsExtension.LoggerLevel.INFO
+							);
+					})
+					.catch(error =>
+						this.writeLog(this.mcdev.getPackageName(), String(error), EnumsExtension.LoggerLevel.WARN)
+					);
 				// refresh metadata types in background from mcdev
 				this.refreshMetadataTypesInBackground();
 			}
 		} catch (error) {
-			// log as debug error
-			this.writeLog(this.mcdev.getPackageName(), error as string, EnumsExtension.LoggerLevel.ERROR);
+			this.writeLog(this.mcdev.getPackageName(), String(error), EnumsExtension.LoggerLevel.ERROR);
+			await this.showInformationMessage("error", String(error), []);
 		}
 	}
 
@@ -1058,14 +1128,30 @@ class DevToolsExtension {
 	 * Handles interactive commands (init, join) by opening a VS Code Terminal panel.
 	 * These commands use inquirer for complex interactive flows and need direct user input.
 	 */
-	handleInteractiveCommand(command: string): void {
-		const packageName = this.mcdev.getPackageName();
-		const terminal = VSCode.window.createTerminal({
-			name: `${packageName} ${command}`,
-			cwd: this.vscodeEditor.getWorkspace().getWorkspaceFsPath()
-		});
-		terminal.show();
-		terminal.sendText(`${packageName} ${command}`);
+	async handleInteractiveCommand(command: string): Promise<void> {
+		try {
+			const packageName = this.mcdev.getPackageName();
+			const invocation = this.mcdev.getInvocation(this.vscodeEditor.getWorkspace().getWorkspaceFsPath());
+			// Choose an explicit shell so quoting matches the terminal, retaining direct TTY input.
+			const shellPath = VSCode.env.shell;
+			const shell = /(?:powershell|pwsh)(?:\.exe)?$/i.test(shellPath)
+				? "powershell"
+				: /cmd(?:\.exe)?$/i.test(shellPath)
+					? "cmd"
+					: "posix";
+			const commandText = mcdevShellCommand(invocation, [command], shell);
+			const terminal = VSCode.window.createTerminal({
+				name: `${packageName} ${command}`,
+				cwd: invocation.cwd,
+				shellPath,
+				env: { MCDEV_RUNTIME_SOURCE: invocation.source === "bundled" ? "bundled" : null }
+			});
+			terminal.show();
+			terminal.sendText(commandText);
+		} catch (error) {
+			this.writeLog(this.mcdev.getPackageName(), String(error), EnumsExtension.LoggerLevel.ERROR);
+			await this.showInformationMessage("error", String(error), []);
+		}
 	}
 
 	/**
@@ -1107,8 +1193,7 @@ class DevToolsExtension {
 			}
 
 			const marketFrom = (await this.requestInputWithOptions(markets, "Select source market:", false)) as
-				| string
-				| undefined;
+				string | undefined;
 			if (!marketFrom) return;
 
 			const buTo = (await this.selectBusinessUnits(projectPath, {
@@ -1118,8 +1203,7 @@ class DevToolsExtension {
 			if (!buTo?.length) return;
 
 			const marketTo = (await this.requestInputWithOptions(markets, "Select target market:", false)) as
-				| string
-				| undefined;
+				string | undefined;
 			if (!marketTo) return;
 
 			const purgeChoice = (await this.requestInputWithOptions(
@@ -1211,8 +1295,7 @@ class DevToolsExtension {
 		else if (credentials.length > 1)
 			// Request user to select a credential
 			selectedCred = (await this.requestInputWithOptions(credentials, MessagesEditor.credentialPrompt, false)) as
-				| string
-				| undefined;
+				string | undefined;
 		else {
 			// Show error message if no credentials are found in the mcdevrc file
 			errorMessage = MessagesEditor.noCredentialFound;
@@ -1374,7 +1457,11 @@ class DevToolsExtension {
 		 *
 		 * @returns A promise that resolves when the actions are completed.
 		 */
-		const executeOnResult = async (success: boolean, resolveCommand: (value: boolean) => void) => {
+		const executeOnResult = async (
+			success: boolean,
+			resolveCommand: (value: boolean) => void,
+			upgradeRequiredProjectPaths: string[]
+		) => {
 			const statusBarIcon = success ? "success" : "error";
 			// changes the status bar icon and and color according to the execution result of the command
 			const newStatusBarColor = success ? "" : "error";
@@ -1398,6 +1485,22 @@ class DevToolsExtension {
 			sessionLogger.endSession(success);
 
 			resolveCommand(success);
+			// Let progress completion settle before displaying another notification.
+			await Promise.resolve();
+
+			// Explicit project guidance replaces the generic result, without retrying the failed operation.
+			if (command !== "upgrade" && upgradeRequiredProjectPaths.length) {
+				for (const projectPath of new Set(upgradeRequiredProjectPaths)) {
+					const answer = await this.showInformationMessage(
+						"warning",
+						MessagesEditor.projectUpgradeRequired(projectPath),
+						["Upgrade", "More Details"]
+					);
+					if (answer === "Upgrade") void this.executeCommand("upgrade", { projectPath });
+					else if (answer === "More Details") this.showOuputChannel(packageName);
+				}
+				return;
+			}
 
 			// Shows the modal message with the result of the command execution
 			const moreDetails = await this.showInformationMessage(
@@ -1439,8 +1542,9 @@ class DevToolsExtension {
 						// Show a placeholder message immediately while the command is being prepared
 						progress.report({ message: MessagesEditor.runningCommand });
 						let success = false;
+						let upgradeRequiredProjectPaths: string[] = [];
 						try {
-							({ success } = await this.executeMcdevCommand(
+							({ success, upgradeRequiredProjectPaths = [] } = await this.executeMcdevCommand(
 								command,
 								executeOnOutput,
 								executeParameters,
@@ -1456,6 +1560,7 @@ class DevToolsExtension {
 								);
 							}
 						} catch (error) {
+							executeOnOutput({ error: String(error) });
 							if (!cancelToken.isCancellationRequested) {
 								trackCommandResult(
 									this.telemetryReporter,
@@ -1488,7 +1593,9 @@ class DevToolsExtension {
 							sessionLogger.endSession(false);
 							resolveCommand(false);
 						} else {
-							executeOnResult(success, resolveCommand);
+							resolveTreeViewProgress();
+							resolveExecute(success);
+							void executeOnResult(success, resolveCommand, upgradeRequiredProjectPaths);
 						}
 						resolveTreeViewProgress();
 						resolveExecute(success);

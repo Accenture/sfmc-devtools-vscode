@@ -7,7 +7,7 @@ import { McdevVersionTelemetry } from "../../mcdevVersionTelemetry";
 import DevToolsExtension, { type McdevExecute } from "../../devtools/index";
 import { activate, deactivate } from "../../extension";
 import { TelemetryReporter, detectEcosystem, type TelemetryValue } from "../../telemetry";
-import { env, extensions, window, type MockExtension } from "../mock/vscode";
+import { env, extensions, window, workspace, Uri, type MockExtension } from "../mock/vscode";
 import { TEditor } from "@types";
 
 interface FetchCall {
@@ -206,8 +206,7 @@ suite("telemetry", () => {
 	test("pending mcdev lookup is awaited when it resolves during shutdown", async () => {
 		const sink = createSink();
 		let resolveLookup:
-			| ((value: { success: boolean; stdStreams: { output: string; error: string } }) => void)
-			| undefined;
+			((value: { success: boolean; stdStreams: { output: string; error: string } }) => void) | undefined;
 		const versionTelemetry = new McdevVersionTelemetry(
 			sink,
 			() =>
@@ -254,8 +253,10 @@ suite("telemetry", () => {
 			const reporter = new TelemetryReporter({ extensionName: "sfmc-devtools", extensionVersion: "9.9.9" });
 			reporter.track("extension.activated", {
 				isDevToolsProject: true,
+				mcdevSource: "auto",
 				...detectEcosystem("Accenture-oss.sfmc-devtools-vscode")
 			});
+			reporter.track("mcdev.sourceChanged", { mcdevSource: "bundled" });
 			reporter.track("mcdev.version", { mcdevVersion: "9.2.1" });
 			reporter.track("command.executed", { command: "retrieve", durationMs: 42 });
 			reporter.track("command.failed", {
@@ -389,6 +390,147 @@ suite("telemetry", () => {
 		}
 	});
 
+	test("source mode changes are allowlisted, deduplicated and observed without a project", async () => {
+		const originalConfiguration = workspace.getConfiguration;
+		const originalListener = workspace.onDidChangeConfiguration;
+		let listener: ((event: { affectsConfiguration(section: string): boolean }) => void) | undefined;
+		let source = "custom";
+		let disposed = false;
+		workspace.getConfiguration = () => ({
+			...originalConfiguration(),
+			get: (key: string, fallback?: unknown) =>
+				key === "mcdevSource" ? source : key === "mcdevPath" ? "C:/private/secret.cmd" : fallback
+		});
+		workspace.onDidChangeConfiguration = ((callback: typeof listener) => {
+			listener = callback;
+			return {
+				dispose: () => {
+					disposed = true;
+				}
+			};
+		}) as typeof workspace.onDidChangeConfiguration;
+		const sink = createSink();
+		const context = makeContext();
+		const extension = new DevToolsExtension(context, {
+			createReporter: () => sink,
+			lookupMcdevVersion: idleLookup
+		});
+		try {
+			await extension.init();
+			const activated = sink.events.find(event => event.event === "extension.activated");
+			assert.strictEqual(activated?.properties.isDevToolsProject, false);
+			assert.strictEqual(activated?.properties.mcdevSource, "custom");
+			assert.ok(listener);
+			const fire = (section: string): void => listener?.({ affectsConfiguration: key => key === section });
+			fire("sfmc-devtools-vscode.mcdevPath");
+			for (source of ["custom", "bundled", "bundled", "auto", "private raw value", "custom"])
+				fire("sfmc-devtools-vscode.mcdevSource");
+			assert.deepStrictEqual(
+				sink.events.filter(event => event.event === "mcdev.sourceChanged"),
+				[
+					{ event: "mcdev.sourceChanged", properties: { mcdevSource: "bundled" } },
+					{ event: "mcdev.sourceChanged", properties: { mcdevSource: "auto" } },
+					{ event: "mcdev.sourceChanged", properties: { mcdevSource: "custom" } }
+				]
+			);
+			assert.doesNotMatch(JSON.stringify(sink.events), /private|secret/);
+			context.subscriptions.forEach(subscription => subscription.dispose());
+			assert.strictEqual(disposed, true);
+		} finally {
+			await extension.disposeTelemetry();
+			workspace.getConfiguration = originalConfiguration;
+			workspace.onDidChangeConfiguration = originalListener;
+		}
+	});
+
+	test("source telemetry reads each folder and deduplicates folder-only mode changes by scope", async () => {
+		const originalConfiguration = workspace.getConfiguration;
+		const originalListener = workspace.onDidChangeConfiguration;
+		const originalFolders = workspace.workspaceFolders;
+		const first = Uri.file("C:/private/first");
+		const second = Uri.file("C:/private/second");
+		const modes = new Map([
+			[first.toString(), "bundled"],
+			[second.toString(), "custom"]
+		]);
+		let listener: ((event: { affectsConfiguration(section: string, resource?: Uri): boolean }) => void) | undefined;
+		const resources: (Uri | undefined)[] = [];
+		workspace.workspaceFolders = [{ uri: first }, { uri: second }];
+		workspace.getConfiguration = ((_section: string, resource?: Uri) => {
+			resources.push(resource);
+			return {
+				...originalConfiguration(),
+				get: (key: string, fallback?: unknown) =>
+					key === "mcdevSource" ? (modes.get(resource?.toString() ?? "") ?? "auto") : fallback
+			};
+		}) as typeof workspace.getConfiguration;
+		workspace.onDidChangeConfiguration = ((callback: typeof listener) => {
+			listener = callback;
+			return { dispose: () => {} };
+		}) as typeof workspace.onDidChangeConfiguration;
+		const sink = createSink();
+		const extension = new DevToolsExtension(makeContext(), {
+			createReporter: () => sink,
+			lookupMcdevVersion: idleLookup
+		});
+		try {
+			await extension.init();
+			assert.deepStrictEqual(
+				sink.events
+					.filter(event => event.event === "extension.activated")
+					.map(event => event.properties.mcdevSource),
+				["bundled", "custom"]
+			);
+			assert.ok(resources.includes(first) && resources.includes(second));
+			assert.ok(!resources.includes(undefined));
+			assert.ok(listener);
+			const fire = (affected?: Uri): void =>
+				listener?.({
+					affectsConfiguration: (section, resource) =>
+						section === "sfmc-devtools-vscode.mcdevSource" && (!affected || resource === affected)
+				});
+			modes.set(second.toString(), "bundled");
+			fire(second);
+			fire(second);
+			fire();
+			assert.deepStrictEqual(
+				sink.events.filter(event => event.event === "mcdev.sourceChanged"),
+				[{ event: "mcdev.sourceChanged", properties: { mcdevSource: "bundled" } }]
+			);
+			modes.set(first.toString(), "custom");
+			fire(first);
+			assert.deepStrictEqual(
+				sink.events.filter(event => event.event === "mcdev.sourceChanged").map(event => event.properties),
+				[{ mcdevSource: "bundled" }, { mcdevSource: "custom" }]
+			);
+			assert.doesNotMatch(JSON.stringify(sink.events), /private|first|second|C:/);
+		} finally {
+			await extension.disposeTelemetry();
+			workspace.getConfiguration = originalConfiguration;
+			workspace.onDidChangeConfiguration = originalListener;
+			workspace.workspaceFolders = originalFolders;
+		}
+	});
+
+	test("source events respect live VS Code opt-out through the real reporter", async () => {
+		const fetchStub = stubFetch();
+		const reporter = new TelemetryReporter({ extensionName: "sfmc-devtools", extensionVersion: "9.9.9" });
+		try {
+			reporter.track("extension.activated", { mcdevSource: "auto" });
+			env.__fireTelemetryChange(false);
+			reporter.track("mcdev.sourceChanged", { mcdevSource: "custom" });
+			await reporter.flush();
+			assert.strictEqual(fetchStub.calls.length, 0);
+			env.__fireTelemetryChange(true);
+			reporter.track("mcdev.sourceChanged", { mcdevSource: "bundled" });
+			await reporter.flush();
+			assert.strictEqual(fetchStub.calls.length, 1);
+		} finally {
+			await reporter.disposeAsync();
+			fetchStub.restore();
+		}
+	});
+
 	test("executeCommand records success duration through the production path", async () => {
 		const sink = createSink();
 		const executeMcdev: McdevExecute = async () => ({ success: true });
@@ -516,8 +658,7 @@ suite("telemetry", () => {
 	test("pending version lookup reaches the reporter during production shutdown", async () => {
 		const sink = createSink();
 		let resolveLookup:
-			| ((value: { success: boolean; stdStreams: { output: string; error: string } }) => void)
-			| undefined;
+			((value: { success: boolean; stdStreams: { output: string; error: string } }) => void) | undefined;
 		const extension = new DevToolsExtension(makeContext(), {
 			createReporter: () => sink,
 			lookupMcdevVersion: () =>

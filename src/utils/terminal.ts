@@ -1,6 +1,23 @@
 import { spawn, spawnSync, SpawnSyncReturns } from "child_process";
 import { TUtils } from "@types";
 import { Lib } from "utils";
+import { mcdevEnvironment, mcdevShellCommand } from "../devtools/mcdevInvocation";
+
+/** Preserve legacy shell fragments while quoting the selected runtime's raw paths. */
+function selectedCommand(config: TUtils.ITerminalCommandRunner): TUtils.ITerminalCommandRunner {
+	if (!config.invocation) return config;
+	return {
+		...config,
+		command: mcdevShellCommand(
+			config.invocation,
+			config.commandArgs,
+			process.platform === "win32" ? "cmd" : "posix"
+		),
+		commandArgs: [],
+		commandCwd: config.invocation.cwd,
+		commandEnv: mcdevEnvironment(config.invocation, config.commandEnv ?? process.env)
+	};
+}
 
 /**
  * Executes a terminal command synchronously
@@ -13,9 +30,12 @@ import { Lib } from "utils";
 function executeCommandSync({
 	command,
 	commandArgs,
-	commandCwd
+	commandCwd,
+	commandEnv
 }: TUtils.ITerminalCommandRunner): TUtils.ITerminalCommandResult {
-	const terminal = <SpawnSyncReturns<Buffer>>spawnSync(command, commandArgs, { shell: true, cwd: commandCwd });
+	const terminal = <SpawnSyncReturns<Buffer>>(
+		spawnSync(command, commandArgs, { shell: true, cwd: commandCwd, env: commandEnv })
+	);
 	return {
 		success: terminal.status === 0,
 		stdStreams: { output: terminal.stdout.toString().trim(), error: terminal.stderr.toString().trim() }
@@ -57,12 +77,15 @@ function executeCommand({
 	command,
 	commandArgs,
 	commandCwd,
+	commandEnv,
 	commandHandler,
+	rawChunkHandler,
 	cancellationToken
 }: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
 	return new Promise(resolve => {
 		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
 		const commandStreamHandler = (data: Buffer, stream: keyof TUtils.ITerminalCommandStreams) => {
+			rawChunkHandler?.(data.toString(), stream);
 			if (commandHandler) {
 				terminalOutput[stream] = data.toString().trim();
 				commandHandler(terminalOutput);
@@ -74,23 +97,36 @@ function executeCommand({
 		const proc = spawn(command, commandArgs, {
 			shell: true,
 			cwd: commandCwd,
+			env: commandEnv,
 			detached: process.platform !== "win32"
 		});
 
-		if (cancellationToken) {
-			cancellationToken.onCancellationRequested(() => {
-				killProcessTree(proc);
-				resolve({ success: false, stdStreams: terminalOutput });
-			});
-		}
+		let settled = false;
+		const settle = (success: boolean) => {
+			if (settled) return;
+			settled = true;
+			resolve({ success, stdStreams: terminalOutput });
+		};
+		const cancel = () => {
+			if (settled) return;
+			killProcessTree(proc);
+			settle(false);
+		};
+		cancellationToken?.onCancellationRequested(cancel);
+		if (cancellationToken?.isCancellationRequested) cancel();
+		proc.on("error", error => {
+			terminalOutput.error = error.message;
+			commandHandler?.(terminalOutput);
+			settle(false);
+		});
 
-		if (proc.stdout && commandHandler)
+		if (proc.stdout && (commandHandler || rawChunkHandler))
 			proc.stdout.on("data", (data: Buffer) => commandStreamHandler(data, "output"));
-		if (proc.stderr && commandHandler)
+		if (proc.stderr && (commandHandler || rawChunkHandler))
 			proc.stderr.on("data", (data: Buffer) => commandStreamHandler(data, "error"));
 
 		proc.on("close", code => {
-			resolve({ success: code === 0, stdStreams: terminalOutput });
+			settle(code === 0);
 		});
 	});
 }
@@ -105,16 +141,13 @@ function executeCommand({
  * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
  * @returns {Promise<TUtils.ITerminalCommandResult>} object configured with the full result of executing the terminal command
  */
-function executeTerminalCommandCapture({
-	command,
-	commandArgs,
-	commandCwd
-}: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
+function executeTerminalCommandCapture(config: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
+	const { command, commandArgs, commandCwd, commandEnv } = selectedCommand(config);
 	return new Promise(resolve => {
 		let output = "";
 		let error = "";
 		const cwd = commandCwd ? Lib.removeLeadingRootDrivePath(commandCwd) : commandCwd;
-		const proc = spawn(command, commandArgs, { shell: true, cwd });
+		const proc = spawn(command, commandArgs, { shell: true, cwd, env: commandEnv });
 
 		if (proc.stdout)
 			proc.stdout.on("data", (data: Buffer) => {
@@ -146,13 +179,24 @@ function executeTerminalCommandCapture({
  * @returns {(TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult>)} object configured with the result of executing the terminal command in an sync or async way
  */
 function executeTerminalCommand(
-	{ command, commandArgs, commandCwd, commandHandler, cancellationToken }: TUtils.ITerminalCommandRunner,
+	config: TUtils.ITerminalCommandRunner,
 	sync: boolean
 ): TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult> {
+	const { command, commandArgs, commandHandler, rawChunkHandler, cancellationToken, commandEnv } =
+		selectedCommand(config);
+	let { commandCwd } = selectedCommand(config);
 	if (commandCwd) commandCwd = Lib.removeLeadingRootDrivePath(commandCwd);
 	return sync
-		? executeCommandSync({ command, commandArgs, commandCwd })
-		: executeCommand({ command, commandArgs, commandCwd, commandHandler, cancellationToken });
+		? executeCommandSync({ command, commandArgs, commandCwd, commandEnv })
+		: executeCommand({
+				command,
+				commandArgs,
+				commandCwd,
+				commandEnv,
+				commandHandler,
+				rawChunkHandler,
+				cancellationToken
+			});
 }
 
 /**

@@ -34,8 +34,13 @@
 	"events": {
 		"extension.activated": {
 			"owner": "joernberkefeld",
-			"comment": "Emitted once after extension initialization with project and related-extension presence booleans.",
+			"comment": "Emitted at initialization for each workspace folder's effective source mode, or once unscoped without folders, with project and related-extension presence booleans. Scope identifiers are never collected.",
 			"properties": {
+				"mcdevSource": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Configured mode only: auto, bundled, or custom. Never an executable path or resolved runtime."
+				},
 				"isDevToolsProject": {
 					"classification": "SystemMetaData",
 					"purpose": "FeatureInsight",
@@ -115,6 +120,17 @@
 					"classification": "SystemMetaData",
 					"purpose": "FeatureInsight",
 					"comment": "Whether joernberkefeld.markdown-preview-bitbucket-innersource is installed."
+				}
+			}
+		},
+		"mcdev.sourceChanged": {
+			"owner": "joernberkefeld",
+			"comment": "Emitted only when the configured mcdev source mode changes during the session, including without an open project.",
+			"properties": {
+				"mcdevSource": {
+					"classification": "SystemMetaData",
+					"purpose": "FeatureInsight",
+					"comment": "Configured mode only: auto, bundled, or custom. Never a path, credential, or diagnostic."
 				}
 			}
 		},

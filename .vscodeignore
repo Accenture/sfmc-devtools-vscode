@@ -1,11 +1,12 @@
 **/*.ts
 **/*.map
-node_modules
+node_modules/**
 src
 .vscode
 .vscode-test
 *.vsix
 .github
+.mcdev-source/**
 .husky
 .fork
 .gitignore
@@ -20,3 +21,4 @@ tsconfig.test.json
 prepare-release.js
 scripts/**
 .gitattributes
+!dist/mcdev/**

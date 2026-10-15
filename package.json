@@ -16,6 +16,11 @@
 	"peerDependencies": {
 		"mcdev": ">=9.0.0"
 	},
+	"peerDependenciesMeta": {
+		"mcdev": {
+			"optional": true
+		}
+	},
 	"keywords": [
 		"amp",
 		"ampscript",
@@ -426,6 +431,19 @@
 		"configuration": {
 			"title": "SFMC DevTools",
 			"properties": {
+				"sfmc-devtools-vscode.mcdevSource": {
+					"type": "string",
+					"enum": ["auto", "bundled", "custom"],
+					"default": "auto",
+					"scope": "resource",
+					"description": "Select mcdev automatically (project-local, PATH, then bundled), use only bundled mcdev, or use only the custom executable. Explicit selections never fall back."
+				},
+				"sfmc-devtools-vscode.mcdevPath": {
+					"type": "string",
+					"default": "",
+					"scope": "resource",
+					"description": "Executable path used when mcdevSource is custom. Relative paths resolve from the project root. Do not include arguments or shell quotes."
+				},
 				"sfmc-devtools-vscode.warnOnMissingJsonRelation": {
 					"type": "boolean",
 					"default": true,
@@ -471,8 +489,8 @@
 				"steps": [
 					{
 						"id": "installMcdev",
-						"title": "Install mcdev",
-						"description": "Install the mcdev CLI tool globally via npm.\n\n[Open Terminal](command:workbench.action.terminal.new)",
+						"title": "Check Node/npm and mcdev source",
+						"description": "mcdev is bundled; no global installation is required. Put compatible Node.js and npm on PATH, then restart the IDE. Default auto selects project-local, PATH, then bundled mcdev; use mcdevSource and mcdevPath for explicit bundled/custom selection. Bundled updates arrive with extension updates. Git is optional for init/upgrade (warning and skipped Git steps), but required for join and Git-backed delta packages.\n\n[Open Terminal](command:workbench.action.terminal.new)",
 						"media": {
 							"markdown": "docs/walkthrough/install.md"
 						},
@@ -531,14 +549,17 @@
 	"scripts": {
 		"esbuild": "node ./scripts/esbuild.mjs",
 		"vscode:prepublish": "npm run package",
-		"compile": "node ./scripts/esbuild.mjs --sourcemap",
+		"compile": "npm run bundle:mcdev && node ./scripts/esbuild.mjs --sourcemap",
+		"bundle:mcdev": "node ./scripts/bundle-mcdev.mjs",
+		"test:packaging": "node --test scripts/bundle-mcdev.test.mjs",
+		"verify:vsix": "node scripts/verify-mcdev-vsix.mjs",
 		"watch": "node ./scripts/esbuild.mjs --sourcemap --watch",
-		"package": "node ./scripts/esbuild.mjs --minify",
+		"package": "npm run bundle:mcdev && node ./scripts/esbuild.mjs --minify",
 		"package:test": "npx @vscode/vsce package --pre-release -o sfmc-devtools-vscode-BETA.vsix",
 		"package:release": "npx @vscode/vsce package",
 		"deploy": "vsce publish",
 		"lint": "eslint ./src --ext .ts",
-		"test": "npm run lint && npm run test:unit && npm run validate:telemetry",
+		"test": "npm run lint && npm run test:unit && npm run test:packaging && npm run validate:telemetry",
 		"test:unit": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha",
 		"validate:telemetry": "node scripts/validate-telemetry-catalog.mjs",
 		"lint:fix": "eslint --fix ./src --ext .ts",
@@ -556,9 +577,10 @@
 		"@eslint/js": "^10.0.1",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^25.9.1",
+		"@types/semver": "^7.8.0",
 		"@types/vscode": "^1.101.0",
 		"@typescript-eslint/parser": "^8.60.0",
-		"@vscode/test-cli": "^0.0.12",
+		"@vscode/test-cli": "^0.0.15",
 		"@vscode/vsce": "^3.9.0",
 		"cross-env": "^10.1.0",
 		"esbuild": "^0.28.2",
@@ -568,17 +590,19 @@
 		"globals": "^17.6.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
+		"mcdev": "10.1.0",
 		"mocha": "^11.7.5",
 		"npm-run-all": "^4.1.5",
 		"ovsx": "^0.10.10",
-		"prettier": "3.8.1",
+		"prettier": "3.9.9",
 		"ts-node": "^10.9.2",
 		"tsconfig-paths": "^4.2.0",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.58.0"
 	},
 	"dependencies": {
-		"@vscode/codicons": "^0.0.45"
+		"@vscode/codicons": "^0.0.45",
+		"semver": "^7.8.5"
 	},
 	"lint-staged": {
 		"*.{js,ts}": [

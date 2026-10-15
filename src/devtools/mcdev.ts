@@ -7,6 +7,12 @@ import { ConfigDevTools } from "@config";
 import { MessagesDevTools } from "@messages";
 import { TDevTools, TUtils } from "@types";
 import { Lib, File, Terminal } from "utils";
+import { McdevInvocation } from "./mcdevResolve";
+
+export interface McdevExecutionResult {
+	success: boolean;
+	upgradeRequiredProjectPaths?: string[];
+}
 
 /**
  * Mcdev class
@@ -39,8 +45,23 @@ class Mcdev {
 	 *
 	 * @constructor
 	 */
-	constructor() {
+	constructor(private readonly resolveInvocation?: (projectPath: string) => McdevInvocation) {
 		this.metadataTypes = new MetadataTypes();
+	}
+
+	/** Resolve the selected runtime afresh for each project invocation. */
+	public getInvocation(projectPath: string): McdevInvocation {
+		if (!this.resolveInvocation) throw new Error("mcdev runtime resolver is not configured.");
+		return this.resolveInvocation(projectPath);
+	}
+
+	/** Probe the selected CLI, never a literal PATH mcdev. */
+	public async lookupVersion(projectPath: string): Promise<TUtils.ITerminalCommandResult> {
+		return Terminal.executeTerminalCommandCapture({
+			command: this.packageName,
+			commandArgs: ["--version"],
+			invocation: this.getInvocation(projectPath)
+		});
 	}
 
 	/**
@@ -142,7 +163,7 @@ class Mcdev {
 			const result = await Terminal.executeTerminalCommandCapture({
 				command: this.packageName,
 				commandArgs: ["et", "--json"],
-				commandCwd: projectPath
+				invocation: this.getInvocation(projectPath)
 			});
 
 			if (!result.success || !result.stdStreams.output) return null;
@@ -359,7 +380,7 @@ class Mcdev {
 		commandHandler: ({ info, output, error }: TUtils.IOutputLogger) => void,
 		parameters: TDevTools.IExecuteParameters,
 		cancellationToken?: TUtils.ICancellationToken
-	): Promise<{ success: boolean }> {
+	): Promise<McdevExecutionResult> {
 		let commandParameters: TDevTools.ICommandParameters = { ...(parameters as TDevTools.ICommandParameters) };
 
 		// Gets the MCDEV command class based on the selected command
@@ -385,8 +406,7 @@ class Mcdev {
 			cancellationToken
 		);
 
-		// Returns success as true if every command execution was successfull
-		return { success: commandResults.every(result => result === true) };
+		return commandResults;
 	}
 
 	/**
@@ -397,7 +417,7 @@ class Mcdev {
 	 * @param commandParameters - The parameters for the command.
 	 * @param commandHandler - A handler function to process the command output.
 	 * @param cancellationToken - An optional token to cancel the running command.
-	 * @returns A promise that resolves to an array of boolean values indicating the success of each command execution.
+	 * @returns Combined success and project paths with explicit upgrade guidance.
 	 */
 	private async runCommand(
 		mcdevCommand: Commands,
@@ -407,6 +427,7 @@ class Mcdev {
 		cancellationToken?: TUtils.ICancellationToken
 	) {
 		const commandResults: boolean[] = [];
+		const upgradeRequiredProjectPaths = new Set<string>();
 
 		const commandConfig = mcdevCommand.run(command, commandParameters);
 
@@ -420,16 +441,33 @@ class Mcdev {
 		for (const [parameters, projectPath] of commandConfig.config) {
 			if (cancellationToken?.isCancellationRequested) break;
 
+			// Keep each stream's partial diagnostic local to this invocation.
+			let stdout = "";
+			let stderr = "";
+			const requiresUpgrade = (text: string): boolean =>
+				/Run 'mcdev upgrade' (?:now to fix this\.|to fix missing or changed configuration options|to ensure optimal performance)/.test(
+					text
+				) || /Please run 'mcdev upgrade' to create it/.test(text);
+
 			// Command terminal configuration
 			const terminalConfig: TUtils.ITerminalCommandRunner = {
 				command: this.getPackageName(),
 				commandArgs: [commandConfig.alias, parameters],
-				commandCwd: projectPath,
-				commandHandler: ({ output, error }: TUtils.ITerminalCommandStreams) =>
-					commandHandler({ output, error }),
+				invocation: this.getInvocation(projectPath),
+				rawChunkHandler: (chunk, stream) => {
+					if (stream === "output") stdout += chunk;
+					else stderr += chunk;
+					if (requiresUpgrade(stdout) || requiresUpgrade(stderr))
+						upgradeRequiredProjectPaths.add(projectPath);
+					// Only the diagnostic tail is needed across arbitrarily split chunks.
+					stdout = stdout.slice(-256);
+					stderr = stderr.slice(-256);
+				},
+				commandHandler: ({ output, error }) => commandHandler({ output, error }),
 				cancellationToken
 			};
 
+			commandHandler({ info: `Selected mcdev source: ${terminalConfig.invocation?.source}\n` });
 			// Logs the command that is being executed
 			commandHandler({
 				info: `${MessagesDevTools.mcdevRunningCommand} ${this.getPackageName()} ${commandConfig.alias} ${parameters}\n`
@@ -445,7 +483,12 @@ class Mcdev {
 			commandResults.push(success);
 		}
 
-		return commandResults;
+		return {
+			success: commandResults.every(result => result === true),
+			...(upgradeRequiredProjectPaths.size
+				? { upgradeRequiredProjectPaths: [...upgradeRequiredProjectPaths] }
+				: {})
+		};
 	}
 }
 

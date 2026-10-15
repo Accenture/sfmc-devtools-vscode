@@ -23,7 +23,8 @@ jobs:
 
             - run: npm ci --no-workspaces
             - run: npm run lint-ts
-            - run: npm test
+            - run: npm run compile --no-workspaces
+            - run: npm test --no-workspaces
 
     publish-vsce:
         needs: build
