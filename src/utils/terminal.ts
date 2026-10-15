@@ -79,11 +79,13 @@ function executeCommand({
 	commandCwd,
 	commandEnv,
 	commandHandler,
+	rawChunkHandler,
 	cancellationToken
 }: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
 	return new Promise(resolve => {
 		const terminalOutput: TUtils.ITerminalCommandStreams = { output: "", error: "" };
 		const commandStreamHandler = (data: Buffer, stream: keyof TUtils.ITerminalCommandStreams) => {
+			rawChunkHandler?.(data.toString(), stream);
 			if (commandHandler) {
 				terminalOutput[stream] = data.toString().trim();
 				commandHandler(terminalOutput);
@@ -118,9 +120,9 @@ function executeCommand({
 			settle(false);
 		});
 
-		if (proc.stdout && commandHandler)
+		if (proc.stdout && (commandHandler || rawChunkHandler))
 			proc.stdout.on("data", (data: Buffer) => commandStreamHandler(data, "output"));
-		if (proc.stderr && commandHandler)
+		if (proc.stderr && (commandHandler || rawChunkHandler))
 			proc.stderr.on("data", (data: Buffer) => commandStreamHandler(data, "error"));
 
 		proc.on("close", code => {
@@ -180,12 +182,21 @@ function executeTerminalCommand(
 	config: TUtils.ITerminalCommandRunner,
 	sync: boolean
 ): TUtils.ITerminalCommandResult | Promise<TUtils.ITerminalCommandResult> {
-	const { command, commandArgs, commandHandler, cancellationToken, commandEnv } = selectedCommand(config);
+	const { command, commandArgs, commandHandler, rawChunkHandler, cancellationToken, commandEnv } =
+		selectedCommand(config);
 	let { commandCwd } = selectedCommand(config);
 	if (commandCwd) commandCwd = Lib.removeLeadingRootDrivePath(commandCwd);
 	return sync
 		? executeCommandSync({ command, commandArgs, commandCwd, commandEnv })
-		: executeCommand({ command, commandArgs, commandCwd, commandEnv, commandHandler, cancellationToken });
+		: executeCommand({
+				command,
+				commandArgs,
+				commandCwd,
+				commandEnv,
+				commandHandler,
+				rawChunkHandler,
+				cancellationToken
+			});
 }
 
 /**

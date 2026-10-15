@@ -19,6 +19,8 @@ The extension ships the published **mcdev 10.1.0** runtime with **sfmc-sdk 4.0.2
 
 Explicit `bundled`/`custom` choices never silently fall back. A failed operation is not retried with another CLI version. Source changes apply to subsequent invocations; the mcdev Output channel reports the selected source/version for diagnostics. Bundled mcdev updates arrive with **extension updates**, not through a global npm update. A project-version mismatch may require updating the extension or deliberately selecting a compatible local/custom CLI before upgrading the project.
 
+When mcdev explicitly recommends a project upgrade, the completion notification offers **Upgrade** and **More Details**. Upgrade runs `mcdev upgrade` for the affected project using the configured CLI source. Dismissing it does nothing; the original operation is never automatically retried. Review project changes after upgrading.
+
 If you prefer a separately installed CLI (including typing `mcdev` directly in a terminal), install it globally with `npm install -g mcdev`, or use a project-local installation. The bundled copy does not add a `mcdev` command to PATH.
 
 ### Install SFMC DevTools VS Code Extension
@@ -96,7 +98,8 @@ This extension collects a small amount of **anonymous** usage telemetry to under
 
 What is collected:
 
-- **Activation** — that the extension started, whether an mcdev project is open, and which related SFMC extensions are co-installed (booleans only).
+- **Activation** — that the extension started, whether an mcdev project is open, which related SFMC extensions are co-installed (presence booleans), and the configured `mcdevSource` mode (`auto`, `bundled`, or `custom`).
+- **Source changes** — only actual changes to that configured mode, including when no mcdev project is open. Custom executable paths and resolved runtime paths are never collected.
 - **mcdev version** — the installed `mcdev` CLI version and this extension's own version.
 - **Command outcomes** — for mcdev-run commands (e.g. retrieve, deploy, build): the command id, its duration, and success/failure (a coarse `errorCategory`, plus optional sanitized `errorName` / `errorCode` when execute throws — never an error message, stack, or path).
 

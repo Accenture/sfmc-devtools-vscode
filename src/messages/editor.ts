@@ -1,6 +1,8 @@
 const runningCommand = "Running DevTools command...";
 const runningCommandSuccess = "DevTools command has run successfully!";
 const runningCommandCancelled = (command: string) => `DevTools command has been cancelled: ${command}`;
+const projectUpgradeRequired = (projectPath: string) =>
+	`mcdev recommends upgrading the project at ${projectPath}. Run mcdev upgrade?`;
 const runningCommandFailure = "Oh no. Something went wrong while running DevTools Command...";
 const credentialPrompt = "Please select the credential you would like to use:";
 const businessUnitsPrompt = "Please select the business unit you would like to use:";
@@ -34,6 +36,7 @@ const buildPurgeOptionYes = "Yes, clear deploy folder before building";
 const buildPurgeOptionNo = "No, keep existing deploy folder";
 
 export {
+	projectUpgradeRequired,
 	runningCommand,
 	runningCommandSuccess,
 	runningCommandCancelled,

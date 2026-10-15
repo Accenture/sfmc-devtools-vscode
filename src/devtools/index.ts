@@ -1,4 +1,4 @@
-import Mcdev from "./mcdev";
+import Mcdev, { type McdevExecutionResult } from "./mcdev";
 import { activateLinkProviders } from "./linkProviders";
 import { McdevTreeDataProvider, registerTreeView } from "./treeView";
 import { SETTING_LABELS, StatusBarTooltipProvider } from "../editor/statusBarTooltipProvider";
@@ -25,7 +25,7 @@ export type McdevExecute = (
 	commandHandler: (streams: TUtils.IOutputLogger) => void,
 	parameters: TDevTools.IExecuteParameters,
 	cancellationToken?: TUtils.ICancellationToken
-) => Promise<{ success: boolean }>;
+) => Promise<McdevExecutionResult>;
 
 export interface DevToolsTelemetryOptions {
 	createReporter?: (extensionVersion: string) => TelemetrySink;
@@ -148,14 +148,43 @@ class DevToolsExtension {
 		// Create the anonymous telemetry reporter, owned by this instance and drained in deactivate()
 		this.telemetryReporter = this.createTelemetryReporter(this.vscodeEditor.getContext().getExtensionVersion());
 
+		// Observe configured mode even when no mcdev project is open; never collect the custom path.
+		const sourceScopes = (): (VSCode.Uri | undefined)[] =>
+			VSCode.workspace.workspaceFolders?.length
+				? VSCode.workspace.workspaceFolders.map(folder => folder.uri)
+				: [undefined];
+		const readSource = (resource?: VSCode.Uri): McdevSourceSetting => {
+			const source = VSCode.workspace
+				.getConfiguration(ConfigExtension.extensionName, resource)
+				.get<string>("mcdevSource", "auto");
+			return source === "bundled" || source === "custom" ? source : "auto";
+		};
+		// Scope identifiers stay internal; telemetry contains only normalized modes.
+		const sourceModes = new Map(sourceScopes().map(resource => [resource?.toString(), readSource(resource)]));
+		this.vscodeEditor.getContext().registerDisposable(
+			VSCode.workspace.onDidChangeConfiguration(event => {
+				for (const resource of sourceScopes()) {
+					if (!event.affectsConfiguration(`${ConfigExtension.extensionName}.mcdevSource`, resource)) continue;
+					const scope = resource?.toString();
+					const next = readSource(resource);
+					if (next === sourceModes.get(scope)) continue;
+					sourceModes.set(scope, next);
+					this.telemetryReporter?.track("mcdev.sourceChanged", { mcdevSource: next });
+				}
+			})
+		);
+
 		// Checks if is there any DevTools Project
 		const isDevToolsProject = await this.isDevToolsProject();
 
 		// Emit an activation event with project presence + ecosystem co-installation booleans
-		this.telemetryReporter.track("extension.activated", {
-			isDevToolsProject,
-			...detectEcosystem(this.extensionContext.extension.id)
-		});
+		for (const resource of sourceScopes()) {
+			this.telemetryReporter.track("extension.activated", {
+				isDevToolsProject,
+				mcdevSource: readSource(resource),
+				...detectEcosystem(this.extensionContext.extension.id)
+			});
+		}
 
 		// Read the installed mcdev version off the activation critical path.
 		this.mcdevVersionTelemetry = new McdevVersionTelemetry(this.telemetryReporter, this.lookupMcdevVersion);
@@ -1428,7 +1457,11 @@ class DevToolsExtension {
 		 *
 		 * @returns A promise that resolves when the actions are completed.
 		 */
-		const executeOnResult = async (success: boolean, resolveCommand: (value: boolean) => void) => {
+		const executeOnResult = async (
+			success: boolean,
+			resolveCommand: (value: boolean) => void,
+			upgradeRequiredProjectPaths: string[]
+		) => {
 			const statusBarIcon = success ? "success" : "error";
 			// changes the status bar icon and and color according to the execution result of the command
 			const newStatusBarColor = success ? "" : "error";
@@ -1452,6 +1485,22 @@ class DevToolsExtension {
 			sessionLogger.endSession(success);
 
 			resolveCommand(success);
+			// Let progress completion settle before displaying another notification.
+			await Promise.resolve();
+
+			// Explicit project guidance replaces the generic result, without retrying the failed operation.
+			if (command !== "upgrade" && upgradeRequiredProjectPaths.length) {
+				for (const projectPath of new Set(upgradeRequiredProjectPaths)) {
+					const answer = await this.showInformationMessage(
+						"warning",
+						MessagesEditor.projectUpgradeRequired(projectPath),
+						["Upgrade", "More Details"]
+					);
+					if (answer === "Upgrade") void this.executeCommand("upgrade", { projectPath });
+					else if (answer === "More Details") this.showOuputChannel(packageName);
+				}
+				return;
+			}
 
 			// Shows the modal message with the result of the command execution
 			const moreDetails = await this.showInformationMessage(
@@ -1493,8 +1542,9 @@ class DevToolsExtension {
 						// Show a placeholder message immediately while the command is being prepared
 						progress.report({ message: MessagesEditor.runningCommand });
 						let success = false;
+						let upgradeRequiredProjectPaths: string[] = [];
 						try {
-							({ success } = await this.executeMcdevCommand(
+							({ success, upgradeRequiredProjectPaths = [] } = await this.executeMcdevCommand(
 								command,
 								executeOnOutput,
 								executeParameters,
@@ -1543,7 +1593,9 @@ class DevToolsExtension {
 							sessionLogger.endSession(false);
 							resolveCommand(false);
 						} else {
-							executeOnResult(success, resolveCommand);
+							resolveTreeViewProgress();
+							resolveExecute(success);
+							void executeOnResult(success, resolveCommand, upgradeRequiredProjectPaths);
 						}
 						resolveTreeViewProgress();
 						resolveExecute(success);

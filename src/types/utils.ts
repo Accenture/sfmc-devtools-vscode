@@ -16,6 +16,8 @@ interface ITerminalCommandRunner {
 	commandCwd?: string;
 	commandEnv?: NodeJS.ProcessEnv;
 	commandHandler?: (terminalStreams: ITerminalCommandStreams) => void;
+	/** Raw current-stream chunk, before trimming or combining display streams. */
+	rawChunkHandler?: (chunk: string, stream: keyof ITerminalCommandStreams) => void;
 	cancellationToken?: ICancellationToken;
 }
 
