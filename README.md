@@ -8,7 +8,7 @@ Accenture SFMC DevTools VS Code Extension was built to simplify the command exec
 - Restart the IDE after installing Node/npm or changing PATH; an already running IDE retains its old environment.
 - [Git](https://git-scm.com/downloads) is optional for ordinary retrieve/deploy and project setup. Without Git, `init` and `upgrade` warn and skip Git steps while continuing non-Git setup. Joining a repository and Git-backed delta packages require Git and fail with an actionable error when it is unavailable. Existing Git failures are not treated as successful setup.
 
-On Windows without administrator rights, a portable Node/npm installation added to **your user-scoped PATH** works too; the extension does not download or provision Node. See [installing Node.js as a local Windows user](https://stackoverflow.com/questions/37029089/how-to-install-nodejs-lts-on-windows-as-a-local-user-without-admin-rights/37029090#37029090) and [opening environment-variable settings](https://superuser.com/a/25038). These are user-supplied supporting links, not a recommendation to use their historical Node versions. Choose a currently supported release satisfying the range above, ensure npm is included, and restart VS Code/Cursor. Check `node --version` and `npm --version` in a new IDE terminal.
+For Windows setup without administrator rights, see [Troubleshooting: portable Node/npm](#windows-portable-nodenpm-without-administrator-rights).
 
 ### Choose the mcdev CLI source
 
@@ -107,11 +107,24 @@ Every event also carries the host OS, the VS Code version, and this extension's 
 
 **Opt out:** telemetry follows VS Code's global setting. Set `telemetry.telemetryLevel` to `off` (Settings → search "telemetry") and no events are sent. The extension re-checks this setting live, so turning it off stops collection immediately.
 
+### Troubleshooting
+
+#### Windows: portable Node/npm without administrator rights
+
+The extension does not download or provision Node. You can use a portable Node/npm installation without administrator rights by adding it to **your user-scoped PATH**:
+
+1. Download the official Node.js Windows portable ZIP for your architecture. Choose a currently supported release satisfying `^22.22.2 || >=24.15.0`: Node 22.22.2+ within Node 22, or Node 24.15.0+. Use the distribution that includes npm, not a standalone `node.exe` download.
+2. Extract the ZIP into a folder you can write to, and confirm that the extracted Node directory contains both `node.exe` and `npm.cmd`.
+3. Open Start, search for **Edit environment variables for your account**, and open that settings entry.
+4. Under **User variables**, select **Path**, choose **Edit**, then **New**, and add the full path to the extracted directory containing `node.exe` and `npm.cmd`. Save with **OK** in each dialog. You do not need administrator rights or changes to the system PATH.
+5. Fully close and restart VS Code/Cursor so it picks up the updated environment.
+6. Open a new IDE terminal and run `node --version` and `npm --version`. Both commands should succeed, and the Node version must satisfy the requirement above.
+
 ### Building locally
 
-From the extension directory, run `npm ci --no-workspaces`, then `npm run compile --no-workspaces` (or `npm run package:test --no-workspaces` for a VSIX). The build stages the exact registry-locked mcdev 10.1.0 package and its runtime dependencies. No sibling source checkout or source-selection environment variable is needed.
+From the extension directory, run `npm ci`, then `npm run compile` (or `npm run package:test` for a VSIX). The build stages the exact registry-locked mcdev 10.1.0 package and its runtime dependencies. No sibling source checkout or source-selection environment variable is needed.
 
-The staged runtime under `dist/mcdev` records the extension lockfile digest, package versions, registry URLs/integrities and per-file hashes in `bundle-metadata.json`. `npm run verify:vsix --no-workspaces -- sfmc-devtools-vscode-BETA.vsix` checks the packaged runtime after extraction/relocation and runs offline smoke tests. Archive timestamps can change the VSIX hash; byte-identical archive reproducibility is not claimed.
+The staged runtime under `dist/mcdev` records the extension lockfile digest, package versions, registry URLs/integrities and per-file hashes in `bundle-metadata.json`. `npm run verify:vsix -- sfmc-devtools-vscode-BETA.vsix` checks the packaged runtime after extraction/relocation and runs offline smoke tests. Archive timestamps can change the VSIX hash; byte-identical archive reproducibility is not claimed.
 
 ### Copyright
 
