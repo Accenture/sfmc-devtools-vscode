@@ -4,7 +4,7 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
-## [3.6.1] — 2026-10-23
+## [3.6.1] — 2026-11-13
 
 ### Fixed
 
