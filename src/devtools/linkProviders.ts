@@ -116,6 +116,14 @@ interface LinkProviderDeps {
  * @param {LinkProviderDeps} deps - dependencies injected from the DevToolsExtension class
  * @returns {void}
  */
+/** Per-project `.mcdevrc.json` metaDataTypes.retrieve cache; hoisted so a refresh command can invalidate it. */
+const configuredTypesCache = new Map<string, string[] | null>();
+
+/** Drops the cached per-project configured types so the next validation re-reads `.mcdevrc.json`. */
+export function clearConfiguredTypesCache(): void {
+	configuredTypesCache.clear();
+}
+
 export function activateLinkProviders(deps: LinkProviderDeps): void {
 	const vscodeContext = deps.vscodeContext;
 	const vscodeWorkspace = deps.vscodeWorkspace;
@@ -219,7 +227,6 @@ export function activateLinkProviders(deps: LinkProviderDeps): void {
 	// Providers are always registered; validation is gated at runtime by the
 	// warnOnMissingJsonRelation setting so users can toggle without restarting.
 
-	const configuredTypesCache = new Map<string, string[] | null>();
 	const shouldValidateType = (type: string, projectPath: string): boolean => {
 		if (!deps.mcdev.isActionSupportedForType("deploy", type)) return false;
 

@@ -4,6 +4,17 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.6.1] — 2026-10-23
+
+### Fixed
+
+- Upgrade-required failures now show the affected project config version and the actual mcdev CLI version, and retain that runtime for the confirmed upgrade even if source settings change.
+- **Run mcdev upgrade** requires explicit per-project confirmation and runs non-interactively with `--yes` (equivalent `--y`). Confirmation and failure messaging explain project/tooling changes and manual Git-only recovery; no rollback or automatic retry is offered.
+- Upgrade guidance is recognized across split stdout/stderr chunks without mixing streams or prompting recursively after an upgrade failure.
+- **mcdev: Refresh caches (reload metadata types)** (formerly "Restart extension") now reloads the metadata types from `mcdev explainTypes`, clears the cached per-project configured types and refreshes the tree view. Failures (resolver errors, CLI errors, unparsable output, a 60 s timeout) are logged and shown instead of being silently ignored, and banner lines before the JSON no longer break parsing.
+- `explainTypes` refreshes no longer drop the extension-defined `retrieveAsTemplate` flag, and new CLI types get explicit `false` lifecycle flags.
+- Added `mobilePush` and `mobilePushApp` to the bundled metadata types so **Build** is available for MobileConnect Push before the CLI refresh completes.
+
 ## [3.6.0] — 2026-10-15
 
 ### Added

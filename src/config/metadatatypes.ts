@@ -660,6 +660,51 @@ const metadataTypesList: TDevTools.IMetadataTypes[] = [
 			"Used by Journey Builder and to send SMS from MobileConnect triggered by API or manually on-the-fly"
 	},
 	{
+		name: "MobileConnect Push",
+		apiName: "mobilePush",
+		retrieveByDefault: true,
+		supports: {
+			retrieve: true,
+			create: true,
+			update: true,
+			delete: true,
+			changeKey: false,
+			buildTemplate: true,
+			retrieveAsTemplate: false,
+			execute: false,
+			schedule: false,
+			pause: false,
+			stop: false,
+			publish: false,
+			validate: false,
+			refresh: false
+		},
+		description:
+			"Used by Journey Builder and to send Push notifications from MobileConnect triggered by API or manually on-the-fly"
+	},
+	{
+		name: "MobilePush Application",
+		apiName: "mobilePushApp",
+		retrieveByDefault: true,
+		supports: {
+			retrieve: true,
+			create: false,
+			update: false,
+			delete: false,
+			changeKey: false,
+			buildTemplate: false,
+			retrieveAsTemplate: false,
+			execute: false,
+			schedule: false,
+			pause: false,
+			stop: false,
+			publish: false,
+			validate: false,
+			refresh: false
+		},
+		description: "Mobile apps registered for push messaging; referenced by MobileConnect Push messages"
+	},
+	{
 		name: "Automation: SQL Query Activity",
 		apiName: "query",
 		retrieveByDefault: true,

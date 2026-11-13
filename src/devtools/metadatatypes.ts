@@ -34,8 +34,21 @@ const CLI_PROVIDED_ACTIONS: TDevTools.MetadataTypesActions[] = [
 	"update",
 	"delete",
 	"changeKey",
-	"buildTemplate",
-	"retrieveAsTemplate"
+	"buildTemplate"
+	// retrieveAsTemplate is NOT emitted by `mcdev explainTypes`; it stays extension-defined and is preserved.
+];
+
+/** Every action flag, used to give types coming from the CLI explicit `false` for flags it does not report. */
+const ALL_ACTIONS: TDevTools.MetadataTypesActions[] = [
+	...CLI_PROVIDED_ACTIONS,
+	"retrieveAsTemplate",
+	"execute",
+	"schedule",
+	"pause",
+	"stop",
+	"publish",
+	"validate",
+	"refresh"
 ];
 
 /**
@@ -133,13 +146,18 @@ class MetadataTypes {
 			if (Array.isArray(curRBD) && Array.isArray(newRBD)) {
 				if (curRBD.length !== newRBD.length || curRBD.some((v, i) => v !== newRBD[i])) return true;
 			} else if (curRBD !== newRBD) return true;
-			return CLI_PROVIDED_ACTIONS.some(k => current.supports[k] !== t.supports[k]);
+			return CLI_PROVIDED_ACTIONS.some(k => Boolean(current.supports[k]) !== Boolean(t.supports?.[k]));
 		});
 
 		if (hasNewTypes || hasRemovedTypes || hasChangedTypes) {
 			this.metadataTypes = types.map(t => {
 				const current = currentMap.get(t.apiName);
-				if (!current) return t;
+				if (!current) {
+					// brand-new type: flags the CLI does not report are explicitly unsupported
+					const supports = {} as TDevTools.MetadataTypesActionsMap;
+					for (const action of ALL_ACTIONS) supports[action] = Boolean(t.supports?.[action]);
+					return { ...t, supports };
+				}
 				const mergedSupports = { ...t.supports };
 				for (const action of Object.keys(current.supports) as TDevTools.MetadataTypesActions[]) {
 					if (!CLI_PROVIDED_ACTIONS.includes(action)) {

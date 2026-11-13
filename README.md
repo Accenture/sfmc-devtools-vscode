@@ -19,7 +19,11 @@ The extension ships the published **mcdev 10.1.0** runtime with **sfmc-sdk 4.0.2
 
 Explicit `bundled`/`custom` choices never silently fall back. A failed operation is not retried with another CLI version. Source changes apply to subsequent invocations; the mcdev Output channel reports the selected source/version for diagnostics. Bundled mcdev updates arrive with **extension updates**, not through a global npm update. A project-version mismatch may require updating the extension or deliberately selecting a compatible local/custom CLI before upgrading the project.
 
-When mcdev explicitly recommends a project upgrade, the completion notification offers **Upgrade** and **More Details**. Upgrade runs `mcdev upgrade` for the affected project using the configured CLI source. Dismissing it does nothing; the original operation is never automatically retried. Review project changes after upgrading.
+When a failed extension command reports `Run 'mcdev upgrade' now to fix this.`, the completion notification shows the affected project's config version and the mcdev CLI version that produced the error, with **Run mcdev upgrade** and **More Details** actions. Missing versions are shown as **not specified** or **unknown**. Each affected project requires separate confirmation.
+
+After confirmation, the extension runs `mcdev upgrade --yes` (using the equivalent `--y` flag) for that project with the same CLI runtime, without waiting for interactive questions. Upgrade can overwrite project configuration/tooling, update dependencies, and affect teammates or pending deployments. Coordinate with the repository owner/tech lead and save or commit existing work before proceeding. Dismissing either prompt changes nothing; the original operation is never automatically retried.
+
+Review project changes after upgrading. Failed or cancelled upgrades can leave partial changes. **Reverting an upgrade must be done manually via Git**; the extension offers no rollback/undo action and does not run Git recovery commands.
 
 If you prefer a separately installed CLI (including typing `mcdev` directly in a terminal), install it globally with `npm install -g mcdev`, or use a project-local installation. The bundled copy does not add a `mcdev` command to PATH.
 

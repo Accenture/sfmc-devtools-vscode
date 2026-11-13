@@ -221,6 +221,45 @@ suite("MetadataTypes", () => {
 		assert.strictEqual(mdt.isActionSupportedForType("execute", "folder"), false);
 	});
 
+	test("bundled list supports build for mobilePush", () => {
+		assert.strictEqual(mdt.isActionSupportedForType("build", "mobilePush"), true);
+		assert.strictEqual(mdt.isActionSupportedForType("retrieve", "mobilePushApp"), true);
+		assert.strictEqual(mdt.isActionSupportedForType("build", "mobilePushApp"), false);
+	});
+
+	test("updateMetadataTypes keeps retrieveAsTemplate and reports no change when CLI omits it", () => {
+		const cliTypes = mdt.getAllMetaDataTypes().map(t => {
+			const { retrieveAsTemplate, ...rest } = t.supports;
+			void retrieveAsTemplate;
+			return { ...t, supports: rest as TDevTools.MetadataTypesActionsMap };
+		});
+		assert.strictEqual(mdt.updateMetadataTypes(cliTypes), false);
+		const keyword = mdt.getAllMetaDataTypes().find(t => t.apiName === "mobileKeyword");
+		assert.strictEqual(keyword?.supports.retrieveAsTemplate, true);
+	});
+
+	test("updateMetadataTypes gives new CLI types explicit false lifecycle flags and tolerates missing supports", () => {
+		const types = [...mdt.getAllMetaDataTypes()] as TDevTools.IMetadataTypes[];
+		types.push({
+			name: "Brand New",
+			apiName: "brandNew",
+			retrieveByDefault: false,
+			supports: { retrieve: true, buildTemplate: true } as unknown as TDevTools.MetadataTypesActionsMap,
+			description: "x"
+		});
+		types.push({
+			name: "No Supports",
+			apiName: "noSupports",
+			retrieveByDefault: false,
+			description: "x"
+		} as unknown as TDevTools.IMetadataTypes);
+		assert.strictEqual(mdt.updateMetadataTypes(types), true);
+		const added = mdt.getAllMetaDataTypes().find(t => t.apiName === "brandNew");
+		assert.strictEqual(added?.supports.execute, false);
+		assert.strictEqual(added?.supports.buildTemplate, true);
+		assert.strictEqual(mdt.isActionSupportedForType("build", "noSupports"), false);
+	});
+
 	test("handleFileConfiguration returns asset subtype for single asset file", () => {
 		const result = mdt.handleFileConfiguration("asset", ["block"]);
 		assert.strictEqual(result.metadataTypeName, "asset-block");

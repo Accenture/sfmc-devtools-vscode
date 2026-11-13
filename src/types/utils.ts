@@ -19,6 +19,8 @@ interface ITerminalCommandRunner {
 	/** Raw current-stream chunk, before trimming or combining display streams. */
 	rawChunkHandler?: (chunk: string, stream: keyof ITerminalCommandStreams) => void;
 	cancellationToken?: ICancellationToken;
+	/** Capture-mode only: kill the process and resolve as failed after this many milliseconds. */
+	timeoutMs?: number;
 }
 
 interface ITerminalCommandResult {

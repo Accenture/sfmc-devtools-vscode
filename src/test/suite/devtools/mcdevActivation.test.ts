@@ -33,7 +33,7 @@ suite("selected mcdev activation", () => {
 		(result as unknown as { mcdev: Mcdev }).mcdev = mcdev;
 		result.writeLog = () => {};
 		result.writeExtensionInformation = async () => {};
-		result.refreshMetadataTypesInBackground = async () => {};
+		result.refreshMetadataTypesInBackground = async () => true;
 		return result;
 	}
 	setup(() => {

@@ -139,15 +139,35 @@ function executeCommand({
  * @param {TUtils.ITerminalCommandRunner} param.command - terminal command
  * @param {TUtils.ITerminalCommandRunner} param.commandArgs - terminal arguments
  * @param {TUtils.ITerminalCommandRunner} param.commandCwd - terminal working directory path
+ * @param {TUtils.ITerminalCommandRunner} param.timeoutMs - optional; kills the process tree and resolves as failed after this many ms
  * @returns {Promise<TUtils.ITerminalCommandResult>} object configured with the full result of executing the terminal command
  */
 function executeTerminalCommandCapture(config: TUtils.ITerminalCommandRunner): Promise<TUtils.ITerminalCommandResult> {
-	const { command, commandArgs, commandCwd, commandEnv } = selectedCommand(config);
+	const { command, commandArgs, commandCwd, commandEnv, timeoutMs } = selectedCommand(config);
 	return new Promise(resolve => {
 		let output = "";
 		let error = "";
+		let timer: NodeJS.Timeout | undefined;
 		const cwd = commandCwd ? Lib.removeLeadingRootDrivePath(commandCwd) : commandCwd;
-		const proc = spawn(command, commandArgs, { shell: true, cwd, env: commandEnv });
+		// a process group is only killable on Unix when spawned detached (see killProcessTree)
+		const proc = spawn(command, commandArgs, {
+			shell: true,
+			cwd,
+			env: commandEnv,
+			detached: timeoutMs !== undefined && process.platform !== "win32"
+		});
+		const done = (success: boolean) => {
+			if (timer) clearTimeout(timer);
+			resolve({ success, stdStreams: { output: output.trim(), error: error.trim() } });
+		};
+
+		if (timeoutMs !== undefined) {
+			timer = setTimeout(() => {
+				killProcessTree(proc);
+				error = `${error}\nTimed out after ${timeoutMs} ms`.trim();
+				done(false);
+			}, timeoutMs);
+		}
 
 		if (proc.stdout)
 			proc.stdout.on("data", (data: Buffer) => {
@@ -158,13 +178,9 @@ function executeTerminalCommandCapture(config: TUtils.ITerminalCommandRunner): P
 				error += data.toString();
 			});
 
-		proc.on("error", () => {
-			resolve({ success: false, stdStreams: { output: output.trim(), error: error.trim() } });
-		});
+		proc.on("error", () => done(false));
 
-		proc.on("close", code => {
-			resolve({ success: code === 0, stdStreams: { output: output.trim(), error: error.trim() } });
-		});
+		proc.on("close", code => done(code === 0));
 	});
 }
 

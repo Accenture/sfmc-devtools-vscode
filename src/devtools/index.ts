@@ -1,5 +1,5 @@
-import Mcdev, { type McdevExecutionResult } from "./mcdev";
-import { activateLinkProviders } from "./linkProviders";
+import Mcdev, { type McdevExecutionResult, type McdevUpgradeContext } from "./mcdev";
+import { activateLinkProviders, clearConfiguredTypesCache } from "./linkProviders";
 import { McdevTreeDataProvider, registerTreeView } from "./treeView";
 import { SETTING_LABELS, StatusBarTooltipProvider } from "../editor/statusBarTooltipProvider";
 import { ConfigExtension } from "@config";
@@ -67,6 +67,8 @@ class DevToolsExtension {
 	 * @type {McdevTreeDataProvider | undefined}
 	 */
 	private treeDataProvider: McdevTreeDataProvider | undefined;
+	/** Re-entrancy guard for refreshMetadataTypesInBackground. */
+	private refreshingMetadataTypes = false;
 	/**
 	 * Extension context reference for registering tree view and interactive terminals.
 	 *
@@ -454,41 +456,82 @@ class DevToolsExtension {
 
 	/**
 	 * Runs 'mcdev explainTypes --json' in the background after initial load and updates
-	 * the metadata types list if any changes to types are detected.
+	 * the metadata types list if any changes to types are detected. Failures are logged
+	 * (and shown when `userInitiated`); the bundled list stays in use.
 	 *
 	 * @async
-	 * @returns {Promise<void>}
+	 * @param {boolean} [userInitiated] - show messages to the user instead of only logging
+	 * @returns {Promise<boolean>} true if the CLI list was loaded successfully
 	 */
-	async refreshMetadataTypesInBackground(): Promise<void> {
+	async refreshMetadataTypesInBackground(userInitiated = false): Promise<boolean> {
+		if (this.refreshingMetadataTypes) {
+			if (userInitiated) await this.showInformationMessage("info", "Metadata type refresh already running.", []);
+			return false;
+		}
+		this.refreshingMetadataTypes = true;
 		const packageName = this.mcdev.getPackageName();
 		this.tooltipProvider.addCacheEntry("metadataTypes", "Metadata Types");
 		this.tooltipProvider.setCacheLoading("metadataTypes");
 		this.tooltipProvider.update();
 		this.writeLog(packageName, "Caching metadata types...", EnumsExtension.LoggerLevel.INFO);
+		let failure: string | undefined;
+		let updated = false;
+		let count = 0;
 		try {
-			const workspace = this.vscodeEditor.getWorkspace();
-			const workspacePath = workspace.getWorkspaceFsPath();
-
-			const types = await this.mcdev.runExplainTypes(workspacePath);
-			if (!types) return;
-
-			const updated = this.mcdev.updateMetadataTypes(types);
-			if (updated) {
-				this.writeLog(
-					packageName,
-					`Metadata types updated from '${packageName} explainTypes --json' (${types.length} types loaded)`,
-					EnumsExtension.LoggerLevel.INFO
-				);
+			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			const types = await this.mcdev.runExplainTypes(workspacePath, reason => (failure = reason));
+			if (types) {
+				count = types.length;
+				updated = this.mcdev.updateMetadataTypes(types);
+			} else {
+				failure ??= "no metadata types returned";
 			}
 		} catch (error) {
+			failure = String(error);
+		} finally {
+			this.refreshingMetadataTypes = false;
+			this.tooltipProvider.setCacheDone("metadataTypes");
+		}
+		if (failure) {
 			this.writeLog(
 				packageName,
-				`[index_refreshMetadataTypesInBackground]: ${error}`,
+				`Metadata types NOT refreshed (bundled list stays in use): ${failure}`,
 				EnumsExtension.LoggerLevel.WARN
 			);
-		} finally {
-			this.tooltipProvider.setCacheDone("metadataTypes");
-			this.writeLog(packageName, "Caching metadata types done", EnumsExtension.LoggerLevel.INFO);
+			if (userInitiated)
+				await this.showInformationMessage("error", `Metadata types not refreshed: ${failure}`, []);
+			return false;
+		}
+		this.writeLog(
+			packageName,
+			updated
+				? `Metadata types updated from '${packageName} explainTypes --json' (${count} types loaded)`
+				: `Metadata types refreshed from '${packageName} explainTypes --json' (${count} types, no changes)`,
+			EnumsExtension.LoggerLevel.INFO
+		);
+		this.tooltipProvider.update();
+		this.treeDataProvider?.refresh();
+		return true;
+	}
+
+	/**
+	 * Refreshes the extension's internal caches: metadata types (from `mcdev et --json`),
+	 * the per-project configured-types cache used by diagnostics, and the tree view.
+	 * Backs the "mcdev: Refresh caches" palette command.
+	 *
+	 * @async
+	 * @returns {Promise<void>}
+	 */
+	async refreshCaches(): Promise<void> {
+		clearConfiguredTypesCache();
+		this.treeDataProvider?.refresh();
+		const ok = await this.refreshMetadataTypesInBackground(true);
+		if (ok) {
+			await this.showInformationMessage(
+				"info",
+				"Caches refreshed (metadata types, project config, tree view).",
+				[]
+			);
 		}
 	}
 
@@ -757,10 +800,10 @@ class DevToolsExtension {
 			})
 		);
 
-		// Register the palette-only "Restart extension" command that re-checks supported types
+		// Register the palette-only "Refresh caches" command (id kept as restartExtension) that reloads metadata types and caches
 		vscodeCommands.registerCommand({
 			command: `${ConfigExtension.extensionName}.restartExtension`,
-			callbackAction: () => this.refreshMetadataTypesInBackground()
+			callbackAction: () => this.refreshCaches()
 		});
 
 		// Register project setup commands (palette-only, no file context)
@@ -1390,6 +1433,55 @@ class DevToolsExtension {
 	 *
 	 */
 	executeCommand(command: string, executeParameters: TDevTools.IExecuteParameters): Promise<boolean> {
+		return this.runCommand(command, executeParameters);
+	}
+
+	/** Offer a separate, explicitly coordinated repair for each affected project. */
+	private async offerProjectUpgrade(context: McdevUpgradeContext): Promise<void> {
+		let configVersion = "unknown";
+		let cliVersion = "unknown";
+		try {
+			const config = JSON.parse(readFileSync(this.mcdev.getConfigFilePath(context.projectPath), "utf8"));
+			if (config && typeof config === "object" && !Array.isArray(config)) {
+				configVersion =
+					config.version === undefined
+						? "not specified"
+						: typeof config.version === "string" && config.version.trim()
+							? config.version.trim()
+							: "unknown";
+			}
+		} catch {
+			// An unreadable config must not hide the explicit CLI repair guidance.
+		}
+		try {
+			const version = await this.mcdev.lookupInvocationVersion(context.invocation);
+			if (version.success && version.stdStreams.output.trim()) cliVersion = version.stdStreams.output.trim();
+		} catch {
+			// Version discovery is informational; keep the repair offer available.
+		}
+		const answer = await this.showInformationMessage(
+			"warning",
+			MessagesEditor.projectUpgradeRequired(context.projectPath, configVersion, cliVersion),
+			[MessagesEditor.projectUpgradeAction, "More Details"]
+		);
+		if (answer === "More Details") this.showOuputChannel(this.mcdev.getPackageName());
+		if (answer !== MessagesEditor.projectUpgradeAction) return;
+		const confirmation = await this.showInformationMessage(
+			"warning",
+			MessagesEditor.projectUpgradeConfirmation(context.projectPath),
+			[MessagesEditor.projectUpgradeConfirmAction],
+			true
+		);
+		if (confirmation !== MessagesEditor.projectUpgradeConfirmAction) return;
+		await this.runCommand("upgrade", { projectPath: context.projectPath }, context);
+	}
+
+	/** Share progress, logging, telemetry and cancellation with confirmed repairs. */
+	private runCommand(
+		command: string,
+		executeParameters: TDevTools.IExecuteParameters,
+		upgradeContext?: McdevUpgradeContext
+	): Promise<boolean> {
 		// Gets the package name from the mcdev instance
 		const packageName = this.mcdev.getPackageName();
 		// Sets the status bar title and icon based on the command execution
@@ -1399,7 +1491,10 @@ class DevToolsExtension {
 		// shared mutable state when multiple commands run concurrently
 		const sessionLogger = new VsceLogger();
 		try {
-			const workspacePath = this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
+			const workspacePath =
+				typeof executeParameters.projectPath === "string"
+					? executeParameters.projectPath
+					: this.vscodeEditor.getWorkspace().getWorkspaceFsPath();
 			sessionLogger.startSession(workspacePath);
 		} catch {
 			// If the workspace path is unavailable, file logging is skipped for this session
@@ -1460,7 +1555,7 @@ class DevToolsExtension {
 		const executeOnResult = async (
 			success: boolean,
 			resolveCommand: (value: boolean) => void,
-			upgradeRequiredProjectPaths: string[]
+			upgradeRequiredProjects: McdevUpgradeContext[]
 		) => {
 			const statusBarIcon = success ? "success" : "error";
 			// changes the status bar icon and and color according to the execution result of the command
@@ -1468,7 +1563,11 @@ class DevToolsExtension {
 			const newStatusBarTitle = this.getStatusBarTitle(statusBarIcon, packageName);
 
 			// Sets the message to show in the modal depending on the execution result
-			const infoMessage = success ? MessagesEditor.runningCommandSuccess : MessagesEditor.runningCommandFailure;
+			const infoMessage = success
+				? MessagesEditor.runningCommandSuccess
+				: command === "upgrade"
+					? MessagesEditor.projectUpgradeFailure
+					: MessagesEditor.runningCommandFailure;
 
 			// Options to be displayed in the modal message
 			const infoMessageOptions = ["More Details"];
@@ -1489,15 +1588,12 @@ class DevToolsExtension {
 			await Promise.resolve();
 
 			// Explicit project guidance replaces the generic result, without retrying the failed operation.
-			if (command !== "upgrade" && upgradeRequiredProjectPaths.length) {
-				for (const projectPath of new Set(upgradeRequiredProjectPaths)) {
-					const answer = await this.showInformationMessage(
-						"warning",
-						MessagesEditor.projectUpgradeRequired(projectPath),
-						["Upgrade", "More Details"]
-					);
-					if (answer === "Upgrade") void this.executeCommand("upgrade", { projectPath });
-					else if (answer === "More Details") this.showOuputChannel(packageName);
+			if (!success && command !== "upgrade" && upgradeRequiredProjects.length) {
+				const offeredProjects = new Set<string>();
+				for (const context of upgradeRequiredProjects) {
+					if (offeredProjects.has(context.projectPath)) continue;
+					offeredProjects.add(context.projectPath);
+					await this.offerProjectUpgrade(context);
 				}
 				return;
 			}
@@ -1509,7 +1605,7 @@ class DevToolsExtension {
 				infoMessageOptions
 			);
 			// if user clicks on 'More Details' button it will open the output channel
-			if (moreDetails) this.showOuputChannel(packageName);
+			if (moreDetails === "More Details") this.showOuputChannel(packageName);
 		};
 
 		// Updates the status bar with the initial configuration
@@ -1542,14 +1638,11 @@ class DevToolsExtension {
 						// Show a placeholder message immediately while the command is being prepared
 						progress.report({ message: MessagesEditor.runningCommand });
 						let success = false;
-						let upgradeRequiredProjectPaths: string[] = [];
+						let upgradeRequiredProjects: McdevUpgradeContext[] = [];
 						try {
-							({ success, upgradeRequiredProjectPaths = [] } = await this.executeMcdevCommand(
-								command,
-								executeOnOutput,
-								executeParameters,
-								cancelToken
-							));
+							({ success, upgradeRequiredProjects = [] } = await (upgradeContext
+								? this.mcdev.executeConfirmedUpgrade(upgradeContext, executeOnOutput, cancelToken)
+								: this.executeMcdevCommand(command, executeOnOutput, executeParameters, cancelToken)));
 							// Skip cancelled commands; completed failures use the coarse category only.
 							if (!cancelToken.isCancellationRequested) {
 								trackCommandResult(
@@ -1574,7 +1667,8 @@ class DevToolsExtension {
 						if (cancelToken.isCancellationRequested) {
 							this.writeLog(
 								packageName,
-								MessagesEditor.runningCommandCancelled(lastRunCommand),
+								MessagesEditor.runningCommandCancelled(lastRunCommand) +
+									(command === "upgrade" ? ` ${MessagesEditor.projectUpgradeFailure}` : ""),
 								EnumsExtension.LoggerLevel.INFO,
 								sessionLogger
 							);
@@ -1595,7 +1689,7 @@ class DevToolsExtension {
 						} else {
 							resolveTreeViewProgress();
 							resolveExecute(success);
-							void executeOnResult(success, resolveCommand, upgradeRequiredProjectPaths);
+							void executeOnResult(success, resolveCommand, upgradeRequiredProjects);
 						}
 						resolveTreeViewProgress();
 						resolveExecute(success);
