@@ -9,17 +9,7 @@ const metadataTypesList: TDevTools.IMetadataTypes[] = [
 	{
 		name: "Asset-[Subtype]",
 		apiName: "asset",
-		retrieveByDefault: [
-			"asset",
-			"block",
-			"cloudpage",
-			"code",
-			"coderesource",
-			"message",
-			"other",
-			"template",
-			"textfile"
-		],
+		retrieveByDefault: ["asset", "block", "code", "email", "mobile", "other", "template", "textfile", "webstudio"],
 		supports: {
 			retrieve: true,
 			create: true,
@@ -44,11 +34,11 @@ const metadataTypesList: TDevTools.IMetadataTypes[] = [
 		retrieveByDefault: true,
 		supports: {
 			retrieve: true,
-			create: false,
-			update: false,
-			delete: false,
+			create: true,
+			update: true,
+			delete: true,
 			changeKey: false,
-			buildTemplate: false,
+			buildTemplate: true,
 			retrieveAsTemplate: false,
 			execute: false,
 			schedule: false,
@@ -66,11 +56,11 @@ const metadataTypesList: TDevTools.IMetadataTypes[] = [
 		retrieveByDefault: true,
 		supports: {
 			retrieve: true,
-			create: false,
-			update: false,
-			delete: false,
+			create: true,
+			update: true,
+			delete: true,
 			changeKey: false,
-			buildTemplate: false,
+			buildTemplate: true,
 			retrieveAsTemplate: false,
 			execute: false,
 			schedule: false,
@@ -502,7 +492,7 @@ const metadataTypesList: TDevTools.IMetadataTypes[] = [
 			validate: false,
 			refresh: false
 		},
-		description: 'Used in automations to filter lists and DEs. Depends on type "FilterDefinitions".'
+		description: 'Used in automations to filter lists and DEs. Depends on type "DataFilter".'
 	},
 	{
 		name: "Folder",

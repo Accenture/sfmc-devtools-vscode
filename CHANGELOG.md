@@ -4,6 +4,29 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.7.0] — 2026-11-16
+
+### Added
+
+- The bundled mcdev runtime is now **mcdev 10.2.0** (sfmc-sdk stays at 4.0.2; mcdev 10.1.1 was an intermediate release). Besides the items below, this also upgrades the bundled formatter to Prettier 3.10.1 and `prettier-plugin-sfmc` 2.2.1, so retrieve and deploy no longer corrupt code placed next to personalization strings or AMPscript inside `<script>` strings.
+- **Data Designer Attribute Groups** and **Attribute Sets** can now be created, updated, deleted and built as templates (mcdev 10.2.0), so the matching **Deploy**, **Delete** and **Build** actions are available for them instead of only retrieve.
+
+### Changed
+
+- Multi-step journeys no longer cause the `mobilePush` and `mobileMessage` items that Journey Builder creates for them on publish to be retrieved or deployed; they are skipped and the journey keeps referencing them (mcdev 10.2.0).
+- The built-in metadata type list now matches mcdev 10.2.0 for the default Content Builder asset subtypes retrieved with `asset`, the attribute types above and the `dataFilter` description, until **mcdev: Refresh caches (reload metadata types)** loads the live list.
+
+### Fixed
+
+- Deploying journey folders no longer fails with `API Permission Failed (Code 7)`: updating journey, automation and triggered send journeybuilder folders is skipped (mcdev 10.2.0).
+- After upgrading a pre-v10 project, mcdev can offer an optional asset-migration hand-off; unattended upgrades only warn (mcdev 10.1.1).
+- Data Extension repair selection and the `--purge` / `--no-purge` flags now behave correctly for build and clone commands, and the initial Git setup pushes the current branch instead of assuming `master` (mcdev 10.1.1).
+
+### Dependencies
+
+- Bump bundled `mcdev` from 10.1.0 to 10.2.0 (adopts `prettier-plugin-sfmc` 2.2.1 and `eslint-plugin-sfmc` 5.3.0).
+- Bump build-time `prettier` from 3.9.9 to 3.10.1 to match mcdev.
+
 ## [3.6.1] — 2026-11-13
 
 ### Fixed

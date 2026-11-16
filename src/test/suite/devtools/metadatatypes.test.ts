@@ -89,6 +89,14 @@ suite("MetadataTypes", () => {
 		assert.strictEqual(mdt.isActionSupportedForType("delete", "folder"), false);
 	});
 
+	test("isActionSupportedForType CUD: attributeGroup and attributeSet supported (mcdev 10.2.0)", () => {
+		for (const type of ["attributeGroup", "attributeSet"]) {
+			for (const action of ["retrieve", "create", "update", "delete"] as const) {
+				assert.strictEqual(mdt.isActionSupportedForType(action, type), true);
+			}
+		}
+	});
+
 	test("isActionSupportedForType handles asset subtypes", () => {
 		assert.strictEqual(mdt.isActionSupportedForType("retrieve", "asset-block"), true);
 		assert.strictEqual(mdt.isActionSupportedForType("delete", "asset-block"), true);
@@ -142,10 +150,12 @@ suite("MetadataTypes", () => {
 		assert.strictEqual(mdt.isActionSupportedForType("refresh", "script"), false);
 	});
 
-	test("isActionSupportedForType build: automation true, attributeGroup false", () => {
+	test("isActionSupportedForType build: automation, attribute types true, campaign false", () => {
 		assert.strictEqual(mdt.isActionSupportedForType("build", "automation"), true);
 		assert.strictEqual(mdt.isActionSupportedForType("build", "dataExtension"), true);
-		assert.strictEqual(mdt.isActionSupportedForType("build", "attributeGroup"), false);
+		assert.strictEqual(mdt.isActionSupportedForType("build", "attributeGroup"), true);
+		assert.strictEqual(mdt.isActionSupportedForType("build", "attributeSet"), true);
+		assert.strictEqual(mdt.isActionSupportedForType("build", "campaign"), false);
 	});
 
 	test("isActionSupportedForType fixkeys: dataExtension true, folder false", () => {

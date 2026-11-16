@@ -10,8 +10,8 @@ const runtime = path.join(root, "dist", "mcdev");
 
 test("exact registry build dependency and optional external CLI peer coexist", async () => {
 	const manifest = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
-	assert.equal(manifest.devDependencies.mcdev, "10.1.0");
-	assert.equal(manifest.devDependencies.prettier, "3.9.9");
+	assert.equal(manifest.devDependencies.mcdev, "10.2.0");
+	assert.equal(manifest.devDependencies.prettier, "3.10.1");
 	assert.equal(manifest.devDependencies["@vscode/test-cli"], "^0.0.15");
 	const lock = JSON.parse(await fs.readFile(path.join(root, "package-lock.json"), "utf8"));
 	assert.equal(lock.packages["node_modules/@vscode/test-cli"].version, "0.0.15");
@@ -51,7 +51,7 @@ test("staged registry closure preserves resources, versions and installed resolu
 	const manifest = JSON.parse(await fs.readFile(path.join(runtime, "package.json"), "utf8"));
 	assert.equal(metadata.schemaVersion, 2);
 	assert.equal(metadata.source, "npm-registry");
-	assert.equal(metadata.version, "10.1.0");
+	assert.equal(metadata.version, "10.2.0");
 	assert.equal(manifest.type, "module");
 	assert.equal(metadata.cliPath, "lib/cli.js");
 	assert.equal(metadata.nodeEngine, "^22.22.2 || >=24.15.0");
@@ -71,14 +71,14 @@ test("staged registry closure preserves resources, versions and installed resolu
 	assert.equal(metadata.packages["node_modules/prettier"].version, manifest.dependencies.prettier);
 	const mcdevRequire = createRequire(path.join(runtime, "package.json"));
 	const pluginRequire = createRequire(path.join(runtime, "node_modules/prettier-plugin-sfmc/package.json"));
-	assert.equal(mcdevRequire("prettier/package.json").version, "3.9.9");
-	assert.equal(pluginRequire("prettier/package.json").version, "3.9.9");
+	assert.equal(mcdevRequire("prettier/package.json").version, "3.10.1");
+	assert.equal(pluginRequire("prettier/package.json").version, "3.10.1");
 	assert.equal(mcdevRequire.resolve("prettier"), pluginRequire.resolve("prettier"));
 	assert.deepEqual(
 		Object.values(metadata.packages)
 			.filter(item => item.name === "prettier")
 			.map(item => item.version),
-		["3.9.9"]
+		["3.10.1"]
 	);
 	assert(!metadata.packages["node_modules/typescript"]);
 	assert(!metadata.packages["node_modules/@vscode/vsce"]);
@@ -92,7 +92,15 @@ test("staged registry closure preserves resources, versions and installed resolu
 				? "node_modules/mcdev"
 				: lock.packages[`node_modules/mcdev/${directory}`]
 					? `node_modules/mcdev/${directory}`
-					: directory;
+					: lock.packages[directory]
+						? directory
+						: // Hoisted lock package nested below its dependent when it collides with a different version.
+							Object.keys(lock.packages).find(
+								key =>
+									key.endsWith(`node_modules/${item.name}`) &&
+									lock.packages[key].version === item.version &&
+									lock.packages[key].integrity === item.integrity
+							);
 		assert.equal(lock.packages[sourceKey].integrity, item.integrity, `${directory} must match its locked source`);
 		for (const dependency of Object.keys({ ...installed.dependencies, ...installed.peerDependencies })) {
 			if (

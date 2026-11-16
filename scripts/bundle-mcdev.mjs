@@ -50,14 +50,17 @@ export async function bundleMcdev(destination = path.join(projectRoot, "dist", "
 	const lock = JSON.parse(lockBytes);
 	const expected = lock.packages[""].devDependencies.mcdev;
 	const rootKey = "node_modules/mcdev";
-	if (expected !== "10.1.0" || lock.packages[rootKey]?.version !== expected) {
-		throw new Error("Expected the exact locked mcdev 10.1.0 build dependency.");
+	if (expected !== "10.2.0" || lock.packages[rootKey]?.version !== expected) {
+		throw new Error("Expected the exact locked mcdev 10.2.0 build dependency.");
 	}
 	const files = new Map();
 	const packages = {};
 	const visited = new Set();
 	// Follow Node's actual hoisted/nested lookup, not lockfile dev flags: mcdev is a devDependency.
-	async function visit(key) {
+	const relocate = key =>
+		key === rootKey ? "" : key.startsWith(`${rootKey}/`) ? key.slice(rootKey.length + 1) : key;
+	const resolutions = [];
+	async function visit(key, targetOverride) {
 		if (visited.has(key)) return;
 		visited.add(key);
 		const item = lock.packages[key];
@@ -68,7 +71,7 @@ export async function bundleMcdev(destination = path.join(projectRoot, "dist", "
 		if ((await fs.realpath(source)) !== path.resolve(source)) throw new Error(`Linked package: ${key}`);
 		const manifest = JSON.parse(await fs.readFile(path.join(source, "package.json"), "utf8"));
 		if (manifest.version !== item.version) throw new Error(`Installed package differs from lock: ${key}`);
-		const target = key === rootKey ? "" : key.startsWith(`${rootKey}/`) ? key.slice(rootKey.length + 1) : key;
+		const target = targetOverride ?? relocate(key);
 		if (packages[target || "."] && packages[target || "."].version !== item.version) {
 			throw new Error(
 				`Registry closure relocation collision at ${target}: ${packages[target].version} vs ${item.version}`
@@ -90,6 +93,7 @@ export async function bundleMcdev(destination = path.join(projectRoot, "dist", "
 		}
 		const optional = manifest.optionalDependencies || {};
 		const dependencies = { ...manifest.dependencies, ...manifest.peerDependencies, ...optional };
+		const selections = [];
 		for (const name of Object.keys(dependencies)) {
 			let parent = key;
 			let selected;
@@ -108,13 +112,41 @@ export async function bundleMcdev(destination = path.join(projectRoot, "dist", "
 				const index = parent.lastIndexOf("/node_modules/");
 				parent = index < 0 ? "" : parent.slice(0, index);
 			}
-			if (selected) await visit(selected);
+			if (selected) selections.push({ name, selected });
 			else if (!(name in optional) && !manifest.peerDependenciesMeta?.[name]?.optional) {
 				throw new Error(`Missing installed runtime dependency: ${key} -> ${name}`);
 			}
 		}
+		// A package nested below its dependent in the lock claims its relocated path first. A hoisted package that
+		// would then collide with a different version is nested below its own dependent, as Node resolves it.
+		const own = `${key}/node_modules/`;
+		selections.sort((a, b) => Number(b.selected.startsWith(own)) - Number(a.selected.startsWith(own)));
+		for (const { name, selected } of selections) {
+			const wanted = lock.packages[selected].version;
+			const preferred = relocate(selected);
+			const childTarget =
+				packages[preferred] && packages[preferred].version !== wanted
+					? path.posix.join(target || ".", "node_modules", name)
+					: preferred;
+			resolutions.push({ from: target || ".", name, version: wanted });
+			await visit(selected, childTarget);
+		}
 	}
 	await visit(rootKey);
+	// Prove the relocated layout resolves every dependency to the locked version (Node's upward lookup).
+	for (const { from, name, version } of resolutions) {
+		let directory = from === "." ? "" : from;
+		let found;
+		while (true) {
+			found = packages[path.posix.join(directory, "node_modules", name) || "."];
+			if (found || !directory) break;
+			const index = directory.lastIndexOf("/node_modules/");
+			directory = index < 0 ? "" : directory.slice(0, index);
+		}
+		if (found?.version !== version) {
+			throw new Error(`Relocated runtime resolves ${from} -> ${name} to ${found?.version}, expected ${version}`);
+		}
+	}
 	const manifest = JSON.parse(await fs.readFile(path.join(projectRoot, rootKey, "package.json"), "utf8"));
 	if (manifest.name !== "mcdev" || manifest.type !== "module" || manifest.bin.mcdev !== "lib/cli.js") {
 		throw new Error("Expected the mcdev ESM package with lib/cli.js as its entry.");
