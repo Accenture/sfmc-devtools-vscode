@@ -83,9 +83,15 @@ suite("Config – extension", () => {
 		);
 	});
 
-	test("package.json version is 3.7.0", () => {
+	test("package.json version has its own section in the CHANGELOG", () => {
+		// a literal version here would fail on every release between the version bump and the next edit of this test
 		const manifest = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"));
-		assert.strictEqual(manifest.version, "3.7.0");
+		const changelog = fs.readFileSync(path.resolve(process.cwd(), "CHANGELOG.md"), "utf8");
+		assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
+		assert.ok(
+			changelog.includes(`## [${manifest.version}]`),
+			`CHANGELOG.md needs a "## [${manifest.version}]" section for the version in package.json`
+		);
 	});
 
 	test("delayTimeUpdateStatusBar is a positive number", () => {
