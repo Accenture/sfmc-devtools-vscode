@@ -136,7 +136,7 @@ export async function verifyVsix(vsix) {
 	const env = { ...process.env, PATH: "", NODE_PATH: "", MCDEV_RUNTIME_SOURCE: "bundled" };
 	assert.equal(metadata.schemaVersion, 2);
 	assert.equal(metadata.source, "npm-registry");
-	assert.equal(metadata.version, "10.2.0");
+	assert.equal(metadata.version, "10.3.0");
 	assert.equal(metadata.nodeEngine, "^22.22.2 || >=24.15.0");
 	assert.equal(metadata.packages["node_modules/sfmc-sdk"].version, "4.0.2");
 	assert.equal(

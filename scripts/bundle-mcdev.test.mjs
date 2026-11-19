@@ -10,7 +10,7 @@ const runtime = path.join(root, "dist", "mcdev");
 
 test("exact registry build dependency and optional external CLI peer coexist", async () => {
 	const manifest = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
-	assert.equal(manifest.devDependencies.mcdev, "10.2.0");
+	assert.equal(manifest.devDependencies.mcdev, "10.3.0");
 	assert.equal(manifest.devDependencies.prettier, "3.10.1");
 	assert.equal(manifest.devDependencies["@vscode/test-cli"], "^0.0.15");
 	const lock = JSON.parse(await fs.readFile(path.join(root, "package-lock.json"), "utf8"));
@@ -51,7 +51,7 @@ test("staged registry closure preserves resources, versions and installed resolu
 	const manifest = JSON.parse(await fs.readFile(path.join(runtime, "package.json"), "utf8"));
 	assert.equal(metadata.schemaVersion, 2);
 	assert.equal(metadata.source, "npm-registry");
-	assert.equal(metadata.version, "10.2.0");
+	assert.equal(metadata.version, "10.3.0");
 	assert.equal(manifest.type, "module");
 	assert.equal(metadata.cliPath, "lib/cli.js");
 	assert.equal(metadata.nodeEngine, "^22.22.2 || >=24.15.0");

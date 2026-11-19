@@ -121,12 +121,15 @@ function getLeadingValueStart(matchIndex: number, matchStr: string, fieldName: s
  *   • r__asset_key inside an asset folder
  *       → asset/template/<key>/<key>.asset-template-meta.json
  *   • Both asset contexts fall back, in order, to flat mobile metadata,
- *     flat webstudio metadata, then nested webstudio metadata in the same BU.
+ *     nested mobile metadata, flat webstudio metadata, then nested webstudio
+ *     metadata in the same BU.
  *   • r__dataExtension_key not found in the current BU
  *       → also tries retrieve/cred/_ParentBU_/dataExtension/<key>.dataExtension-meta.json
  *
  * Links are resolved on demand (no pre-scan at startup) and cached after
  * the first successful lookup so that re-opening the same file is instant.
+ * Misses are not cached, so a target retrieved later gets its link the next
+ * time links are requested.
  *
  * Only active for .json files under retrieve/<cred>/<bu>/<type>/ paths.
  *
@@ -139,14 +142,14 @@ class RelatedItemLinkProvider implements VSCode.DocumentLinkProvider {
 	 * Key format:
 	 *   • Standard types:  "buPrefix|type|key"
 	 *   • Asset type:      "buPrefix|asset|key|in" or "buPrefix|asset|key|out"
-	 * Value is the resolved URI, or null when the file was not found.
+	 * Value is the resolved URI. Only found files are stored.
 	 */
-	private readonly resolvedCache = new Map<string, VSCode.Uri | null>();
+	private readonly resolvedCache = new Map<string, VSCode.Uri>();
 
 	/**
 	 * Resolves the URI for a referenced metadata file.
-	 * Results are cached; null is cached to avoid repeated filesystem searches
-	 * for missing files.
+	 * Found files are cached. A miss is looked up again on every call, because
+	 * the target may be retrieved while the referencing file stays open.
 	 *
 	 * @param type                - metadata type folder name (e.g. "dataExtension")
 	 * @param key                 - item key (e.g. "myKey1")
@@ -167,9 +170,8 @@ class RelatedItemLinkProvider implements VSCode.DocumentLinkProvider {
 				? `${buPrefix}|asset|${key}|${isInsideAssetFolder ? "in" : "out"}`
 				: `${buPrefix}|${type}|${key}`;
 
-		if (this.resolvedCache.has(cacheKey)) {
-			return this.resolvedCache.get(cacheKey) ?? null;
-		}
+		const cached = this.resolvedCache.get(cacheKey);
+		if (cached) return cached;
 
 		let uri: VSCode.Uri | null = null;
 
@@ -179,6 +181,7 @@ class RelatedItemLinkProvider implements VSCode.DocumentLinkProvider {
 			const paths = [
 				`${buPrefix}/asset/${subtype}/${key}/${key}.asset-${subtype}-meta.json`,
 				`${buPrefix}/asset/mobile/${key}.asset-mobile-meta.json`,
+				`${buPrefix}/asset/mobile/${key}/${key}.asset-mobile-meta.json`,
 				`${buPrefix}/asset/webstudio/${key}.asset-webstudio-meta.json`,
 				`${buPrefix}/asset/webstudio/${key}/${key}.asset-webstudio-meta.json`
 			];
@@ -203,7 +206,7 @@ class RelatedItemLinkProvider implements VSCode.DocumentLinkProvider {
 			}
 		}
 
-		this.resolvedCache.set(cacheKey, uri);
+		if (uri) this.resolvedCache.set(cacheKey, uri);
 		return uri;
 	}
 
@@ -211,7 +214,7 @@ class RelatedItemLinkProvider implements VSCode.DocumentLinkProvider {
 	 * Provides document links for all r__TYPE_key and r__type/r__key occurrences
 	 * in a JSON metadata file.
 	 *
-	 * Links are resolved on demand; results are cached after the first lookup.
+	 * Links are resolved on demand; found targets are cached after the first lookup.
 	 *
 	 * Returns an empty array for files outside the
 	 * retrieve/<cred>/<bu>/<type>/ path structure or for non-JSON files.

@@ -22,6 +22,7 @@ function candidates(inside: boolean, bu = BU): string[] {
 	return [
 		`${bu}/asset/${subtype}/${KEY}/${KEY}.asset-${subtype}-meta.json`,
 		`${bu}/asset/mobile/${KEY}.asset-mobile-meta.json`,
+		`${bu}/asset/mobile/${KEY}/${KEY}.asset-mobile-meta.json`,
 		`${bu}/asset/webstudio/${KEY}.asset-webstudio-meta.json`,
 		`${bu}/asset/webstudio/${KEY}/${KEY}.asset-webstudio-meta.json`
 	];
@@ -57,7 +58,7 @@ suite("Related item providers – asset metadata resolution", () => {
 
 	for (const inside of [false, true]) {
 		const context = inside ? "inside asset" : "outside asset";
-		for (const index of [0, 1, 2, 3]) {
+		for (const index of [0, 1, 2, 3, 4]) {
 			test(`${context}: candidate ${index} resolves and stops before lower-priority matches`, async () => {
 				const paths = candidates(inside);
 				// All later candidates exist too, proving precedence rather than mere discovery.
@@ -122,8 +123,8 @@ suite("Related item providers – asset metadata resolution", () => {
 	});
 
 	for (const present of [false, true]) {
-		test(`sequential lookups reuse ${present ? "positive" : "negative"} caches`, async () => {
-			const target = candidates(false)[3];
+		test(`sequential lookups ${present ? "reuse positive caches" : "re-resolve link misses"}`, async () => {
+			const target = candidates(false)[4];
 			files.add(`${BU}/asset/other.json`);
 			if (present) files.add(target);
 			const document = documentFor(false);
@@ -132,17 +133,47 @@ suite("Related item providers – asset metadata resolution", () => {
 			const firstDiagnostics = diagnostics.getDiagnosticCollection().get(document.uri);
 			assert.strictEqual(firstLinks.length, present ? 1 : 0);
 			assert.strictEqual(firstDiagnostics?.length, present ? 0 : 1);
-			assert.strictEqual(calls.length, 9);
+			assert.strictEqual(calls.length, 11);
 			calls = [];
-			// Change the backing files; cache behavior intentionally remains unchanged.
+			// Change the backing files. Found links and diagnostic results stay cached;
+			// a link miss is looked up again so a later-retrieved target gets its link.
 			if (present) files.delete(target);
 			else files.add(target);
-			assert.deepStrictEqual(await links.provideDocumentLinks(document), firstLinks);
+			const secondLinks = await links.provideDocumentLinks(document);
+			if (present) assert.deepStrictEqual(secondLinks, firstLinks);
+			else assert.strictEqual(secondLinks[0]?.target?.path, `/workspace/${target}`);
 			await diagnostics.validateDocument(document);
 			assert.deepStrictEqual(diagnostics.getDiagnosticCollection().get(document.uri), firstDiagnostics);
-			assert.deepStrictEqual(calls, []);
+			assert.deepStrictEqual(calls, present ? [] : candidates(false));
 		});
 	}
+
+	test("mobilePush relations get links once their targets are retrieved, on the same provider", async () => {
+		const appKey = "push-app-key";
+		const text = `{"r__mobilePushApp_key":"${appKey}","r__asset_key":"${KEY}"}`;
+		const document = {
+			uri: VSCode.Uri.file(`/workspace/${BU}/mobilePush/source.mobilePush-meta.json`),
+			getText: () => text,
+			positionAt: (offset: number) => new VSCode.Position(0, offset)
+		} as VSCode.TextDocument;
+		const appTarget = `${BU}/mobilePushApp/${appKey}.mobilePushApp-meta.json`;
+		const assetTarget = candidates(false)[2];
+
+		// Opened before either target type was retrieved: no links yet.
+		assert.deepStrictEqual(await links.provideDocumentLinks(document), []);
+
+		files = new Set([appTarget, assetTarget]);
+		const result = await links.provideDocumentLinks(document);
+		assert.deepStrictEqual(
+			result.map(link => link.target?.path),
+			[`/workspace/${appTarget}`, `/workspace/${assetTarget}`]
+		);
+		assert.strictEqual(result[0].range.start.character, text.indexOf(appKey));
+		assert.strictEqual(result[0].range.end.character, text.indexOf(appKey) + appKey.length);
+
+		await diagnostics.validateDocument(document);
+		assert.deepStrictEqual(diagnostics.getDiagnosticCollection().get(document.uri), []);
+	});
 
 	test("same key caches remain separated by BU and asset context", async () => {
 		const otherBu = "retrieve/cred/other-bu";

@@ -50,8 +50,8 @@ export async function bundleMcdev(destination = path.join(projectRoot, "dist", "
 	const lock = JSON.parse(lockBytes);
 	const expected = lock.packages[""].devDependencies.mcdev;
 	const rootKey = "node_modules/mcdev";
-	if (expected !== "10.2.0" || lock.packages[rootKey]?.version !== expected) {
-		throw new Error("Expected the exact locked mcdev 10.2.0 build dependency.");
+	if (expected !== "10.3.0" || lock.packages[rootKey]?.version !== expected) {
+		throw new Error("Expected the exact locked mcdev 10.3.0 build dependency.");
 	}
 	const files = new Map();
 	const packages = {};

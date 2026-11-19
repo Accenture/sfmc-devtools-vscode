@@ -301,7 +301,8 @@ class RelatedItemDiagnosticProvider {
 	/**
 	 * Checks whether the specific key file exists in the workspace.
 	 * Assets prefer nested template/message metadata according to document context,
-	 * then flat mobile, flat webstudio, and nested webstudio metadata in the same BU.
+	 * then flat mobile, nested mobile, flat webstudio, and nested webstudio metadata
+	 * in the same BU.
 	 * Results are cached; false is cached to avoid repeated searches.
 	 *
 	 * @param type                - metadata type folder name (e.g. "dataExtension")
@@ -335,6 +336,7 @@ class RelatedItemDiagnosticProvider {
 			const paths = [
 				`${buPrefix}/asset/${subtype}/${key}/${key}.asset-${subtype}-meta.json`,
 				`${buPrefix}/asset/mobile/${key}.asset-mobile-meta.json`,
+				`${buPrefix}/asset/mobile/${key}/${key}.asset-mobile-meta.json`,
 				`${buPrefix}/asset/webstudio/${key}.asset-webstudio-meta.json`,
 				`${buPrefix}/asset/webstudio/${key}/${key}.asset-webstudio-meta.json`
 			];

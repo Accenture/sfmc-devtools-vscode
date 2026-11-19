@@ -4,6 +4,27 @@ All notable changes to the **SFMC DevTools** VS Code extension are documented in
 
 Publishing is triggered automatically via GitHub Actions when a new release is created.
 
+## [3.8.0] — 2026-11-19
+
+### Added
+
+- The bundled mcdev runtime is now **mcdev 10.3.0** (sfmc-sdk stays at 4.0.2).
+- **Transactional push messages can be deployed across business units** (mcdev 10.3.0): a `transactionalPush` file now references its MobilePush application as `r__mobilePushApp_key` and `r__mobilePushApp_name` instead of storing `applicationId`, like `mobilePush` and journey activities. On deploy the key is tried first and the name is used when the key does not exist on the target BU. Files that still carry a plain `applicationId` are deployed unchanged.
+
+### Changed
+
+- **MobilePush applications are identified by their ID** (mcdev 10.3.0), the value the Marketing Cloud GUI shows, instead of an encoded text that appeared nowhere in the GUI. `mobilePushApp` files are named by ID, and `r__mobilePushApp_key` in `mobilePush`, `journey` and `transactionalPush` holds that ID.
+- **What to do once:** re-retrieve `journey`, `mobilePush`, `transactionalPush` and `mobilePushApp` on every branch you keep, and commit the result. This rewrites the references and replaces the application files, including their names. Nothing breaks if you deploy first: references in the old form are still understood on deploy. Details are in the mcdev wiki under [Updating mcdev](https://github.com/Accenture/sfmc-devtools/wiki/03.-Updating-mcdev).
+
+### Fixed
+
+- `r__asset_key` relations to mobile assets stored in their own subfolder (`asset/mobile/<key>/<key>.asset-mobile-meta.json`) now get a link and are no longer reported as "was not found on the BU". Mobile assets stored directly in `asset/mobile/` keep working.
+- Relation links such as `r__mobilePushApp_key` now appear after the referenced item is retrieved, the next time the file is edited or brought back into view. Before, a relation whose target was missing when the file was first opened stayed without a link until the window was reloaded.
+
+### Dependencies
+
+- Bump bundled `mcdev` from 10.2.0 to 10.3.0.
+
 ## [3.7.0] — 2026-11-16
 
 ### Added

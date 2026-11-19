@@ -12,7 +12,7 @@ For Windows setup without administrator rights, see [Troubleshooting: portable N
 
 ### Choose the mcdev CLI source
 
-The extension ships the published **mcdev 10.2.0** runtime with **sfmc-sdk 4.0.2**: **no global or project-local mcdev installation is required**. In Settings, configure:
+The extension ships the published **mcdev 10.3.0** runtime with **sfmc-sdk 4.0.2**: **no global or project-local mcdev installation is required**. In Settings, configure:
 
 - `sfmc-devtools-vscode.mcdevSource`: `auto` (default) selects project-local mcdev first, then mcdev on PATH, then the bundled runtime. `bundled` always uses the extension's copy. `custom` always uses the executable named by `mcdevPath`.
 - `sfmc-devtools-vscode.mcdevPath`: executable path for `custom`; relative paths resolve from the project root. Supply only the path, without arguments or shell quotes. Windows `.cmd` launchers are supported.
@@ -126,7 +126,7 @@ The extension does not download or provision Node. You can use a portable Node/n
 
 ### Building locally
 
-From the extension directory, run `npm ci`, then `npm run compile` (or `npm run package:test` for a VSIX). The build stages the exact registry-locked mcdev 10.2.0 package and its runtime dependencies. No sibling source checkout or source-selection environment variable is needed.
+From the extension directory, run `npm ci`, then `npm run compile` (or `npm run package:test` for a VSIX). The build stages the exact registry-locked mcdev 10.3.0 package and its runtime dependencies. No sibling source checkout or source-selection environment variable is needed.
 
 The staged runtime under `dist/mcdev` records the extension lockfile digest, package versions, registry URLs/integrities and per-file hashes in `bundle-metadata.json`. `npm run verify:vsix -- sfmc-devtools-vscode-BETA.vsix` checks the packaged runtime after extraction/relocation and runs offline smoke tests. Archive timestamps can change the VSIX hash; byte-identical archive reproducibility is not claimed.
 
